@@ -1,47 +1,17 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Plus, TrendingUp, DollarSign } from 'lucide-react';
-import { useProducts } from '@/hooks/useProducts';
+import { Plus, TrendingUp, DollarSign, Eye, Edit, Trash2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { useSales } from '@/hooks/useSales';
+import { CreateSaleDialog } from './CreateSaleDialog';
 
 export const SalesSection = () => {
-  const { products } = useProducts();
-
-  // Mock sales data - in a real app, this would come from a sales hook/API
-  const salesData = [
-    {
-      id: 'SALE001',
-      productId: 'SKU001',
-      productName: 'Wireless Bluetooth Headphones',
-      quantity: 2,
-      unitPrice: '$89.99',
-      totalAmount: '$179.98',
-      date: '2024-01-15',
-      status: 'Completed'
-    },
-    {
-      id: 'SALE002',
-      productId: 'SKU002',
-      productName: 'Cotton T-Shirt - Blue',
-      quantity: 5,
-      unitPrice: '$24.99',
-      totalAmount: '$124.95',
-      date: '2024-01-14',
-      status: 'Completed'
-    },
-    {
-      id: 'SALE003',
-      productId: 'SKU004',
-      productName: 'Running Shoes - Size 10',
-      quantity: 1,
-      unitPrice: '$129.99',
-      totalAmount: '$129.99',
-      date: '2024-01-13',
-      status: 'Pending'
-    }
-  ];
+  const { toast } = useToast();
+  const { sales, addSale, updateSale, deleteSale } = useSales();
+  const [showCreateSale, setShowCreateSale] = useState(false);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -52,9 +22,41 @@ export const SalesSection = () => {
     }
   };
 
-  const totalSales = salesData.reduce((sum, sale) => 
-    sum + parseFloat(sale.totalAmount.replace('$', '')), 0
+  const totalSales = sales.reduce((sum, sale) => 
+    sum + parseFloat(sale.totalAmount.replace('$', '').replace(',', '')), 0
   );
+
+  const handleSaleCreated = (saleData: any) => {
+    addSale(saleData);
+    toast({
+      title: "Sale Recorded",
+      description: "The sale has been recorded successfully.",
+    });
+  };
+
+  const handleViewSale = (sale: any) => {
+    toast({
+      title: "View Sale",
+      description: `Viewing details for ${sale.id}`,
+    });
+  };
+
+  const handleEditSale = (sale: any) => {
+    toast({
+      title: "Edit Sale",
+      description: `Editing ${sale.id}`,
+    });
+  };
+
+  const handleDeleteSale = (sale: any) => {
+    if (window.confirm(`Are you sure you want to delete sale ${sale.id}?`)) {
+      deleteSale(sale.id);
+      toast({
+        title: "Sale Deleted",
+        description: `Sale ${sale.id} has been deleted.`,
+      });
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -66,7 +68,7 @@ export const SalesSection = () => {
               <TrendingUp className="h-5 w-5 text-blue-600" />
               <div>
                 <p className="text-sm text-gray-600">Total Sales</p>
-                <p className="text-2xl font-bold">{salesData.length}</p>
+                <p className="text-2xl font-bold">{sales.length}</p>
               </div>
             </div>
           </CardContent>
@@ -90,7 +92,7 @@ export const SalesSection = () => {
               <TrendingUp className="h-5 w-5 text-purple-600" />
               <div>
                 <p className="text-sm text-gray-600">Avg. Sale Value</p>
-                <p className="text-2xl font-bold">${(totalSales / salesData.length).toFixed(2)}</p>
+                <p className="text-2xl font-bold">${sales.length > 0 ? (totalSales / sales.length).toFixed(2) : '0.00'}</p>
               </div>
             </div>
           </CardContent>
@@ -101,8 +103,11 @@ export const SalesSection = () => {
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
-            <CardTitle>Recent Sales ({salesData.length} records)</CardTitle>
-            <Button className="flex items-center gap-2">
+            <CardTitle>Recent Sales ({sales.length} records)</CardTitle>
+            <Button 
+              className="flex items-center gap-2"
+              onClick={() => setShowCreateSale(true)}
+            >
               <Plus className="h-4 w-4" />
               Record New Sale
             </Button>
@@ -115,21 +120,24 @@ export const SalesSection = () => {
                 <tr className="border-b">
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Sale ID</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Product</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-600">Customer</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Quantity</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Unit Price</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Total</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Date</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Status</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-600">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {salesData.map((sale) => (
+                {sales.map((sale) => (
                   <tr key={sale.id} className="border-b hover:bg-gray-50 transition-colors">
                     <td className="py-4 px-4 text-sm font-mono">{sale.id}</td>
                     <td className="py-4 px-4">
                       <div className="font-medium text-gray-900">{sale.productName}</div>
                       <div className="text-sm text-gray-500">SKU: {sale.productId}</div>
                     </td>
+                    <td className="py-4 px-4 text-sm">{sale.customerName || 'N/A'}</td>
                     <td className="py-4 px-4">{sale.quantity}</td>
                     <td className="py-4 px-4">{sale.unitPrice}</td>
                     <td className="py-4 px-4 font-semibold">{sale.totalAmount}</td>
@@ -139,19 +147,54 @@ export const SalesSection = () => {
                         {sale.status}
                       </Badge>
                     </td>
+                    <td className="py-4 px-4">
+                      <div className="flex space-x-1">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleViewSale(sale)}
+                          title="View Sale"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleEditSale(sale)}
+                          title="Edit Sale"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleDeleteSale(sale)}
+                          title="Delete Sale"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
           
-          {salesData.length === 0 && (
+          {sales.length === 0 && (
             <div className="text-center py-8 text-gray-500">
               <p>No sales records found. Record your first sale to get started.</p>
             </div>
           )}
         </CardContent>
       </Card>
+
+      <CreateSaleDialog
+        open={showCreateSale}
+        onOpenChange={setShowCreateSale}
+        onSaleCreated={handleSaleCreated}
+      />
     </div>
   );
 };

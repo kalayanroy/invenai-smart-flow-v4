@@ -1,50 +1,17 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Plus, ShoppingCart, Package, DollarSign } from 'lucide-react';
-import { useProducts } from '@/hooks/useProducts';
+import { Plus, ShoppingCart, Package, DollarSign, Eye, Edit, Trash2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { usePurchases } from '@/hooks/usePurchases';
+import { CreatePurchaseDialog } from './CreatePurchaseDialog';
 
 export const PurchaseSection = () => {
-  const { products } = useProducts();
-
-  // Mock purchase data - in a real app, this would come from a purchases hook/API
-  const purchaseData = [
-    {
-      id: 'PUR001',
-      productId: 'SKU001',
-      productName: 'Wireless Bluetooth Headphones',
-      supplier: 'Tech Supplies Co.',
-      quantity: 50,
-      unitPrice: '$60.00',
-      totalAmount: '$3,000.00',
-      date: '2024-01-10',
-      status: 'Received'
-    },
-    {
-      id: 'PUR002',
-      productId: 'SKU002',
-      productName: 'Cotton T-Shirt - Blue',
-      supplier: 'Fashion Wholesale Ltd.',
-      quantity: 100,
-      unitPrice: '$15.00',
-      totalAmount: '$1,500.00',
-      date: '2024-01-08',
-      status: 'Received'
-    },
-    {
-      id: 'PUR003',
-      productId: 'SKU003',
-      productName: 'Garden Watering Can',
-      supplier: 'Garden Supply Inc.',
-      quantity: 25,
-      unitPrice: '$20.00',
-      totalAmount: '$500.00',
-      date: '2024-01-12',
-      status: 'Pending'
-    }
-  ];
+  const { toast } = useToast();
+  const { purchases, addPurchase, updatePurchase, deletePurchase } = usePurchases();
+  const [showCreatePurchase, setShowCreatePurchase] = useState(false);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -56,9 +23,41 @@ export const PurchaseSection = () => {
     }
   };
 
-  const totalPurchases = purchaseData.reduce((sum, purchase) => 
+  const totalPurchases = purchases.reduce((sum, purchase) => 
     sum + parseFloat(purchase.totalAmount.replace('$', '').replace(',', '')), 0
   );
+
+  const handlePurchaseCreated = (purchaseData: any) => {
+    addPurchase(purchaseData);
+    toast({
+      title: "Purchase Order Created",
+      description: "The purchase order has been created successfully.",
+    });
+  };
+
+  const handleViewPurchase = (purchase: any) => {
+    toast({
+      title: "View Purchase",
+      description: `Viewing details for ${purchase.id}`,
+    });
+  };
+
+  const handleEditPurchase = (purchase: any) => {
+    toast({
+      title: "Edit Purchase",
+      description: `Editing ${purchase.id}`,
+    });
+  };
+
+  const handleDeletePurchase = (purchase: any) => {
+    if (window.confirm(`Are you sure you want to delete purchase ${purchase.id}?`)) {
+      deletePurchase(purchase.id);
+      toast({
+        title: "Purchase Deleted",
+        description: `Purchase ${purchase.id} has been deleted.`,
+      });
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -70,7 +69,7 @@ export const PurchaseSection = () => {
               <ShoppingCart className="h-5 w-5 text-blue-600" />
               <div>
                 <p className="text-sm text-gray-600">Total Purchases</p>
-                <p className="text-2xl font-bold">{purchaseData.length}</p>
+                <p className="text-2xl font-bold">{purchases.length}</p>
               </div>
             </div>
           </CardContent>
@@ -95,7 +94,7 @@ export const PurchaseSection = () => {
               <div>
                 <p className="text-sm text-gray-600">Items Purchased</p>
                 <p className="text-2xl font-bold">
-                  {purchaseData.reduce((sum, purchase) => sum + purchase.quantity, 0)}
+                  {purchases.reduce((sum, purchase) => sum + purchase.quantity, 0)}
                 </p>
               </div>
             </div>
@@ -107,8 +106,11 @@ export const PurchaseSection = () => {
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
-            <CardTitle>Purchase Orders ({purchaseData.length} records)</CardTitle>
-            <Button className="flex items-center gap-2">
+            <CardTitle>Purchase Orders ({purchases.length} records)</CardTitle>
+            <Button 
+              className="flex items-center gap-2"
+              onClick={() => setShowCreatePurchase(true)}
+            >
               <Plus className="h-4 w-4" />
               Create Purchase Order
             </Button>
@@ -127,10 +129,11 @@ export const PurchaseSection = () => {
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Total</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Date</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Status</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-600">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {purchaseData.map((purchase) => (
+                {purchases.map((purchase) => (
                   <tr key={purchase.id} className="border-b hover:bg-gray-50 transition-colors">
                     <td className="py-4 px-4 text-sm font-mono">{purchase.id}</td>
                     <td className="py-4 px-4">
@@ -147,19 +150,54 @@ export const PurchaseSection = () => {
                         {purchase.status}
                       </Badge>
                     </td>
+                    <td className="py-4 px-4">
+                      <div className="flex space-x-1">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleViewPurchase(purchase)}
+                          title="View Purchase"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleEditPurchase(purchase)}
+                          title="Edit Purchase"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleDeletePurchase(purchase)}
+                          title="Delete Purchase"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
           
-          {purchaseData.length === 0 && (
+          {purchases.length === 0 && (
             <div className="text-center py-8 text-gray-500">
               <p>No purchase records found. Create your first purchase order to get started.</p>
             </div>
           )}
         </CardContent>
       </Card>
+
+      <CreatePurchaseDialog
+        open={showCreatePurchase}
+        onOpenChange={setShowCreatePurchase}
+        onPurchaseCreated={handlePurchaseCreated}
+      />
     </div>
   );
 };
