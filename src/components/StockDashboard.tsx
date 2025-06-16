@@ -10,6 +10,7 @@ import { SalesSection } from './inventory/SalesSection';
 import { PurchaseSection } from './inventory/PurchaseSection';
 import { StockManagement } from './inventory/StockManagement';
 import { SalesReturnSection } from './inventory/SalesReturnSection';
+import { Reports } from '../pages/Reports';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { User, LogOut } from 'lucide-react';
@@ -59,6 +60,7 @@ export const StockDashboard = () => {
             { id: 'sales', label: 'Sales' },
             { id: 'sales-returns', label: 'Sales Returns' },
             { id: 'purchases', label: 'Purchases' },
+            { id: 'reports', label: 'Reports' },
             { id: 'analytics', label: 'AI Analytics' },
           ].map((tab) => (
             <button
@@ -95,6 +97,8 @@ export const StockDashboard = () => {
             {activeTab === 'sales-returns' && <SalesReturnSection />}
             
             {activeTab === 'purchases' && <PurchaseSection />}
+            
+            {activeTab === 'reports' && <Reports />}
             
             {activeTab === 'analytics' && <AIInsights />}
           </div>

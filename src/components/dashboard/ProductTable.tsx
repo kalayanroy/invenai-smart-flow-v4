@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Eye, Edit, Trash2, MoreHorizontal, Plus } from 'lucide-react';
+import { Eye, Edit, Trash2, MoreHorizontal, Plus, Download } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { CreateProductForm } from '../inventory/CreateProductForm';
 import { ProductViewDialog } from '../inventory/ProductViewDialog';

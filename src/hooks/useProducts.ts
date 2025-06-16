@@ -1,5 +1,5 @@
-
 import { useState, useEffect } from 'react';
+import { useProductFileManager } from './useProductFileManager';
 
 export interface Product {
   id: string;
@@ -112,6 +112,7 @@ const STORAGE_KEY = 'inventory-products';
 
 export const useProducts = () => {
   const [products, setProducts] = useState<Product[]>([]);
+  const { saveProductToFile, saveAllProductsToFile } = useProductFileManager();
 
   // Load products from localStorage on mount
   useEffect(() => {
@@ -150,16 +151,40 @@ export const useProducts = () => {
     };
 
     setProducts(prev => [...prev, newProduct]);
+    
+    // Create text file for new product
+    setTimeout(() => {
+      saveProductToFile(newProduct);
+    }, 100);
+    
+    console.log('New product added and text file created:', newProduct.name);
     return newProduct;
   };
 
   const updateProduct = (id: string, updates: Partial<Product>) => {
-    setProducts(prev => prev.map(product => 
-      product.id === id ? { ...product, ...updates } : product
-    ));
+    setProducts(prev => prev.map(product => {
+      if (product.id === id) {
+        const updatedProduct = { ...product, ...updates };
+        
+        // Create updated text file
+        setTimeout(() => {
+          saveProductToFile(updatedProduct);
+        }, 100);
+        
+        console.log('Product updated and text file refreshed:', updatedProduct.name);
+        return updatedProduct;
+      }
+      return product;
+    }));
   };
 
   const deleteProduct = (id: string) => {
+    const productToDelete = products.find(p => p.id === id);
+    if (productToDelete) {
+      console.log(`Product deleted: ${productToDelete.name} (${productToDelete.sku})`);
+      console.log('Note: Text file for this product should be manually removed from downloads');
+    }
+    
     setProducts(prev => prev.filter(product => product.id !== id));
   };
 
@@ -167,11 +192,16 @@ export const useProducts = () => {
     return products.find(product => product.id === id);
   };
 
+  const exportAllProductsToFile = () => {
+    saveAllProductsToFile(products);
+  };
+
   return {
     products,
     addProduct,
     updateProduct,
     deleteProduct,
-    getProduct
+    getProduct,
+    exportAllProductsToFile
   };
 };
