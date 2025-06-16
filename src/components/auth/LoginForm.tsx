@@ -9,36 +9,37 @@ import { Lock, User, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 export const LoginForm = () => {
-  const { login } = useAuth();
+  const { login, isLoggingIn } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Prevent multiple submissions
+    if (isLoggingIn) return;
+    
     setError('');
-    setIsLoading(true);
 
     try {
       const success = await login(username, password);
       if (!success) {
         setError('Invalid username or password');
       }
-      // If successful, the component will automatically re-render due to auth state change
     } catch (err) {
       setError('Login failed. Please try again.');
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const handleDemoLogin = async (userType: 'admin' | 'guest') => {
+    // Prevent multiple submissions
+    if (isLoggingIn) return;
+    
     setUsername(userType);
     setPassword('123456');
     setError('');
-    setIsLoading(true);
     
     try {
       const success = await login(userType, '123456');
@@ -47,8 +48,6 @@ export const LoginForm = () => {
       }
     } catch (err) {
       setError('Login failed. Please try again.');
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -78,6 +77,7 @@ export const LoginForm = () => {
                   onChange={(e) => setUsername(e.target.value)}
                   className="pl-10"
                   required
+                  disabled={isLoggingIn}
                 />
               </div>
             </div>
@@ -94,6 +94,7 @@ export const LoginForm = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   className="pl-10 pr-10"
                   required
+                  disabled={isLoggingIn}
                 />
                 <Button
                   type="button"
@@ -101,6 +102,7 @@ export const LoginForm = () => {
                   size="sm"
                   className="absolute right-0 top-0 h-full px-3"
                   onClick={() => setShowPassword(!showPassword)}
+                  disabled={isLoggingIn}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
@@ -116,9 +118,9 @@ export const LoginForm = () => {
             <Button
               type="submit"
               className="w-full"
-              disabled={isLoading}
+              disabled={isLoggingIn}
             >
-              {isLoading ? 'Signing in...' : 'Sign In'}
+              {isLoggingIn ? 'Signing in...' : 'Sign In'}
             </Button>
           </form>
 
@@ -132,7 +134,7 @@ export const LoginForm = () => {
                 size="sm"
                 className="flex-1"
                 onClick={() => handleDemoLogin('admin')}
-                disabled={isLoading}
+                disabled={isLoggingIn}
               >
                 Admin User
               </Button>
@@ -141,7 +143,7 @@ export const LoginForm = () => {
                 size="sm"
                 className="flex-1"
                 onClick={() => handleDemoLogin('guest')}
-                disabled={isLoading}
+                disabled={isLoggingIn}
               >
                 Guest User
               </Button>

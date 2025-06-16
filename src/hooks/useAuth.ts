@@ -34,6 +34,7 @@ const AUTH_STORAGE_KEY = 'inventory-auth';
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem(AUTH_STORAGE_KEY);
@@ -51,7 +52,15 @@ export const useAuth = () => {
   }, []);
 
   const login = async (username: string, password: string): Promise<boolean> => {
+    // Prevent multiple simultaneous login attempts
+    if (isLoggingIn) {
+      console.log('Login already in progress, ignoring duplicate request');
+      return false;
+    }
+
+    setIsLoggingIn(true);
     console.log('Login attempt:', { username, password });
+    
     const userKey = username.toLowerCase().trim();
     const userData = users[userKey];
     
@@ -59,19 +68,24 @@ export const useAuth = () => {
     console.log('Available users:', Object.keys(users));
     console.log('Found user data:', userData);
     
+    // Add a small delay to prevent rapid successive calls
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
     if (userData && userData.password === password) {
       console.log('Login successful for:', userData.user);
       
-      // Use functional state update to ensure immediate re-render
-      setUser(() => {
-        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(userData.user));
-        return userData.user;
-      });
+      // Store in localStorage first
+      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(userData.user));
+      
+      // Then update state
+      setUser(userData.user);
+      setIsLoggingIn(false);
       
       return true;
     }
     
     console.log('Login failed - invalid credentials');
+    setIsLoggingIn(false);
     return false;
   };
 
@@ -88,6 +102,7 @@ export const useAuth = () => {
   return {
     user,
     isLoading,
+    isLoggingIn,
     login,
     logout,
     hasPermission,
