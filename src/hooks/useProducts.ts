@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from 'react';
-import { useJsonFileManager } from './useJsonFileManager';
 
 export interface Product {
   id: string;
@@ -113,7 +112,6 @@ const STORAGE_KEY = 'inventory-products';
 
 export const useProducts = () => {
   const [products, setProducts] = useState<Product[]>([]);
-  const { saveProductToJson, saveAllProductsToJson, saveProductsToFile } = useJsonFileManager();
 
   // Load products from localStorage on mount
   useEffect(() => {
@@ -133,16 +131,12 @@ export const useProducts = () => {
     }
   }, []);
 
-  // Save products to localStorage and JSON file whenever products change
+  // Save products to localStorage whenever products change
   useEffect(() => {
     if (products.length > 0) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
-      // Auto-save all products to JSON database file
-      setTimeout(() => {
-        saveProductsToFile(products);
-      }, 500);
     }
-  }, [products, saveProductsToFile]);
+  }, [products]);
 
   const addProduct = (productData: Omit<Product, 'id' | 'status' | 'aiRecommendation' | 'createdAt'>) => {
     const newProduct: Product = {
@@ -156,13 +150,7 @@ export const useProducts = () => {
     };
 
     setProducts(prev => [...prev, newProduct]);
-    
-    // Create JSON file for new product
-    setTimeout(() => {
-      saveProductToJson(newProduct);
-    }, 100);
-    
-    console.log('New product added and JSON files will be updated:', newProduct.name);
+    console.log('New product added:', newProduct.name);
     return newProduct;
   };
 
@@ -170,13 +158,7 @@ export const useProducts = () => {
     setProducts(prev => prev.map(product => {
       if (product.id === id) {
         const updatedProduct = { ...product, ...updates };
-        
-        // Create updated JSON file
-        setTimeout(() => {
-          saveProductToJson(updatedProduct);
-        }, 100);
-        
-        console.log('Product updated and JSON files will be refreshed:', updatedProduct.name);
+        console.log('Product updated:', updatedProduct.name);
         return updatedProduct;
       }
       return product;
@@ -187,7 +169,6 @@ export const useProducts = () => {
     const productToDelete = products.find(p => p.id === id);
     if (productToDelete) {
       console.log(`Product deleted: ${productToDelete.name} (${productToDelete.sku})`);
-      console.log('Product database JSON file will be updated automatically');
     }
     
     setProducts(prev => prev.filter(product => product.id !== id));
@@ -197,21 +178,11 @@ export const useProducts = () => {
     return products.find(product => product.id === id);
   };
 
-  const exportAllProductsToFile = () => {
-    saveAllProductsToJson(products);
-  };
-
-  const exportProductsDatabase = () => {
-    saveProductsToFile(products);
-  };
-
   return {
     products,
     addProduct,
     updateProduct,
     deleteProduct,
-    getProduct,
-    exportAllProductsToFile,
-    exportProductsDatabase
+    getProduct
   };
 };

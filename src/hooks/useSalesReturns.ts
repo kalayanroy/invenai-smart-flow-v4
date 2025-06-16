@@ -1,6 +1,4 @@
-
 import { useState, useEffect } from 'react';
-import { useJsonFileManager } from './useJsonFileManager';
 
 export interface SalesReturn {
   id: string;
@@ -58,7 +56,6 @@ const RETURNS_STORAGE_KEY = 'inventory-sales-returns';
 
 export const useSalesReturns = () => {
   const [returns, setReturns] = useState<SalesReturn[]>([]);
-  const { saveSalesReturnsToJson, saveSalesReturnsToFile } = useJsonFileManager();
 
   useEffect(() => {
     const stored = localStorage.getItem(RETURNS_STORAGE_KEY);
@@ -79,12 +76,8 @@ export const useSalesReturns = () => {
   useEffect(() => {
     if (returns.length > 0) {
       localStorage.setItem(RETURNS_STORAGE_KEY, JSON.stringify(returns));
-      // Auto-save to JSON database file whenever returns data changes
-      setTimeout(() => {
-        saveSalesReturnsToFile(returns);
-      }, 500);
     }
-  }, [returns, saveSalesReturnsToFile]);
+  }, [returns]);
 
   const addReturn = (returnData: Omit<SalesReturn, 'id'>) => {
     const newReturn: SalesReturn = {
@@ -92,7 +85,7 @@ export const useSalesReturns = () => {
       id: `RET${String(returns.length + 1).padStart(3, '0')}`,
     };
     setReturns(prev => [...prev, newReturn]);
-    console.log('New return added and sales returns database JSON file will be updated:', newReturn.id);
+    console.log('New return added:', newReturn.id);
     return newReturn;
   };
 
@@ -100,12 +93,12 @@ export const useSalesReturns = () => {
     setReturns(prev => prev.map(returnItem => 
       returnItem.id === id ? { ...returnItem, ...updates } : returnItem
     ));
-    console.log('Return updated and sales returns database JSON file will be updated:', id);
+    console.log('Return updated:', id);
   };
 
   const deleteReturn = (id: string) => {
     setReturns(prev => prev.filter(returnItem => returnItem.id !== id));
-    console.log('Return deleted and sales returns database JSON file will be updated:', id);
+    console.log('Return deleted:', id);
   };
 
   const processReturn = (id: string, status: 'Approved' | 'Rejected', processedBy: string) => {
@@ -120,21 +113,11 @@ export const useSalesReturns = () => {
     updateReturn(id, updates);
   };
 
-  const exportReturnsToJson = () => {
-    saveSalesReturnsToJson(returns);
-  };
-
-  const exportReturnsDatabase = () => {
-    saveSalesReturnsToFile(returns);
-  };
-
   return {
     returns,
     addReturn,
     updateReturn,
     deleteReturn,
-    processReturn,
-    exportReturnsToJson,
-    exportReturnsDatabase
+    processReturn
   };
 };

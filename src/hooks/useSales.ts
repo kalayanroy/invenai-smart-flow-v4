@@ -1,6 +1,4 @@
-
 import { useState, useEffect } from 'react';
-import { useJsonFileManager } from './useJsonFileManager';
 
 export interface Sale {
   id: string;
@@ -55,7 +53,6 @@ const SALES_STORAGE_KEY = 'inventory-sales';
 
 export const useSales = () => {
   const [sales, setSales] = useState<Sale[]>([]);
-  const { saveSalesToJson, saveSalesToFile } = useJsonFileManager();
 
   useEffect(() => {
     const stored = localStorage.getItem(SALES_STORAGE_KEY);
@@ -76,12 +73,8 @@ export const useSales = () => {
   useEffect(() => {
     if (sales.length > 0) {
       localStorage.setItem(SALES_STORAGE_KEY, JSON.stringify(sales));
-      // Auto-save to JSON database file whenever sales data changes
-      setTimeout(() => {
-        saveSalesToFile(sales);
-      }, 500);
     }
-  }, [sales, saveSalesToFile]);
+  }, [sales]);
 
   const addSale = (saleData: Omit<Sale, 'id'>) => {
     const newSale: Sale = {
@@ -89,7 +82,7 @@ export const useSales = () => {
       id: `SALE${String(sales.length + 1).padStart(3, '0')}`,
     };
     setSales(prev => [...prev, newSale]);
-    console.log('New sale added and sales database JSON file will be updated:', newSale.id);
+    console.log('New sale added:', newSale.id);
     return newSale;
   };
 
@@ -97,28 +90,18 @@ export const useSales = () => {
     setSales(prev => prev.map(sale => 
       sale.id === id ? { ...sale, ...updates } : sale
     ));
-    console.log('Sale updated and sales database JSON file will be updated:', id);
+    console.log('Sale updated:', id);
   };
 
   const deleteSale = (id: string) => {
     setSales(prev => prev.filter(sale => sale.id !== id));
-    console.log('Sale deleted and sales database JSON file will be updated:', id);
-  };
-
-  const exportSalesToJson = () => {
-    saveSalesToJson(sales);
-  };
-
-  const exportSalesDatabase = () => {
-    saveSalesToFile(sales);
+    console.log('Sale deleted:', id);
   };
 
   return {
     sales,
     addSale,
     updateSale,
-    deleteSale,
-    exportSalesToJson,
-    exportSalesDatabase
+    deleteSale
   };
 };
