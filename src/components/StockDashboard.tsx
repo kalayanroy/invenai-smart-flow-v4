@@ -6,6 +6,8 @@ import { InventoryChart } from './dashboard/InventoryChart';
 import { ProductTable } from './dashboard/ProductTable';
 import { AIInsights } from './dashboard/AIInsights';
 import { AlertsPanel } from './dashboard/AlertsPanel';
+import { SalesSection } from './inventory/SalesSection';
+import { PurchaseSection } from './inventory/PurchaseSection';
 
 export const StockDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -20,6 +22,8 @@ export const StockDashboard = () => {
           {[
             { id: 'overview', label: 'Overview' },
             { id: 'inventory', label: 'Inventory' },
+            { id: 'sales', label: 'Sales' },
+            { id: 'purchases', label: 'Purchases' },
             { id: 'analytics', label: 'AI Analytics' },
           ].map((tab) => (
             <button
@@ -48,6 +52,10 @@ export const StockDashboard = () => {
             )}
             
             {activeTab === 'inventory' && <ProductTable />}
+            
+            {activeTab === 'sales' && <SalesSection />}
+            
+            {activeTab === 'purchases' && <PurchaseSection />}
             
             {activeTab === 'analytics' && <AIInsights />}
           </div>

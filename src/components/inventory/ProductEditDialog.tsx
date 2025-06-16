@@ -7,6 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Product } from '@/hooks/useProducts';
 import { useToast } from '@/hooks/use-toast';
+import { Upload, X, Plus } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 
 interface ProductEditDialogProps {
   product: Product | null;
@@ -15,12 +17,19 @@ interface ProductEditDialogProps {
   onSave: (id: string, updates: Partial<Product>) => void;
 }
 
-const units = ['Pieces', 'Kg', 'Liter', 'Meter', 'Box', 'Dozen'];
-const categories = ['Electronics', 'Clothing', 'Food & Beverages', 'Home & Garden', 'Sports', 'Books'];
+const initialUnits = ['Pieces', 'Kg', 'Liter', 'Meter', 'Box', 'Dozen'];
+const initialCategories = ['Electronics', 'Clothing', 'Food & Beverages', 'Home & Garden', 'Sports', 'Books'];
 
 export const ProductEditDialog = ({ product, open, onOpenChange, onSave }: ProductEditDialogProps) => {
   const { toast } = useToast();
   const [formData, setFormData] = useState<Partial<Product>>({});
+  const [units, setUnits] = useState(initialUnits);
+  const [categories, setCategories] = useState(initialCategories);
+  const [newUnit, setNewUnit] = useState('');
+  const [newCategory, setNewCategory] = useState('');
+  const [showUnitDialog, setShowUnitDialog] = useState(false);
+  const [showCategoryDialog, setShowCategoryDialog] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   useEffect(() => {
     if (product) {
@@ -33,10 +42,61 @@ export const ProductEditDialog = ({ product, open, onOpenChange, onSave }: Produ
         sellPrice: product.sellPrice,
         stock: product.stock,
         reorderPoint: product.reorderPoint,
+        openingStock: product.openingStock,
         unit: product.unit
       });
+      setImagePreview(product.image || null);
     }
   }, [product]);
+
+  const handleInputChange = (field: keyof Product, value: string | number) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+        setFormData(prev => ({ ...prev, image: e.target?.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setImagePreview(null);
+    setFormData(prev => ({ ...prev, image: undefined }));
+  };
+
+  const addNewUnit = () => {
+    if (newUnit.trim() && !units.includes(newUnit.trim())) {
+      const updatedUnits = [...units, newUnit.trim()];
+      setUnits(updatedUnits);
+      setFormData(prev => ({ ...prev, unit: newUnit.trim() }));
+      setNewUnit('');
+      setShowUnitDialog(false);
+      toast({
+        title: "Unit Added",
+        description: `"${newUnit.trim()}" has been added to the units list.`,
+      });
+    }
+  };
+
+  const addNewCategory = () => {
+    if (newCategory.trim() && !categories.includes(newCategory.trim())) {
+      const updatedCategories = [...categories, newCategory.trim()];
+      setCategories(updatedCategories);
+      setFormData(prev => ({ ...prev, category: newCategory.trim() }));
+      setNewCategory('');
+      setShowCategoryDialog(false);
+      toast({
+        title: "Category Added",
+        description: `"${newCategory.trim()}" has been added to the categories list.`,
+      });
+    }
+  };
 
   const handleSave = () => {
     if (!product || !formData.name || !formData.sku) {
@@ -60,118 +120,277 @@ export const ProductEditDialog = ({ product, open, onOpenChange, onSave }: Produ
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Edit Product</DialogTitle>
+          <DialogTitle className="text-2xl font-bold">Edit Product</DialogTitle>
         </DialogHeader>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label>Product Name *</Label>
-            <Input
-              value={formData.name || ''}
-              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              placeholder="Enter product name"
-            />
-          </div>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="space-y-6">
+              {/* Basic Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="productName">Product Name *</Label>
+                  <Input
+                    id="productName"
+                    value={formData.name || ''}
+                    onChange={(e) => handleInputChange('name', e.target.value)}
+                    placeholder="Enter product name"
+                    required
+                  />
+                </div>
 
-          <div className="space-y-2">
-            <Label>SKU *</Label>
-            <Input
-              value={formData.sku || ''}
-              onChange={(e) => setFormData(prev => ({ ...prev, sku: e.target.value }))}
-              placeholder="Enter SKU"
-            />
-          </div>
+                <div className="space-y-2">
+                  <Label htmlFor="sku">SKU *</Label>
+                  <Input
+                    id="sku"
+                    value={formData.sku || ''}
+                    onChange={(e) => handleInputChange('sku', e.target.value)}
+                    placeholder="Enter SKU"
+                    required
+                  />
+                </div>
 
-          <div className="space-y-2">
-            <Label>Barcode</Label>
-            <Input
-              value={formData.barcode || ''}
-              onChange={(e) => setFormData(prev => ({ ...prev, barcode: e.target.value }))}
-              placeholder="Enter barcode"
-            />
-          </div>
+                <div className="space-y-2">
+                  <Label htmlFor="barcode">Barcode</Label>
+                  <Input
+                    id="barcode"
+                    value={formData.barcode || ''}
+                    onChange={(e) => handleInputChange('barcode', e.target.value)}
+                    placeholder="Enter barcode"
+                  />
+                </div>
 
-          <div className="space-y-2">
-            <Label>Category</Label>
-            <Select value={formData.category || ''} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((category) => (
-                  <SelectItem key={category} value={category}>
-                    {category}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+                <div className="space-y-2">
+                  <Label htmlFor="openingStock">Opening Stock</Label>
+                  <Input
+                    id="openingStock"
+                    type="number"
+                    value={formData.openingStock || 0}
+                    onChange={(e) => handleInputChange('openingStock', parseInt(e.target.value) || 0)}
+                    placeholder="Enter opening stock"
+                    min="0"
+                  />
+                </div>
+              </div>
 
-          <div className="space-y-2">
-            <Label>Purchase Price</Label>
-            <Input
-              value={formData.purchasePrice || ''}
-              onChange={(e) => setFormData(prev => ({ ...prev, purchasePrice: e.target.value }))}
-              placeholder="$0.00"
-            />
-          </div>
+              {/* Pricing */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="purchasePrice">Purchase Price *</Label>
+                  <Input
+                    id="purchasePrice"
+                    value={formData.purchasePrice || ''}
+                    onChange={(e) => handleInputChange('purchasePrice', e.target.value)}
+                    placeholder="Enter purchase price"
+                    required
+                  />
+                </div>
 
-          <div className="space-y-2">
-            <Label>Sell Price</Label>
-            <Input
-              value={formData.sellPrice || ''}
-              onChange={(e) => setFormData(prev => ({ ...prev, sellPrice: e.target.value }))}
-              placeholder="$0.00"
-            />
-          </div>
+                <div className="space-y-2">
+                  <Label htmlFor="sellPrice">Sell Price *</Label>
+                  <Input
+                    id="sellPrice"
+                    value={formData.sellPrice || ''}
+                    onChange={(e) => handleInputChange('sellPrice', e.target.value)}
+                    placeholder="Enter sell price"
+                    required
+                  />
+                </div>
+              </div>
 
-          <div className="space-y-2">
-            <Label>Current Stock</Label>
-            <Input
-              type="number"
-              value={formData.stock || 0}
-              onChange={(e) => setFormData(prev => ({ ...prev, stock: parseInt(e.target.value) || 0 }))}
-              min="0"
-            />
-          </div>
+              {/* Stock Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="currentStock">Current Stock</Label>
+                  <Input
+                    id="currentStock"
+                    type="number"
+                    value={formData.stock || 0}
+                    onChange={(e) => handleInputChange('stock', parseInt(e.target.value) || 0)}
+                    min="0"
+                  />
+                </div>
 
-          <div className="space-y-2">
-            <Label>Reorder Point</Label>
-            <Input
-              type="number"
-              value={formData.reorderPoint || 0}
-              onChange={(e) => setFormData(prev => ({ ...prev, reorderPoint: parseInt(e.target.value) || 0 }))}
-              min="0"
-            />
-          </div>
+                <div className="space-y-2">
+                  <Label htmlFor="reorderPoint">Reorder Point</Label>
+                  <Input
+                    id="reorderPoint"
+                    type="number"
+                    value={formData.reorderPoint || 0}
+                    onChange={(e) => handleInputChange('reorderPoint', parseInt(e.target.value) || 0)}
+                    min="0"
+                  />
+                </div>
+              </div>
 
-          <div className="space-y-2">
-            <Label>Unit</Label>
-            <Select value={formData.unit || ''} onValueChange={(value) => setFormData(prev => ({ ...prev, unit: value }))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select unit" />
-              </SelectTrigger>
-              <SelectContent>
-                {units.map((unit) => (
-                  <SelectItem key={unit} value={unit}>
-                    {unit}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+              {/* Unit and Category */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label>Unit *</Label>
+                  <div className="flex gap-2">
+                    <Select value={formData.unit || ''} onValueChange={(value) => handleInputChange('unit', value)}>
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="Select unit" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {units.map((unit) => (
+                          <SelectItem key={unit} value={unit}>
+                            {unit}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Dialog open={showUnitDialog} onOpenChange={setShowUnitDialog}>
+                      <DialogTrigger asChild>
+                        <Button type="button" variant="outline" size="icon">
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Add New Unit</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <Input
+                            value={newUnit}
+                            onChange={(e) => setNewUnit(e.target.value)}
+                            placeholder="Enter new unit"
+                            onKeyPress={(e) => e.key === 'Enter' && addNewUnit()}
+                          />
+                          <div className="flex gap-2">
+                            <Button onClick={addNewUnit} className="flex-1">
+                              Add Unit
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={() => setShowUnitDialog(false)}
+                              className="flex-1"
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </div>
 
-        <div className="flex gap-2 mt-6">
-          <Button onClick={handleSave} className="flex-1">
-            Save Changes
-          </Button>
-          <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
-            Cancel
-          </Button>
-        </div>
+                <div className="space-y-2">
+                  <Label>Category *</Label>
+                  <div className="flex gap-2">
+                    <Select value={formData.category || ''} onValueChange={(value) => handleInputChange('category', value)}>
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map((category) => (
+                          <SelectItem key={category} value={category}>
+                            {category}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Dialog open={showCategoryDialog} onOpenChange={setShowCategoryDialog}>
+                      <DialogTrigger asChild>
+                        <Button type="button" variant="outline" size="icon">
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Add New Category</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <Input
+                            value={newCategory}
+                            onChange={(e) => setNewCategory(e.target.value)}
+                            placeholder="Enter new category"
+                            onKeyPress={(e) => e.key === 'Enter' && addNewCategory()}
+                          />
+                          <div className="flex gap-2">
+                            <Button onClick={addNewCategory} className="flex-1">
+                              Add Category
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={() => setShowCategoryDialog(false)}
+                              className="flex-1"
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </div>
+              </div>
+
+              {/* Image Upload */}
+              <div className="space-y-2">
+                <Label>Product Image</Label>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
+                  {imagePreview ? (
+                    <div className="relative inline-block">
+                      <img
+                        src={imagePreview}
+                        alt="Product preview"
+                        className="max-w-xs max-h-48 object-cover rounded-lg"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute -top-2 -right-2 h-6 w-6"
+                        onClick={removeImage}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="text-center">
+                      <Upload className="mx-auto h-12 w-12 text-gray-400" />
+                      <div className="mt-4">
+                        <Label
+                          htmlFor="image-upload-edit"
+                          className="cursor-pointer inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
+                        >
+                          Upload Image
+                        </Label>
+                        <input
+                          id="image-upload-edit"
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                          className="hidden"
+                        />
+                      </div>
+                      <p className="mt-2 text-sm text-gray-500">
+                        PNG, JPG, GIF up to 10MB
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Submit Buttons */}
+              <div className="flex gap-4">
+                <Button onClick={handleSave} className="flex-1">
+                  Save Changes
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => onOpenChange(false)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </DialogContent>
     </Dialog>
   );
