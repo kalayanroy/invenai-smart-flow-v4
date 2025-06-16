@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -213,7 +214,7 @@ export const Reports = () => {
           <p><strong>Return Transactions:</strong> ${profitData.returnCount}</p>
         </div>
       `;
-    } else if (activeReport === 'inventory') {
+    } else if (activeReport === 'inventory' && Array.isArray(data)) {
       content += `
         <div class="summary">
           <strong>Summary:</strong> Total Products: ${data.length} | 
@@ -250,7 +251,7 @@ export const Reports = () => {
           </tbody>
         </table>
       `;
-    } else if (activeReport === 'sales') {
+    } else if (activeReport === 'sales' && Array.isArray(data)) {
       const totalAmount = data.reduce((sum: number, sale: any) => sum + parseFloat(sale.totalAmount.replace('৳', '').replace(',', '')), 0);
       content += `
         <div class="summary">
@@ -327,7 +328,7 @@ export const Reports = () => {
         ['Purchase Count', profitData.purchaseCount.toString()],
         ['Return Count', profitData.returnCount.toString()]
       ];
-    } else if (activeReport === 'inventory') {
+    } else if (activeReport === 'inventory' && Array.isArray(data)) {
       headers = ['SKU', 'Product Name', 'Category', 'Stock', 'Reorder Point', 'Status', 'Purchase Price', 'Sell Price'];
       rows = data.map((product: any) => [
         product.sku,
@@ -339,7 +340,7 @@ export const Reports = () => {
         product.purchasePrice,
         product.sellPrice
       ]);
-    } else if (activeReport === 'sales') {
+    } else if (activeReport === 'sales' && Array.isArray(data)) {
       headers = ['Sale ID', 'Product Name', 'Customer', 'Quantity', 'Unit Price', 'Total Amount', 'Date', 'Status'];
       rows = data.map((sale: any) => [
         sale.id,
