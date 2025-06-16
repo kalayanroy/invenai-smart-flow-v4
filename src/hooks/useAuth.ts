@@ -40,6 +40,7 @@ export const useAuth = () => {
     if (stored) {
       try {
         const userData = JSON.parse(stored);
+        console.log('Loaded stored user:', userData);
         setUser(userData);
       } catch (error) {
         console.error('Error parsing stored auth:', error);
@@ -50,18 +51,27 @@ export const useAuth = () => {
   }, []);
 
   const login = (username: string, password: string): boolean => {
-    const userKey = username.toLowerCase();
+    console.log('Login attempt:', { username, password });
+    const userKey = username.toLowerCase().trim();
     const userData = users[userKey];
     
+    console.log('Looking for user key:', userKey);
+    console.log('Available users:', Object.keys(users));
+    console.log('Found user data:', userData);
+    
     if (userData && userData.password === password) {
+      console.log('Login successful for:', userData.user);
       setUser(userData.user);
       localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(userData.user));
       return true;
     }
+    
+    console.log('Login failed - invalid credentials');
     return false;
   };
 
   const logout = () => {
+    console.log('Logging out user');
     setUser(null);
     localStorage.removeItem(AUTH_STORAGE_KEY);
   };
