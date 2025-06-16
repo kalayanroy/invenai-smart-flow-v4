@@ -7,9 +7,11 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Lock, User, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 
 export const LoginForm = () => {
   const { login, isLoggingIn } = useAuth();
+  const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -25,7 +27,9 @@ export const LoginForm = () => {
 
     try {
       const success = await login(username, password);
-      if (!success) {
+      if (success) {
+        navigate('/');
+      } else {
         setError('Invalid username or password');
       }
     } catch (err) {
@@ -43,7 +47,9 @@ export const LoginForm = () => {
     
     try {
       const success = await login(userType, '123456');
-      if (!success) {
+      if (success) {
+        navigate('/');
+      } else {
         setError('Login failed. Please try again.');
       }
     } catch (err) {

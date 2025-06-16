@@ -11,28 +11,19 @@ import { PurchaseSection } from './inventory/PurchaseSection';
 import { StockManagement } from './inventory/StockManagement';
 import { SalesReturnSection } from './inventory/SalesReturnSection';
 import { useAuth } from '@/hooks/useAuth';
-import { LoginForm } from './auth/LoginForm';
 import { Button } from '@/components/ui/button';
 import { User, LogOut } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export const StockDashboard = () => {
-  const { user, logout, isLoading, isAuthenticated } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return <LoginForm />;
-  }
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -49,7 +40,7 @@ export const StockDashboard = () => {
                 <span className="font-medium">{user?.username}</span>
                 <span className="text-gray-500">({user?.role})</span>
               </div>
-              <Button variant="outline" size="sm" onClick={logout} className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={handleLogout} className="flex items-center gap-2">
                 <LogOut className="h-4 w-4" />
                 Logout
               </Button>
