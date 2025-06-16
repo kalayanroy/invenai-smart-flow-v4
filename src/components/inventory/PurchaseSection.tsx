@@ -5,13 +5,18 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Plus, ShoppingCart, Package, DollarSign, Eye, Edit, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { usePurchases } from '@/hooks/usePurchases';
+import { usePurchases, Purchase } from '@/hooks/usePurchases';
 import { CreatePurchaseDialog } from './CreatePurchaseDialog';
+import { ViewPurchaseDialog } from './ViewPurchaseDialog';
+import { EditPurchaseDialog } from './EditPurchaseDialog';
 
 export const PurchaseSection = () => {
   const { toast } = useToast();
   const { purchases, addPurchase, updatePurchase, deletePurchase } = usePurchases();
   const [showCreatePurchase, setShowCreatePurchase] = useState(false);
+  const [showViewPurchase, setShowViewPurchase] = useState(false);
+  const [showEditPurchase, setShowEditPurchase] = useState(false);
+  const [selectedPurchase, setSelectedPurchase] = useState<Purchase | null>(null);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -35,21 +40,25 @@ export const PurchaseSection = () => {
     });
   };
 
-  const handleViewPurchase = (purchase: any) => {
+  const handleViewPurchase = (purchase: Purchase) => {
+    setSelectedPurchase(purchase);
+    setShowViewPurchase(true);
+  };
+
+  const handleEditPurchase = (purchase: Purchase) => {
+    setSelectedPurchase(purchase);
+    setShowEditPurchase(true);
+  };
+
+  const handlePurchaseUpdated = (id: string, updates: Partial<Purchase>) => {
+    updatePurchase(id, updates);
     toast({
-      title: "View Purchase",
-      description: `Viewing details for ${purchase.id}`,
+      title: "Purchase Updated",
+      description: `Purchase ${id} has been updated successfully.`,
     });
   };
 
-  const handleEditPurchase = (purchase: any) => {
-    toast({
-      title: "Edit Purchase",
-      description: `Editing ${purchase.id}`,
-    });
-  };
-
-  const handleDeletePurchase = (purchase: any) => {
+  const handleDeletePurchase = (purchase: Purchase) => {
     if (window.confirm(`Are you sure you want to delete purchase ${purchase.id}?`)) {
       deletePurchase(purchase.id);
       toast({
@@ -197,6 +206,19 @@ export const PurchaseSection = () => {
         open={showCreatePurchase}
         onOpenChange={setShowCreatePurchase}
         onPurchaseCreated={handlePurchaseCreated}
+      />
+
+      <ViewPurchaseDialog
+        open={showViewPurchase}
+        onOpenChange={setShowViewPurchase}
+        purchase={selectedPurchase}
+      />
+
+      <EditPurchaseDialog
+        open={showEditPurchase}
+        onOpenChange={setShowEditPurchase}
+        purchase={selectedPurchase}
+        onPurchaseUpdated={handlePurchaseUpdated}
       />
     </div>
   );

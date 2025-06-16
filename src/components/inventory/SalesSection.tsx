@@ -5,13 +5,18 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Plus, TrendingUp, DollarSign, Eye, Edit, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useSales } from '@/hooks/useSales';
+import { useSales, Sale } from '@/hooks/useSales';
 import { CreateSaleDialog } from './CreateSaleDialog';
+import { ViewSaleDialog } from './ViewSaleDialog';
+import { EditSaleDialog } from './EditSaleDialog';
 
 export const SalesSection = () => {
   const { toast } = useToast();
   const { sales, addSale, updateSale, deleteSale } = useSales();
   const [showCreateSale, setShowCreateSale] = useState(false);
+  const [showViewSale, setShowViewSale] = useState(false);
+  const [showEditSale, setShowEditSale] = useState(false);
+  const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -34,21 +39,25 @@ export const SalesSection = () => {
     });
   };
 
-  const handleViewSale = (sale: any) => {
+  const handleViewSale = (sale: Sale) => {
+    setSelectedSale(sale);
+    setShowViewSale(true);
+  };
+
+  const handleEditSale = (sale: Sale) => {
+    setSelectedSale(sale);
+    setShowEditSale(true);
+  };
+
+  const handleSaleUpdated = (id: string, updates: Partial<Sale>) => {
+    updateSale(id, updates);
     toast({
-      title: "View Sale",
-      description: `Viewing details for ${sale.id}`,
+      title: "Sale Updated",
+      description: `Sale ${id} has been updated successfully.`,
     });
   };
 
-  const handleEditSale = (sale: any) => {
-    toast({
-      title: "Edit Sale",
-      description: `Editing ${sale.id}`,
-    });
-  };
-
-  const handleDeleteSale = (sale: any) => {
+  const handleDeleteSale = (sale: Sale) => {
     if (window.confirm(`Are you sure you want to delete sale ${sale.id}?`)) {
       deleteSale(sale.id);
       toast({
@@ -194,6 +203,19 @@ export const SalesSection = () => {
         open={showCreateSale}
         onOpenChange={setShowCreateSale}
         onSaleCreated={handleSaleCreated}
+      />
+
+      <ViewSaleDialog
+        open={showViewSale}
+        onOpenChange={setShowViewSale}
+        sale={selectedSale}
+      />
+
+      <EditSaleDialog
+        open={showEditSale}
+        onOpenChange={setShowEditSale}
+        sale={selectedSale}
+        onSaleUpdated={handleSaleUpdated}
       />
     </div>
   );
