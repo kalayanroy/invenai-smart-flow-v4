@@ -22,10 +22,11 @@ export const LoginForm = () => {
     setIsLoading(true);
 
     try {
-      const success = login(username, password);
+      const success = await login(username, password);
       if (!success) {
         setError('Invalid username or password');
       }
+      // If successful, the component will automatically re-render due to auth state change
     } catch (err) {
       setError('Login failed. Please try again.');
     } finally {
@@ -33,10 +34,22 @@ export const LoginForm = () => {
     }
   };
 
-  const handleDemoLogin = (userType: 'admin' | 'guest') => {
+  const handleDemoLogin = async (userType: 'admin' | 'guest') => {
     setUsername(userType);
     setPassword('123456');
     setError('');
+    setIsLoading(true);
+    
+    try {
+      const success = await login(userType, '123456');
+      if (!success) {
+        setError('Login failed. Please try again.');
+      }
+    } catch (err) {
+      setError('Login failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -119,6 +132,7 @@ export const LoginForm = () => {
                 size="sm"
                 className="flex-1"
                 onClick={() => handleDemoLogin('admin')}
+                disabled={isLoading}
               >
                 Admin User
               </Button>
@@ -127,6 +141,7 @@ export const LoginForm = () => {
                 size="sm"
                 className="flex-1"
                 onClick={() => handleDemoLogin('guest')}
+                disabled={isLoading}
               >
                 Guest User
               </Button>

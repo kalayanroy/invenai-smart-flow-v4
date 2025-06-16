@@ -50,7 +50,7 @@ export const useAuth = () => {
     setIsLoading(false);
   }, []);
 
-  const login = (username: string, password: string): boolean => {
+  const login = async (username: string, password: string): Promise<boolean> => {
     console.log('Login attempt:', { username, password });
     const userKey = username.toLowerCase().trim();
     const userData = users[userKey];
@@ -61,8 +61,13 @@ export const useAuth = () => {
     
     if (userData && userData.password === password) {
       console.log('Login successful for:', userData.user);
-      setUser(userData.user);
-      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(userData.user));
+      
+      // Use functional state update to ensure immediate re-render
+      setUser(() => {
+        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(userData.user));
+        return userData.user;
+      });
+      
       return true;
     }
     
