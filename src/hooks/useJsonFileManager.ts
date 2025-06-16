@@ -34,6 +34,56 @@ export const useJsonFileManager = () => {
     }
   };
 
+  const saveProductsToFile = (products: Product[]) => {
+    const productsData = {
+      products: products,
+      exportDate: new Date().toISOString(),
+      totalProducts: products.length,
+      categories: [...new Set(products.map(p => p.category))],
+      totalValue: products.reduce((sum, p) => sum + (parseFloat(p.sellPrice.replace('৳', '')) * p.stock), 0),
+      type: 'products_database'
+    };
+    
+    saveToJsonFile(productsData, 'products-database.json');
+  };
+
+  const saveSalesToFile = (sales: Sale[]) => {
+    const salesData = {
+      sales: sales,
+      exportDate: new Date().toISOString(),
+      totalSales: sales.length,
+      totalRevenue: sales.reduce((sum, sale) => sum + parseFloat(sale.totalAmount.replace('৳', '').replace(',', '')), 0),
+      type: 'sales_database'
+    };
+    
+    saveToJsonFile(salesData, 'sales-database.json');
+  };
+
+  const savePurchasesToFile = (purchases: Purchase[]) => {
+    const purchasesData = {
+      purchases: purchases,
+      exportDate: new Date().toISOString(),
+      totalPurchases: purchases.length,
+      totalCost: purchases.reduce((sum, purchase) => sum + parseFloat(purchase.totalAmount.replace('৳', '').replace(',', '')), 0),
+      type: 'purchases_database'
+    };
+    
+    saveToJsonFile(purchasesData, 'purchases-database.json');
+  };
+
+  const saveSalesReturnsToFile = (returns: SalesReturn[]) => {
+    const returnsData = {
+      salesReturns: returns,
+      exportDate: new Date().toISOString(),
+      totalReturns: returns.length,
+      totalRefunds: returns.reduce((sum, returnItem) => sum + parseFloat(returnItem.totalRefund.replace('৳', '').replace(',', '')), 0),
+      type: 'sales_returns_database'
+    };
+    
+    saveToJsonFile(returnsData, 'sales-returns-database.json');
+  };
+
+  // Legacy methods for backward compatibility
   const saveProductToJson = (product: Product) => {
     const productData = {
       productInfo: product,
@@ -133,6 +183,12 @@ export const useJsonFileManager = () => {
   };
 
   return {
+    // New database file methods
+    saveProductsToFile,
+    saveSalesToFile,
+    savePurchasesToFile,
+    saveSalesReturnsToFile,
+    // Legacy methods
     saveProductToJson,
     saveAllProductsToJson,
     saveSalesToJson,

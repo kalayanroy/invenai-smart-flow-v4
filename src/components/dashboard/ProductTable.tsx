@@ -1,8 +1,9 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Eye, Edit, Trash2, MoreHorizontal, Plus, Download, FileJson } from 'lucide-react';
+import { Eye, Edit, Trash2, MoreHorizontal, Plus, Download, FileJson, Database } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { CreateProductForm } from '../inventory/CreateProductForm';
 import { ProductViewDialog } from '../inventory/ProductViewDialog';
@@ -13,7 +14,7 @@ import { useJsonFileManager } from '@/hooks/useJsonFileManager';
 
 export const ProductTable = () => {
   const { toast } = useToast();
-  const { products, addProduct, updateProduct, deleteProduct } = useProducts();
+  const { products, addProduct, updateProduct, deleteProduct, exportProductsDatabase } = useProducts();
   const { saveCompleteInventoryToJson } = useJsonFileManager();
   const [showCreateProduct, setShowCreateProduct] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -87,12 +88,24 @@ export const ProductTable = () => {
     });
   };
 
+  const handleExportProductsDatabase = () => {
+    exportProductsDatabase();
+    toast({
+      title: "Products Database Exported",
+      description: "Products database JSON file has been created successfully.",
+    });
+  };
+
   return (
     <div className="space-y-6">
       {/* Header with Create Button */}
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Product Inventory</h2>
         <div className="flex gap-2">
+          <Button variant="outline" onClick={handleExportProductsDatabase} className="flex items-center gap-2">
+            <Database className="h-4 w-4" />
+            Export Products Database
+          </Button>
           <Button variant="outline" onClick={handleExportAllToJson} className="flex items-center gap-2">
             <FileJson className="h-4 w-4" />
             Export All to JSON

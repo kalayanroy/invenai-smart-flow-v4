@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useJsonFileManager } from './useJsonFileManager';
 
@@ -54,7 +55,7 @@ const SALES_STORAGE_KEY = 'inventory-sales';
 
 export const useSales = () => {
   const [sales, setSales] = useState<Sale[]>([]);
-  const { saveSalesToJson } = useJsonFileManager();
+  const { saveSalesToJson, saveSalesToFile } = useJsonFileManager();
 
   useEffect(() => {
     const stored = localStorage.getItem(SALES_STORAGE_KEY);
@@ -75,12 +76,12 @@ export const useSales = () => {
   useEffect(() => {
     if (sales.length > 0) {
       localStorage.setItem(SALES_STORAGE_KEY, JSON.stringify(sales));
-      // Auto-save to JSON file whenever sales data changes
+      // Auto-save to JSON database file whenever sales data changes
       setTimeout(() => {
-        saveSalesToJson(sales);
+        saveSalesToFile(sales);
       }, 500);
     }
-  }, [sales, saveSalesToJson]);
+  }, [sales, saveSalesToFile]);
 
   const addSale = (saleData: Omit<Sale, 'id'>) => {
     const newSale: Sale = {
@@ -88,7 +89,7 @@ export const useSales = () => {
       id: `SALE${String(sales.length + 1).padStart(3, '0')}`,
     };
     setSales(prev => [...prev, newSale]);
-    console.log('New sale added and JSON file will be updated:', newSale.id);
+    console.log('New sale added and sales database JSON file will be updated:', newSale.id);
     return newSale;
   };
 
@@ -96,16 +97,20 @@ export const useSales = () => {
     setSales(prev => prev.map(sale => 
       sale.id === id ? { ...sale, ...updates } : sale
     ));
-    console.log('Sale updated and JSON file will be updated:', id);
+    console.log('Sale updated and sales database JSON file will be updated:', id);
   };
 
   const deleteSale = (id: string) => {
     setSales(prev => prev.filter(sale => sale.id !== id));
-    console.log('Sale deleted and JSON file will be updated:', id);
+    console.log('Sale deleted and sales database JSON file will be updated:', id);
   };
 
   const exportSalesToJson = () => {
     saveSalesToJson(sales);
+  };
+
+  const exportSalesDatabase = () => {
+    saveSalesToFile(sales);
   };
 
   return {
@@ -113,6 +118,7 @@ export const useSales = () => {
     addSale,
     updateSale,
     deleteSale,
-    exportSalesToJson
+    exportSalesToJson,
+    exportSalesDatabase
   };
 };
