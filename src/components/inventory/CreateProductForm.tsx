@@ -9,7 +9,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Plus, Upload, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-interface Product {
+interface CreateProductFormProps {
+  onProductCreated?: (productData: any) => void;
+}
+
+interface ProductFormData {
   name: string;
   sku: string;
   barcode: string;
@@ -24,9 +28,9 @@ interface Product {
 const initialUnits = ['Pieces', 'Kg', 'Liter', 'Meter', 'Box', 'Dozen'];
 const initialCategories = ['Electronics', 'Clothing', 'Food & Beverages', 'Home & Garden', 'Sports', 'Books'];
 
-export const CreateProductForm = () => {
+export const CreateProductForm = ({ onProductCreated }: CreateProductFormProps) => {
   const { toast } = useToast();
-  const [product, setProduct] = useState<Product>({
+  const [product, setProduct] = useState<ProductFormData>({
     name: '',
     sku: '',
     barcode: '',
@@ -46,7 +50,7 @@ export const CreateProductForm = () => {
   const [showCategoryDialog, setShowCategoryDialog] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-  const handleInputChange = (field: keyof Product, value: string) => {
+  const handleInputChange = (field: keyof ProductFormData, value: string) => {
     setProduct(prev => ({ ...prev, [field]: value }));
   };
 
@@ -97,6 +101,21 @@ export const CreateProductForm = () => {
     }
   };
 
+  const resetForm = () => {
+    setProduct({
+      name: '',
+      sku: '',
+      barcode: '',
+      purchasePrice: '',
+      sellPrice: '',
+      openingStock: '',
+      unit: '',
+      category: '',
+      image: null
+    });
+    setImagePreview(null);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -110,8 +129,26 @@ export const CreateProductForm = () => {
       return;
     }
 
-    // Here you would typically send the data to your backend
-    console.log('Product data:', product);
+    // Create product data
+    const productData = {
+      name: product.name,
+      sku: product.sku,
+      barcode: product.barcode,
+      category: product.category,
+      purchasePrice: product.purchasePrice,
+      sellPrice: product.sellPrice,
+      price: product.sellPrice,
+      openingStock: parseInt(product.openingStock) || 0,
+      unit: product.unit,
+      image: imagePreview || undefined
+    };
+
+    console.log('Product data:', productData);
+    
+    // Call the callback if provided
+    if (onProductCreated) {
+      onProductCreated(productData);
+    }
     
     toast({
       title: "Product Created",
@@ -119,18 +156,7 @@ export const CreateProductForm = () => {
     });
 
     // Reset form
-    setProduct({
-      name: '',
-      sku: '',
-      barcode: '',
-      purchasePrice: '',
-      sellPrice: '',
-      openingStock: '',
-      unit: '',
-      category: '',
-      image: null
-    });
-    setImagePreview(null);
+    resetForm();
   };
 
   return (
@@ -377,20 +403,7 @@ export const CreateProductForm = () => {
               type="button"
               variant="outline"
               className="flex-1"
-              onClick={() => {
-                setProduct({
-                  name: '',
-                  sku: '',
-                  barcode: '',
-                  purchasePrice: '',
-                  sellPrice: '',
-                  openingStock: '',
-                  unit: '',
-                  category: '',
-                  image: null
-                });
-                setImagePreview(null);
-              }}
+              onClick={resetForm}
             >
               Reset Form
             </Button>

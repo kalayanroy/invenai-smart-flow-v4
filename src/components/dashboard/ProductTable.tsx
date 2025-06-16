@@ -6,64 +6,18 @@ import { Button } from '@/components/ui/button';
 import { Eye, Edit, Trash2, MoreHorizontal, Plus } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { CreateProductForm } from '../inventory/CreateProductForm';
+import { ProductViewDialog } from '../inventory/ProductViewDialog';
+import { ProductEditDialog } from '../inventory/ProductEditDialog';
 import { useToast } from '@/hooks/use-toast';
-
-const products = [
-  {
-    id: 'SKU001',
-    name: 'Wireless Bluetooth Headphones',
-    category: 'Electronics',
-    stock: 245,
-    reorderPoint: 50,
-    price: '$89.99',
-    status: 'In Stock',
-    aiRecommendation: 'Increase order quantity by 20%'
-  },
-  {
-    id: 'SKU002',
-    name: 'Cotton T-Shirt - Blue',
-    category: 'Clothing',
-    stock: 12,
-    reorderPoint: 25,
-    price: '$24.99',
-    status: 'Low Stock',
-    aiRecommendation: 'Reorder immediately'
-  },
-  {
-    id: 'SKU003',
-    name: 'Garden Watering Can',
-    category: 'Home & Garden',
-    stock: 0,
-    reorderPoint: 15,
-    price: '$34.99',
-    status: 'Out of Stock',
-    aiRecommendation: 'Critical: Lost sales opportunity'
-  },
-  {
-    id: 'SKU004',
-    name: 'Running Shoes - Size 10',
-    category: 'Sports',
-    stock: 78,
-    reorderPoint: 30,
-    price: '$129.99',
-    status: 'In Stock',
-    aiRecommendation: 'Optimal stock level'
-  },
-  {
-    id: 'SKU005',
-    name: 'Programming Textbook',
-    category: 'Books',
-    stock: 156,
-    reorderPoint: 20,
-    price: '$59.99',
-    status: 'Overstocked',
-    aiRecommendation: 'Consider promotion to reduce inventory'
-  },
-];
+import { useProducts, Product } from '@/hooks/useProducts';
 
 export const ProductTable = () => {
   const { toast } = useToast();
+  const { products, addProduct, updateProduct, deleteProduct } = useProducts();
   const [showCreateProduct, setShowCreateProduct] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [showViewDialog, setShowViewDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -75,37 +29,44 @@ export const ProductTable = () => {
     }
   };
 
-  const handleViewProduct = (product: any) => {
-    toast({
-      title: "View Product",
-      description: `Viewing details for ${product.name}`,
-    });
+  const handleViewProduct = (product: Product) => {
+    setSelectedProduct(product);
+    setShowViewDialog(true);
     console.log('View product:', product);
   };
 
-  const handleEditProduct = (product: any) => {
-    toast({
-      title: "Edit Product",
-      description: `Opening edit form for ${product.name}`,
-    });
+  const handleEditProduct = (product: Product) => {
+    setSelectedProduct(product);
+    setShowEditDialog(true);
     console.log('Edit product:', product);
   };
 
-  const handleDeleteProduct = (product: any) => {
-    toast({
-      title: "Delete Product",
-      description: `Are you sure you want to delete ${product.name}?`,
-      variant: "destructive",
-    });
-    console.log('Delete product:', product);
+  const handleDeleteProduct = (product: Product) => {
+    if (window.confirm(`Are you sure you want to delete ${product.name}?`)) {
+      deleteProduct(product.id);
+      toast({
+        title: "Product Deleted",
+        description: `${product.name} has been deleted successfully.`,
+      });
+      console.log('Delete product:', product);
+    }
   };
 
-  const handleMoreActions = (product: any) => {
+  const handleMoreActions = (product: Product) => {
     toast({
       title: "More Actions",
       description: `Additional options for ${product.name}`,
     });
     console.log('More actions for product:', product);
+  };
+
+  const handleProductCreated = (productData: any) => {
+    addProduct(productData);
+    setShowCreateProduct(false);
+  };
+
+  const handleProductUpdate = (id: string, updates: Partial<Product>) => {
+    updateProduct(id, updates);
   };
 
   return (
@@ -124,15 +85,15 @@ export const ProductTable = () => {
             <DialogHeader>
               <DialogTitle>Create New Product</DialogTitle>
             </DialogHeader>
-            <CreateProductForm />
+            <CreateProductForm onProductCreated={handleProductCreated} />
           </DialogContent>
         </Dialog>
       </div>
 
-      {/* Existing Table */}
+      {/* Product Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Product Inventory</CardTitle>
+          <CardTitle>Product Inventory ({products.length} items)</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -151,15 +112,24 @@ export const ProductTable = () => {
                 {products.map((product) => (
                   <tr key={product.id} className="border-b hover:bg-gray-50 transition-colors">
                     <td className="py-4 px-4">
-                      <div>
-                        <div className="font-medium text-gray-900">{product.name}</div>
-                        <div className="text-sm text-gray-500">{product.category} • {product.price}</div>
+                      <div className="flex items-center gap-3">
+                        {product.image && (
+                          <img
+                            src={product.image}
+                            alt={product.name}
+                            className="w-10 h-10 object-cover rounded"
+                          />
+                        )}
+                        <div>
+                          <div className="font-medium text-gray-900">{product.name}</div>
+                          <div className="text-sm text-gray-500">{product.category} • {product.price}</div>
+                        </div>
                       </div>
                     </td>
                     <td className="py-4 px-4 text-sm font-mono">{product.id}</td>
                     <td className="py-4 px-4">
                       <div className="text-sm">
-                        <div className="font-medium">{product.stock} units</div>
+                        <div className="font-medium">{product.stock} {product.unit}</div>
                         <div className="text-gray-500">Reorder at {product.reorderPoint}</div>
                       </div>
                     </td>
@@ -196,6 +166,7 @@ export const ProductTable = () => {
                           size="sm"
                           onClick={() => handleDeleteProduct(product)}
                           title="Delete Product"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -214,8 +185,28 @@ export const ProductTable = () => {
               </tbody>
             </table>
           </div>
+          
+          {products.length === 0 && (
+            <div className="text-center py-8 text-gray-500">
+              <p>No products found. Create your first product to get started.</p>
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      {/* Dialogs */}
+      <ProductViewDialog
+        product={selectedProduct}
+        open={showViewDialog}
+        onOpenChange={setShowViewDialog}
+      />
+
+      <ProductEditDialog
+        product={selectedProduct}
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        onSave={handleProductUpdate}
+      />
     </div>
   );
 };
