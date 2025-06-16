@@ -15,8 +15,8 @@ export const StockManagement = () => {
   const { sales } = useSales();
   const { purchases } = usePurchases();
   const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
 
   // Calculate stock movements
   const getProductMovements = (productId: string) => {
@@ -33,8 +33,8 @@ export const StockManagement = () => {
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          product.sku.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = !categoryFilter || product.category === categoryFilter;
-    const matchesStatus = !statusFilter || product.status === statusFilter;
+    const matchesCategory = categoryFilter === 'all' || product.category === categoryFilter;
+    const matchesStatus = statusFilter === 'all' || product.status === statusFilter;
     
     return matchesSearch && matchesCategory && matchesStatus;
   });
@@ -245,7 +245,7 @@ export const StockManagement = () => {
                 <SelectValue placeholder="Filter by category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Categories</SelectItem>
+                <SelectItem value="all">All Categories</SelectItem>
                 {categories.map(category => (
                   <SelectItem key={category} value={category}>{category}</SelectItem>
                 ))}
@@ -257,7 +257,7 @@ export const StockManagement = () => {
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Status</SelectItem>
+                <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="In Stock">In Stock</SelectItem>
                 <SelectItem value="Low Stock">Low Stock</SelectItem>
                 <SelectItem value="Out of Stock">Out of Stock</SelectItem>
@@ -265,13 +265,13 @@ export const StockManagement = () => {
               </SelectContent>
             </Select>
             
-            {(searchTerm || categoryFilter || statusFilter) && (
+            {(searchTerm || categoryFilter !== 'all' || statusFilter !== 'all') && (
               <Button 
                 variant="ghost" 
                 onClick={() => {
                   setSearchTerm('');
-                  setCategoryFilter('');
-                  setStatusFilter('');
+                  setCategoryFilter('all');
+                  setStatusFilter('all');
                 }}
               >
                 Clear Filters
