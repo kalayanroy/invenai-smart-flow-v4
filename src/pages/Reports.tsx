@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Download, Filter, Calendar, Package, ShoppingCart, RefreshCw, TrendingUp } from 'lucide-react';
+import { FileText, Download, Filter, Calendar, Package, ShoppingCart, RefreshCw, TrendingUp, DollarSign } from 'lucide-react';
 import { useProducts } from '@/hooks/useProducts';
 import { useSales } from '@/hooks/useSales';
 import { usePurchases } from '@/hooks/usePurchases';
@@ -29,6 +28,7 @@ export const Reports = () => {
     { id: 'sales', label: 'Sales Report', icon: ShoppingCart },
     { id: 'purchases', label: 'Purchase Report', icon: TrendingUp },
     { id: 'returns', label: 'Sales Returns Report', icon: RefreshCw },
+    { id: 'profit-loss', label: 'Profit & Loss Report', icon: DollarSign },
     { id: 'analytics', label: 'Analytics Report', icon: FileText }
   ];
 
@@ -65,6 +65,43 @@ export const Reports = () => {
     return data.filter(item => new Date(item[dateField]) >= filterDate);
   };
 
+  const calculateProfitLoss = () => {
+    const filteredSales = filterDataByDate(sales.filter(s => s.status === 'Completed'), 'date');
+    const filteredPurchases = filterDataByDate(purchases.filter(p => p.status === 'Received'), 'date');
+    const filteredReturns = filterDataByDate(returns.filter(r => r.status === 'Processed'), 'returnDate');
+
+    const totalRevenue = filteredSales.reduce((sum, sale) => {
+      const amount = parseFloat(sale.totalAmount.replace('৳', '').replace(',', '')) || 0;
+      return sum + amount;
+    }, 0);
+
+    const totalCosts = filteredPurchases.reduce((sum, purchase) => {
+      const amount = parseFloat(purchase.totalAmount.replace('৳', '').replace(',', '')) || 0;
+      return sum + amount;
+    }, 0);
+
+    const totalRefunds = filteredReturns.reduce((sum, returnItem) => {
+      const amount = parseFloat(returnItem.totalRefund.replace('৳', '').replace(',', '')) || 0;
+      return sum + amount;
+    }, 0);
+
+    const netRevenue = totalRevenue - totalRefunds;
+    const grossProfit = netRevenue - totalCosts;
+    const profitMargin = netRevenue > 0 ? (grossProfit / netRevenue) * 100 : 0;
+
+    return {
+      totalRevenue,
+      totalCosts,
+      totalRefunds,
+      netRevenue,
+      grossProfit,
+      profitMargin,
+      salesCount: filteredSales.length,
+      purchaseCount: filteredPurchases.length,
+      returnCount: filteredReturns.length
+    };
+  };
+
   const getFilteredData = () => {
     switch (activeReport) {
       case 'inventory':
@@ -88,6 +125,8 @@ export const Reports = () => {
           const matchesStatus = statusFilter === 'all' || returnItem.status === statusFilter;
           return matchesStatus;
         });
+      case 'profit-loss':
+        return calculateProfitLoss();
       default:
         return [];
     }
@@ -110,6 +149,10 @@ export const Reports = () => {
             th { background-color: #f2f2f2; font-weight: bold; }
             tr:nth-child(even) { background-color: #f9f9f9; }
             .summary { margin: 20px 0; padding: 15px; background: #e3f2fd; border-radius: 5px; }
+            .profit-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+            .metric { padding: 10px; background: white; border-radius: 5px; text-align: center; }
+            .positive { color: #10b981; }
+            .negative { color: #ef4444; }
             .footer { margin-top: 30px; text-align: center; font-size: 12px; color: #666; }
           </style>
         </head>
@@ -128,8 +171,49 @@ export const Reports = () => {
           </div>
     `;
 
-    // Generate table based on report type
-    if (activeReport === 'inventory') {
+    // Generate content based on report type
+    if (activeReport === 'profit-loss') {
+      const profitData = data as any;
+      content += `
+        <div class="summary">
+          <h3>Profit & Loss Summary</h3>
+          <div class="profit-summary">
+            <div class="metric">
+              <h4>Total Revenue</h4>
+              <p style="font-size: 24px; font-weight: bold;">৳${profitData.totalRevenue.toLocaleString()}</p>
+            </div>
+            <div class="metric">
+              <h4>Total Costs</h4>
+              <p style="font-size: 24px; font-weight: bold;">৳${profitData.totalCosts.toLocaleString()}</p>
+            </div>
+            <div class="metric">
+              <h4>Total Refunds</h4>
+              <p style="font-size: 24px; font-weight: bold;">৳${profitData.totalRefunds.toLocaleString()}</p>
+            </div>
+            <div class="metric">
+              <h4>Net Revenue</h4>
+              <p style="font-size: 24px; font-weight: bold;">৳${profitData.netRevenue.toLocaleString()}</p>
+            </div>
+            <div class="metric">
+              <h4>Gross Profit</h4>
+              <p style="font-size: 24px; font-weight: bold;" class="${profitData.grossProfit >= 0 ? 'positive' : 'negative'}">
+                ৳${profitData.grossProfit.toLocaleString()}
+              </p>
+            </div>
+            <div class="metric">
+              <h4>Profit Margin</h4>
+              <p style="font-size: 24px; font-weight: bold;" class="${profitData.profitMargin >= 0 ? 'positive' : 'negative'}">
+                ${profitData.profitMargin.toFixed(2)}%
+              </p>
+            </div>
+          </div>
+          <br>
+          <p><strong>Sales Transactions:</strong> ${profitData.salesCount}</p>
+          <p><strong>Purchase Transactions:</strong> ${profitData.purchaseCount}</p>
+          <p><strong>Return Transactions:</strong> ${profitData.returnCount}</p>
+        </div>
+      `;
+    } else if (activeReport === 'inventory') {
       content += `
         <div class="summary">
           <strong>Summary:</strong> Total Products: ${data.length} | 
@@ -229,7 +313,21 @@ export const Reports = () => {
     let headers: string[] = [];
     let rows: string[][] = [];
 
-    if (activeReport === 'inventory') {
+    if (activeReport === 'profit-loss') {
+      const profitData = data as any;
+      headers = ['Metric', 'Value'];
+      rows = [
+        ['Total Revenue', `৳${profitData.totalRevenue.toLocaleString()}`],
+        ['Total Costs', `৳${profitData.totalCosts.toLocaleString()}`],
+        ['Total Refunds', `৳${profitData.totalRefunds.toLocaleString()}`],
+        ['Net Revenue', `৳${profitData.netRevenue.toLocaleString()}`],
+        ['Gross Profit', `৳${profitData.grossProfit.toLocaleString()}`],
+        ['Profit Margin', `${profitData.profitMargin.toFixed(2)}%`],
+        ['Sales Count', profitData.salesCount.toString()],
+        ['Purchase Count', profitData.purchaseCount.toString()],
+        ['Return Count', profitData.returnCount.toString()]
+      ];
+    } else if (activeReport === 'inventory') {
       headers = ['SKU', 'Product Name', 'Category', 'Stock', 'Reorder Point', 'Status', 'Purchase Price', 'Sell Price'];
       rows = data.map((product: any) => [
         product.sku,
@@ -402,84 +500,139 @@ export const Reports = () => {
       <Card>
         <CardHeader>
           <CardTitle>
-            {reportTypes.find(r => r.id === activeReport)?.label} ({data.length} records)
+            {reportTypes.find(r => r.id === activeReport)?.label}
+            {activeReport !== 'profit-loss' && ` (${Array.isArray(data) ? data.length : 0} records)`}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  {activeReport === 'inventory' && (
-                    <>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">SKU</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Product</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Category</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Stock</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Status</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Price</th>
-                    </>
-                  )}
-                  {activeReport === 'sales' && (
-                    <>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Sale ID</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Product</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Customer</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Quantity</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Total</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Date</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Status</th>
-                    </>
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {data.map((item: any, index: number) => (
-                  <tr key={index} className="border-b hover:bg-gray-50">
+          {activeReport === 'profit-loss' ? (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h3 className="text-sm font-medium text-blue-600 mb-2">Total Revenue</h3>
+                  <p className="text-2xl font-bold text-blue-900">৳{(data as any).totalRevenue.toLocaleString()}</p>
+                </div>
+                <div className="bg-red-50 p-4 rounded-lg">
+                  <h3 className="text-sm font-medium text-red-600 mb-2">Total Costs</h3>
+                  <p className="text-2xl font-bold text-red-900">৳{(data as any).totalCosts.toLocaleString()}</p>
+                </div>
+                <div className="bg-yellow-50 p-4 rounded-lg">
+                  <h3 className="text-sm font-medium text-yellow-600 mb-2">Total Refunds</h3>
+                  <p className="text-2xl font-bold text-yellow-900">৳{(data as any).totalRefunds.toLocaleString()}</p>
+                </div>
+                <div className="bg-purple-50 p-4 rounded-lg">
+                  <h3 className="text-sm font-medium text-purple-600 mb-2">Net Revenue</h3>
+                  <p className="text-2xl font-bold text-purple-900">৳{(data as any).netRevenue.toLocaleString()}</p>
+                </div>
+                <div className={`p-4 rounded-lg ${(data as any).grossProfit >= 0 ? 'bg-green-50' : 'bg-red-50'}`}>
+                  <h3 className={`text-sm font-medium mb-2 ${(data as any).grossProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    Gross Profit/Loss
+                  </h3>
+                  <p className={`text-2xl font-bold ${(data as any).grossProfit >= 0 ? 'text-green-900' : 'text-red-900'}`}>
+                    ৳{(data as any).grossProfit.toLocaleString()}
+                  </p>
+                </div>
+                <div className={`p-4 rounded-lg ${(data as any).profitMargin >= 0 ? 'bg-green-50' : 'bg-red-50'}`}>
+                  <h3 className={`text-sm font-medium mb-2 ${(data as any).profitMargin >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    Profit Margin
+                  </h3>
+                  <p className={`text-2xl font-bold ${(data as any).profitMargin >= 0 ? 'text-green-900' : 'text-red-900'}`}>
+                    ${(data as any).profitMargin.toFixed(2)}%
+                  </p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
+                <div className="text-center">
+                  <p className="text-sm text-gray-600">Sales Transactions</p>
+                  <p className="text-lg font-semibold">{(data as any).salesCount}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm text-gray-600">Purchase Transactions</p>
+                  <p className="text-lg font-semibold">{(data as any).purchaseCount}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm text-gray-600">Return Transactions</p>
+                  <p className="text-lg font-semibold">{(data as any).returnCount}</p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
                     {activeReport === 'inventory' && (
                       <>
-                        <td className="py-3 px-4 text-sm">{item.sku}</td>
-                        <td className="py-3 px-4">{item.name}</td>
-                        <td className="py-3 px-4 text-sm">{item.category}</td>
-                        <td className="py-3 px-4 text-sm">{item.stock} {item.unit}</td>
-                        <td className="py-3 px-4">
-                          <Badge className={
-                            item.status === 'In Stock' ? 'bg-green-100 text-green-800' :
-                            item.status === 'Low Stock' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-red-100 text-red-800'
-                          }>
-                            {item.status}
-                          </Badge>
-                        </td>
-                        <td className="py-3 px-4 text-sm">{item.sellPrice}</td>
+                        <th className="text-left py-3 px-4 font-medium text-gray-600">SKU</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-600">Product</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-600">Category</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-600">Stock</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-600">Status</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-600">Price</th>
                       </>
                     )}
                     {activeReport === 'sales' && (
                       <>
-                        <td className="py-3 px-4 text-sm">{item.id}</td>
-                        <td className="py-3 px-4">{item.productName}</td>
-                        <td className="py-3 px-4 text-sm">{item.customerName || 'N/A'}</td>
-                        <td className="py-3 px-4 text-sm">{item.quantity}</td>
-                        <td className="py-3 px-4 text-sm font-medium">{item.totalAmount}</td>
-                        <td className="py-3 px-4 text-sm">{item.date}</td>
-                        <td className="py-3 px-4">
-                          <Badge className={
-                            item.status === 'Completed' ? 'bg-green-100 text-green-800' :
-                            item.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-red-100 text-red-800'
-                          }>
-                            {item.status}
-                          </Badge>
-                        </td>
+                        <th className="text-left py-3 px-4 font-medium text-gray-600">Sale ID</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-600">Product</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-600">Customer</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-600">Quantity</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-600">Total</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-600">Date</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-600">Status</th>
                       </>
                     )}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {Array.isArray(data) && data.map((item: any, index: number) => (
+                    <tr key={index} className="border-b hover:bg-gray-50">
+                      {activeReport === 'inventory' && (
+                        <>
+                          <td className="py-3 px-4 text-sm">{item.sku}</td>
+                          <td className="py-3 px-4">{item.name}</td>
+                          <td className="py-3 px-4 text-sm">{item.category}</td>
+                          <td className="py-3 px-4 text-sm">{item.stock} {item.unit}</td>
+                          <td className="py-3 px-4">
+                            <Badge className={
+                              item.status === 'In Stock' ? 'bg-green-100 text-green-800' :
+                              item.status === 'Low Stock' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-red-100 text-red-800'
+                            }>
+                              {item.status}
+                            </Badge>
+                          </td>
+                          <td className="py-3 px-4 text-sm">{item.sellPrice}</td>
+                        </>
+                      )}
+                      {activeReport === 'sales' && (
+                        <>
+                          <td className="py-3 px-4 text-sm">{item.id}</td>
+                          <td className="py-3 px-4">{item.productName}</td>
+                          <td className="py-3 px-4 text-sm">{item.customerName || 'N/A'}</td>
+                          <td className="py-3 px-4 text-sm">{item.quantity}</td>
+                          <td className="py-3 px-4 text-sm font-medium">{item.totalAmount}</td>
+                          <td className="py-3 px-4 text-sm">{item.date}</td>
+                          <td className="py-3 px-4">
+                            <Badge className={
+                              item.status === 'Completed' ? 'bg-green-100 text-green-800' :
+                              item.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-red-100 text-red-800'
+                            }>
+                              {item.status}
+                            </Badge>
+                          </td>
+                        </>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
 
-          {data.length === 0 && (
+          {Array.isArray(data) && data.length === 0 && (
             <div className="text-center py-8 text-gray-500">
               <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
               <p>No data found for the selected filters.</p>
