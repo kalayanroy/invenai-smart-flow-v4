@@ -8,6 +8,7 @@ import { AIInsights } from './dashboard/AIInsights';
 import { AlertsPanel } from './dashboard/AlertsPanel';
 import { SalesSection } from './inventory/SalesSection';
 import { PurchaseSection } from './inventory/PurchaseSection';
+import { StockManagement } from './inventory/StockManagement';
 
 export const StockDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -22,6 +23,7 @@ export const StockDashboard = () => {
           {[
             { id: 'overview', label: 'Overview' },
             { id: 'inventory', label: 'Inventory' },
+            { id: 'stock-management', label: 'Stock Management' },
             { id: 'sales', label: 'Sales' },
             { id: 'purchases', label: 'Purchases' },
             { id: 'analytics', label: 'AI Analytics' },
@@ -52,6 +54,8 @@ export const StockDashboard = () => {
             )}
             
             {activeTab === 'inventory' && <ProductTable />}
+            
+            {activeTab === 'stock-management' && <StockManagement />}
             
             {activeTab === 'sales' && <SalesSection />}
             

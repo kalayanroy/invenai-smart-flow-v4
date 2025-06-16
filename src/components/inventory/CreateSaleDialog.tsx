@@ -20,24 +20,34 @@ export const CreateSaleDialog = ({ open, onOpenChange, onSaleCreated }: CreateSa
   const [formData, setFormData] = useState({
     productId: '',
     quantity: 1,
+    unitPrice: '',
     customerName: '',
     status: 'Completed' as Sale['status'],
     notes: ''
   });
 
   const selectedProduct = products.find(p => p.id === formData.productId);
-  const unitPrice = selectedProduct ? parseFloat(selectedProduct.sellPrice.replace('$', '')) : 0;
+  const unitPrice = formData.unitPrice ? parseFloat(formData.unitPrice) : 0;
   const totalAmount = unitPrice * formData.quantity;
+
+  const handleProductChange = (productId: string) => {
+    const product = products.find(p => p.id === productId);
+    setFormData({
+      ...formData,
+      productId,
+      unitPrice: product ? product.sellPrice.replace('$', '') : ''
+    });
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedProduct) return;
+    if (!selectedProduct || !formData.unitPrice) return;
 
     const saleData: Omit<Sale, 'id'> = {
       productId: formData.productId,
       productName: selectedProduct.name,
       quantity: formData.quantity,
-      unitPrice: selectedProduct.sellPrice,
+      unitPrice: `$${parseFloat(formData.unitPrice).toFixed(2)}`,
       totalAmount: `$${totalAmount.toFixed(2)}`,
       date: new Date().toISOString().split('T')[0],
       status: formData.status,
@@ -50,6 +60,7 @@ export const CreateSaleDialog = ({ open, onOpenChange, onSaleCreated }: CreateSa
     setFormData({
       productId: '',
       quantity: 1,
+      unitPrice: '',
       customerName: '',
       status: 'Completed',
       notes: ''
@@ -67,7 +78,7 @@ export const CreateSaleDialog = ({ open, onOpenChange, onSaleCreated }: CreateSa
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="product">Product *</Label>
-              <Select value={formData.productId} onValueChange={(value) => setFormData({...formData, productId: value})}>
+              <Select value={formData.productId} onValueChange={handleProductChange}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select a product" />
                 </SelectTrigger>
@@ -89,6 +100,20 @@ export const CreateSaleDialog = ({ open, onOpenChange, onSaleCreated }: CreateSa
                 min="1"
                 value={formData.quantity}
                 onChange={(e) => setFormData({...formData, quantity: parseInt(e.target.value) || 1})}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="unitPrice">Unit Price *</Label>
+              <Input
+                id="unitPrice"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                value={formData.unitPrice}
+                onChange={(e) => setFormData({...formData, unitPrice: e.target.value})}
                 required
               />
             </div>
@@ -118,12 +143,12 @@ export const CreateSaleDialog = ({ open, onOpenChange, onSaleCreated }: CreateSa
             </div>
           </div>
 
-          {selectedProduct && (
+          {formData.unitPrice && (
             <div className="bg-gray-50 p-4 rounded-lg">
               <h4 className="font-medium mb-2">Sale Summary</h4>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="text-gray-600">Unit Price:</span> {selectedProduct.sellPrice}
+                  <span className="text-gray-600">Unit Price:</span> ${parseFloat(formData.unitPrice).toFixed(2)}
                 </div>
                 <div>
                   <span className="text-gray-600">Quantity:</span> {formData.quantity}
@@ -150,7 +175,7 @@ export const CreateSaleDialog = ({ open, onOpenChange, onSaleCreated }: CreateSa
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={!formData.productId}>
+            <Button type="submit" disabled={!formData.productId || !formData.unitPrice}>
               Record Sale
             </Button>
           </div>

@@ -18,6 +18,7 @@ interface EditSaleDialogProps {
 export const EditSaleDialog = ({ open, onOpenChange, sale, onSaleUpdated }: EditSaleDialogProps) => {
   const [formData, setFormData] = useState({
     quantity: 1,
+    unitPrice: '',
     customerName: '',
     status: 'Completed' as Sale['status'],
     notes: ''
@@ -27,6 +28,7 @@ export const EditSaleDialog = ({ open, onOpenChange, sale, onSaleUpdated }: Edit
     if (sale) {
       setFormData({
         quantity: sale.quantity,
+        unitPrice: sale.unitPrice.replace('$', ''),
         customerName: sale.customerName || '',
         status: sale.status,
         notes: sale.notes || ''
@@ -36,7 +38,7 @@ export const EditSaleDialog = ({ open, onOpenChange, sale, onSaleUpdated }: Edit
 
   if (!sale) return null;
 
-  const unitPrice = parseFloat(sale.unitPrice.replace('$', ''));
+  const unitPrice = parseFloat(formData.unitPrice) || 0;
   const totalAmount = unitPrice * formData.quantity;
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -44,6 +46,7 @@ export const EditSaleDialog = ({ open, onOpenChange, sale, onSaleUpdated }: Edit
 
     const updates: Partial<Sale> = {
       quantity: formData.quantity,
+      unitPrice: `$${unitPrice.toFixed(2)}`,
       totalAmount: `$${totalAmount.toFixed(2)}`,
       customerName: formData.customerName,
       status: formData.status,
@@ -84,6 +87,20 @@ export const EditSaleDialog = ({ open, onOpenChange, sale, onSaleUpdated }: Edit
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="unitPrice">Unit Price *</Label>
+              <Input
+                id="unitPrice"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                value={formData.unitPrice}
+                onChange={(e) => setFormData({...formData, unitPrice: e.target.value})}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="customerName">Customer Name</Label>
               <Input
                 id="customerName"
@@ -112,7 +129,7 @@ export const EditSaleDialog = ({ open, onOpenChange, sale, onSaleUpdated }: Edit
             <h4 className="font-medium mb-2">Sale Summary</h4>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <span className="text-gray-600">Unit Price:</span> {sale.unitPrice}
+                <span className="text-gray-600">Unit Price:</span> ${unitPrice.toFixed(2)}
               </div>
               <div>
                 <span className="text-gray-600">Quantity:</span> {formData.quantity}
