@@ -1,19 +1,20 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Eye, Edit, Trash2, MoreHorizontal, Plus, Download } from 'lucide-react';
+import { Eye, Edit, Trash2, MoreHorizontal, Plus, Download, FileJson } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { CreateProductForm } from '../inventory/CreateProductForm';
 import { ProductViewDialog } from '../inventory/ProductViewDialog';
 import { ProductEditDialog } from '../inventory/ProductEditDialog';
 import { useToast } from '@/hooks/use-toast';
 import { useProducts, Product } from '@/hooks/useProducts';
+import { useJsonFileManager } from '@/hooks/useJsonFileManager';
 
 export const ProductTable = () => {
   const { toast } = useToast();
   const { products, addProduct, updateProduct, deleteProduct } = useProducts();
+  const { saveCompleteInventoryToJson } = useJsonFileManager();
   const [showCreateProduct, setShowCreateProduct] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showViewDialog, setShowViewDialog] = useState(false);
@@ -69,25 +70,48 @@ export const ProductTable = () => {
     updateProduct(id, updates);
   };
 
+  const handleExportAllToJson = () => {
+    const inventoryData = {
+      products: products,
+      sales: [],
+      purchases: [],
+      salesReturns: [],
+      exportDate: new Date().toISOString(),
+      totalValue: products.reduce((sum, p) => sum + (parseFloat(p.sellPrice.replace('৳', ''))  * p.stock), 0)
+    };
+    
+    saveCompleteInventoryToJson(inventoryData);
+    toast({
+      title: "Export Complete",
+      description: "All products exported to JSON file successfully.",
+    });
+  };
+
   return (
     <div className="space-y-6">
       {/* Header with Create Button */}
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Product Inventory</h2>
-        <Dialog open={showCreateProduct} onOpenChange={setShowCreateProduct}>
-          <DialogTrigger asChild>
-            <Button className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Create New Product
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Create New Product</DialogTitle>
-            </DialogHeader>
-            <CreateProductForm onProductCreated={handleProductCreated} />
-          </DialogContent>
-        </Dialog>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleExportAllToJson} className="flex items-center gap-2">
+            <FileJson className="h-4 w-4" />
+            Export All to JSON
+          </Button>
+          <Dialog open={showCreateProduct} onOpenChange={setShowCreateProduct}>
+            <DialogTrigger asChild>
+              <Button className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Create New Product
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Create New Product</DialogTitle>
+              </DialogHeader>
+              <CreateProductForm onProductCreated={handleProductCreated} />
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Product Table */}

@@ -1,5 +1,5 @@
-
 import { useState, useEffect } from 'react';
+import { useJsonFileManager } from './useJsonFileManager';
 
 export interface Purchase {
   id: string;
@@ -54,6 +54,7 @@ const PURCHASES_STORAGE_KEY = 'inventory-purchases';
 
 export const usePurchases = () => {
   const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const { savePurchasesToJson } = useJsonFileManager();
 
   useEffect(() => {
     const stored = localStorage.getItem(PURCHASES_STORAGE_KEY);
@@ -74,8 +75,12 @@ export const usePurchases = () => {
   useEffect(() => {
     if (purchases.length > 0) {
       localStorage.setItem(PURCHASES_STORAGE_KEY, JSON.stringify(purchases));
+      // Auto-save to JSON file whenever purchases data changes
+      setTimeout(() => {
+        savePurchasesToJson(purchases);
+      }, 500);
     }
-  }, [purchases]);
+  }, [purchases, savePurchasesToJson]);
 
   const addPurchase = (purchaseData: Omit<Purchase, 'id'>) => {
     const newPurchase: Purchase = {
@@ -83,6 +88,7 @@ export const usePurchases = () => {
       id: `PUR${String(purchases.length + 1).padStart(3, '0')}`,
     };
     setPurchases(prev => [...prev, newPurchase]);
+    console.log('New purchase added and JSON file will be updated:', newPurchase.id);
     return newPurchase;
   };
 
@@ -90,16 +96,23 @@ export const usePurchases = () => {
     setPurchases(prev => prev.map(purchase => 
       purchase.id === id ? { ...purchase, ...updates } : purchase
     ));
+    console.log('Purchase updated and JSON file will be updated:', id);
   };
 
   const deletePurchase = (id: string) => {
     setPurchases(prev => prev.filter(purchase => purchase.id !== id));
+    console.log('Purchase deleted and JSON file will be updated:', id);
+  };
+
+  const exportPurchasesToJson = () => {
+    savePurchasesToJson(purchases);
   };
 
   return {
     purchases,
     addPurchase,
     updatePurchase,
-    deletePurchase
+    deletePurchase,
+    exportPurchasesToJson
   };
 };

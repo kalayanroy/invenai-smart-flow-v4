@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useProductFileManager } from './useProductFileManager';
+import { useJsonFileManager } from './useJsonFileManager';
 
 export interface Product {
   id: string;
@@ -29,9 +29,9 @@ const initialProducts: Product[] = [
     category: 'Electronics',
     stock: 245,
     reorderPoint: 50,
-    price: '$89.99',
-    purchasePrice: '$60.00',
-    sellPrice: '$89.99',
+    price: '৳89.99',
+    purchasePrice: '৳60.00',
+    sellPrice: '৳89.99',
     openingStock: 200,
     unit: 'Pieces',
     status: 'In Stock',
@@ -46,9 +46,9 @@ const initialProducts: Product[] = [
     category: 'Clothing',
     stock: 12,
     reorderPoint: 25,
-    price: '$24.99',
-    purchasePrice: '$15.00',
-    sellPrice: '$24.99',
+    price: '৳24.99',
+    purchasePrice: '৳15.00',
+    sellPrice: '৳24.99',
     openingStock: 50,
     unit: 'Pieces',
     status: 'Low Stock',
@@ -63,9 +63,9 @@ const initialProducts: Product[] = [
     category: 'Home & Garden',
     stock: 0,
     reorderPoint: 15,
-    price: '$34.99',
-    purchasePrice: '$20.00',
-    sellPrice: '$34.99',
+    price: '৳34.99',
+    purchasePrice: '৳20.00',
+    sellPrice: '৳34.99',
     openingStock: 30,
     unit: 'Pieces',
     status: 'Out of Stock',
@@ -80,9 +80,9 @@ const initialProducts: Product[] = [
     category: 'Sports',
     stock: 78,
     reorderPoint: 30,
-    price: '$129.99',
-    purchasePrice: '$80.00',
-    sellPrice: '$129.99',
+    price: '৳129.99',
+    purchasePrice: '৳80.00',
+    sellPrice: '৳129.99',
     openingStock: 100,
     unit: 'Pieces',
     status: 'In Stock',
@@ -97,9 +97,9 @@ const initialProducts: Product[] = [
     category: 'Books',
     stock: 156,
     reorderPoint: 20,
-    price: '$59.99',
-    purchasePrice: '$35.00',
-    sellPrice: '$59.99',
+    price: '৳59.99',
+    purchasePrice: '৳35.00',
+    sellPrice: '৳59.99',
     openingStock: 100,
     unit: 'Pieces',
     status: 'Overstocked',
@@ -112,7 +112,7 @@ const STORAGE_KEY = 'inventory-products';
 
 export const useProducts = () => {
   const [products, setProducts] = useState<Product[]>([]);
-  const { saveProductToFile, saveAllProductsToFile } = useProductFileManager();
+  const { saveProductToJson, saveAllProductsToJson } = useJsonFileManager();
 
   // Load products from localStorage on mount
   useEffect(() => {
@@ -152,12 +152,12 @@ export const useProducts = () => {
 
     setProducts(prev => [...prev, newProduct]);
     
-    // Create text file for new product
+    // Create JSON file for new product
     setTimeout(() => {
-      saveProductToFile(newProduct);
+      saveProductToJson(newProduct);
     }, 100);
     
-    console.log('New product added and text file created:', newProduct.name);
+    console.log('New product added and JSON file created:', newProduct.name);
     return newProduct;
   };
 
@@ -166,12 +166,12 @@ export const useProducts = () => {
       if (product.id === id) {
         const updatedProduct = { ...product, ...updates };
         
-        // Create updated text file
+        // Create updated JSON file
         setTimeout(() => {
-          saveProductToFile(updatedProduct);
+          saveProductToJson(updatedProduct);
         }, 100);
         
-        console.log('Product updated and text file refreshed:', updatedProduct.name);
+        console.log('Product updated and JSON file refreshed:', updatedProduct.name);
         return updatedProduct;
       }
       return product;
@@ -182,7 +182,7 @@ export const useProducts = () => {
     const productToDelete = products.find(p => p.id === id);
     if (productToDelete) {
       console.log(`Product deleted: ${productToDelete.name} (${productToDelete.sku})`);
-      console.log('Note: Text file for this product should be manually removed from downloads');
+      console.log('Note: JSON file for this product should be manually removed from downloads');
     }
     
     setProducts(prev => prev.filter(product => product.id !== id));
@@ -193,7 +193,7 @@ export const useProducts = () => {
   };
 
   const exportAllProductsToFile = () => {
-    saveAllProductsToFile(products);
+    saveAllProductsToJson(products);
   };
 
   return {

@@ -1,5 +1,5 @@
-
 import { useState, useEffect } from 'react';
+import { useJsonFileManager } from './useJsonFileManager';
 
 export interface Sale {
   id: string;
@@ -54,6 +54,7 @@ const SALES_STORAGE_KEY = 'inventory-sales';
 
 export const useSales = () => {
   const [sales, setSales] = useState<Sale[]>([]);
+  const { saveSalesToJson } = useJsonFileManager();
 
   useEffect(() => {
     const stored = localStorage.getItem(SALES_STORAGE_KEY);
@@ -74,8 +75,12 @@ export const useSales = () => {
   useEffect(() => {
     if (sales.length > 0) {
       localStorage.setItem(SALES_STORAGE_KEY, JSON.stringify(sales));
+      // Auto-save to JSON file whenever sales data changes
+      setTimeout(() => {
+        saveSalesToJson(sales);
+      }, 500);
     }
-  }, [sales]);
+  }, [sales, saveSalesToJson]);
 
   const addSale = (saleData: Omit<Sale, 'id'>) => {
     const newSale: Sale = {
@@ -83,6 +88,7 @@ export const useSales = () => {
       id: `SALE${String(sales.length + 1).padStart(3, '0')}`,
     };
     setSales(prev => [...prev, newSale]);
+    console.log('New sale added and JSON file will be updated:', newSale.id);
     return newSale;
   };
 
@@ -90,16 +96,23 @@ export const useSales = () => {
     setSales(prev => prev.map(sale => 
       sale.id === id ? { ...sale, ...updates } : sale
     ));
+    console.log('Sale updated and JSON file will be updated:', id);
   };
 
   const deleteSale = (id: string) => {
     setSales(prev => prev.filter(sale => sale.id !== id));
+    console.log('Sale deleted and JSON file will be updated:', id);
+  };
+
+  const exportSalesToJson = () => {
+    saveSalesToJson(sales);
   };
 
   return {
     sales,
     addSale,
     updateSale,
-    deleteSale
+    deleteSale,
+    exportSalesToJson
   };
 };
