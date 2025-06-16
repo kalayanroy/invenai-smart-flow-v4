@@ -28,7 +28,7 @@ export const SalesSection = () => {
   };
 
   const totalSales = sales.reduce((sum, sale) => 
-    sum + parseFloat(sale.totalAmount.replace('$', '').replace(',', '')), 0
+    sum + parseFloat(sale.totalAmount.replace('৳', '').replace(',', '')), 0
   );
 
   const handleSaleCreated = (saleData: any) => {
@@ -89,7 +89,7 @@ export const SalesSection = () => {
               <DollarSign className="h-5 w-5 text-green-600" />
               <div>
                 <p className="text-sm text-gray-600">Sales Revenue</p>
-                <p className="text-2xl font-bold">${totalSales.toFixed(2)}</p>
+                <p className="text-2xl font-bold">৳{totalSales.toFixed(2)}</p>
               </div>
             </div>
           </CardContent>
@@ -101,7 +101,7 @@ export const SalesSection = () => {
               <TrendingUp className="h-5 w-5 text-purple-600" />
               <div>
                 <p className="text-sm text-gray-600">Avg. Sale Value</p>
-                <p className="text-2xl font-bold">${sales.length > 0 ? (totalSales / sales.length).toFixed(2) : '0.00'}</p>
+                <p className="text-2xl font-bold">৳{sales.length > 0 ? (totalSales / sales.length).toFixed(2) : '0.00'}</p>
               </div>
             </div>
           </CardContent>

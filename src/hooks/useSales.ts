@@ -20,8 +20,8 @@ const initialSales: Sale[] = [
     productId: 'SKU001',
     productName: 'Wireless Bluetooth Headphones',
     quantity: 2,
-    unitPrice: '$89.99',
-    totalAmount: '$179.98',
+    unitPrice: '৳89.99',
+    totalAmount: '৳179.98',
     date: '2024-01-15',
     status: 'Completed',
     customerName: 'John Doe'
@@ -31,8 +31,8 @@ const initialSales: Sale[] = [
     productId: 'SKU002',
     productName: 'Cotton T-Shirt - Blue',
     quantity: 5,
-    unitPrice: '$24.99',
-    totalAmount: '$124.95',
+    unitPrice: '৳24.99',
+    totalAmount: '৳124.95',
     date: '2024-01-14',
     status: 'Completed',
     customerName: 'Jane Smith'
@@ -42,8 +42,8 @@ const initialSales: Sale[] = [
     productId: 'SKU004',
     productName: 'Running Shoes - Size 10',
     quantity: 1,
-    unitPrice: '$129.99',
-    totalAmount: '$129.99',
+    unitPrice: '৳129.99',
+    totalAmount: '৳129.99',
     date: '2024-01-13',
     status: 'Pending',
     customerName: 'Mike Johnson'

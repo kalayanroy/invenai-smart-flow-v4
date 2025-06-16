@@ -29,7 +29,7 @@ export const PurchaseSection = () => {
   };
 
   const totalPurchases = purchases.reduce((sum, purchase) => 
-    sum + parseFloat(purchase.totalAmount.replace('$', '').replace(',', '')), 0
+    sum + parseFloat(purchase.totalAmount.replace('৳', '').replace(',', '')), 0
   );
 
   const handlePurchaseCreated = (purchaseData: any) => {
@@ -90,7 +90,7 @@ export const PurchaseSection = () => {
               <DollarSign className="h-5 w-5 text-green-600" />
               <div>
                 <p className="text-sm text-gray-600">Purchase Cost</p>
-                <p className="text-2xl font-bold">${totalPurchases.toLocaleString()}</p>
+                <p className="text-2xl font-bold">৳{totalPurchases.toLocaleString()}</p>
               </div>
             </div>
           </CardContent>

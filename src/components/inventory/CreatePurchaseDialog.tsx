@@ -27,7 +27,7 @@ export const CreatePurchaseDialog = ({ open, onOpenChange, onPurchaseCreated }: 
   });
 
   const selectedProduct = products.find(p => p.id === formData.productId);
-  const unitPrice = parseFloat(formData.unitPrice.replace('$', '')) || 0;
+  const unitPrice = parseFloat(formData.unitPrice.replace('৳', '')) || 0;
   const totalAmount = unitPrice * formData.quantity;
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -39,8 +39,8 @@ export const CreatePurchaseDialog = ({ open, onOpenChange, onPurchaseCreated }: 
       productName: selectedProduct.name,
       supplier: formData.supplier,
       quantity: formData.quantity,
-      unitPrice: formData.unitPrice.startsWith('$') ? formData.unitPrice : `$${formData.unitPrice}`,
-      totalAmount: `$${totalAmount.toFixed(2)}`,
+      unitPrice: formData.unitPrice.startsWith('৳') ? formData.unitPrice : `৳${formData.unitPrice}`,
+      totalAmount: `৳${totalAmount.toFixed(2)}`,
       date: new Date().toISOString().split('T')[0],
       status: formData.status,
       notes: formData.notes
@@ -138,13 +138,13 @@ export const CreatePurchaseDialog = ({ open, onOpenChange, onPurchaseCreated }: 
               <h4 className="font-medium mb-2">Purchase Summary</h4>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="text-gray-600">Unit Price:</span> ${unitPrice.toFixed(2)}
+                  <span className="text-gray-600">Unit Price:</span> ৳{unitPrice.toFixed(2)}
                 </div>
                 <div>
                   <span className="text-gray-600">Quantity:</span> {formData.quantity}
                 </div>
                 <div className="col-span-2 text-lg font-semibold">
-                  <span className="text-gray-600">Total Amount:</span> ${totalAmount.toFixed(2)}
+                  <span className="text-gray-600">Total Amount:</span> ৳{totalAmount.toFixed(2)}
                 </div>
               </div>
             </div>

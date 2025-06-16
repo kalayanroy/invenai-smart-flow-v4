@@ -21,8 +21,8 @@ const initialPurchases: Purchase[] = [
     productName: 'Wireless Bluetooth Headphones',
     supplier: 'Tech Supplies Co.',
     quantity: 50,
-    unitPrice: '$60.00',
-    totalAmount: '$3,000.00',
+    unitPrice: '৳60.00',
+    totalAmount: '৳3,000.00',
     date: '2024-01-10',
     status: 'Received'
   },
@@ -32,8 +32,8 @@ const initialPurchases: Purchase[] = [
     productName: 'Cotton T-Shirt - Blue',
     supplier: 'Fashion Wholesale Ltd.',
     quantity: 100,
-    unitPrice: '$15.00',
-    totalAmount: '$1,500.00',
+    unitPrice: '৳15.00',
+    totalAmount: '৳1,500.00',
     date: '2024-01-08',
     status: 'Received'
   },
@@ -43,8 +43,8 @@ const initialPurchases: Purchase[] = [
     productName: 'Garden Watering Can',
     supplier: 'Garden Supply Inc.',
     quantity: 25,
-    unitPrice: '$20.00',
-    totalAmount: '$500.00',
+    unitPrice: '৳20.00',
+    totalAmount: '৳500.00',
     date: '2024-01-12',
     status: 'Pending'
   }
