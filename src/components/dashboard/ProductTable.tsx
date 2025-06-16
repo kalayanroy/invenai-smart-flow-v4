@@ -1,10 +1,12 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Eye, Edit, MoreHorizontal, Plus } from 'lucide-react';
+import { Eye, Edit, Trash2, MoreHorizontal, Plus } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { CreateProductForm } from '../inventory/CreateProductForm';
+import { useToast } from '@/hooks/use-toast';
 
 const products = [
   {
@@ -60,6 +62,7 @@ const products = [
 ];
 
 export const ProductTable = () => {
+  const { toast } = useToast();
   const [showCreateProduct, setShowCreateProduct] = useState(false);
 
   const getStatusColor = (status: string) => {
@@ -70,6 +73,39 @@ export const ProductTable = () => {
       case 'Overstocked': return 'bg-blue-100 text-blue-800';
       default: return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  const handleViewProduct = (product: any) => {
+    toast({
+      title: "View Product",
+      description: `Viewing details for ${product.name}`,
+    });
+    console.log('View product:', product);
+  };
+
+  const handleEditProduct = (product: any) => {
+    toast({
+      title: "Edit Product",
+      description: `Opening edit form for ${product.name}`,
+    });
+    console.log('Edit product:', product);
+  };
+
+  const handleDeleteProduct = (product: any) => {
+    toast({
+      title: "Delete Product",
+      description: `Are you sure you want to delete ${product.name}?`,
+      variant: "destructive",
+    });
+    console.log('Delete product:', product);
+  };
+
+  const handleMoreActions = (product: any) => {
+    toast({
+      title: "More Actions",
+      description: `Additional options for ${product.name}`,
+    });
+    console.log('More actions for product:', product);
   };
 
   return (
@@ -139,13 +175,36 @@ export const ProductTable = () => {
                     </td>
                     <td className="py-4 px-4">
                       <div className="flex space-x-2">
-                        <Button variant="ghost" size="sm">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleViewProduct(product)}
+                          title="View Product"
+                        >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleEditProduct(product)}
+                          title="Edit Product"
+                        >
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleDeleteProduct(product)}
+                          title="Delete Product"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleMoreActions(product)}
+                          title="More Actions"
+                        >
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </div>
