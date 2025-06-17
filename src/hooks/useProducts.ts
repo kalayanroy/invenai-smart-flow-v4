@@ -20,93 +20,7 @@ export interface Product {
   createdAt: string;
 }
 
-const initialProducts: Product[] = [
-  {
-    id: 'SKU001',
-    name: 'Wireless Bluetooth Headphones',
-    sku: 'SKU001',
-    barcode: '',
-    category: 'Electronics',
-    stock: 245,
-    reorderPoint: 50,
-    price: '৳89.99',
-    purchasePrice: '৳60.00',
-    sellPrice: '৳89.99',
-    openingStock: 200,
-    unit: 'Pieces',
-    status: 'In Stock',
-    aiRecommendation: 'Increase order quantity by 20%',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'SKU002',
-    name: 'Cotton T-Shirt - Blue',
-    sku: 'SKU002',
-    barcode: '',
-    category: 'Clothing',
-    stock: 12,
-    reorderPoint: 25,
-    price: '৳24.99',
-    purchasePrice: '৳15.00',
-    sellPrice: '৳24.99',
-    openingStock: 50,
-    unit: 'Pieces',
-    status: 'Low Stock',
-    aiRecommendation: 'Reorder immediately',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'SKU003',
-    name: 'Garden Watering Can',
-    sku: 'SKU003',
-    barcode: '',
-    category: 'Home & Garden',
-    stock: 0,
-    reorderPoint: 15,
-    price: '৳34.99',
-    purchasePrice: '৳20.00',
-    sellPrice: '৳34.99',
-    openingStock: 30,
-    unit: 'Pieces',
-    status: 'Out of Stock',
-    aiRecommendation: 'Critical: Lost sales opportunity',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'SKU004',
-    name: 'Running Shoes - Size 10',
-    sku: 'SKU004',
-    barcode: '',
-    category: 'Sports',
-    stock: 78,
-    reorderPoint: 30,
-    price: '৳129.99',
-    purchasePrice: '৳80.00',
-    sellPrice: '৳129.99',
-    openingStock: 100,
-    unit: 'Pieces',
-    status: 'In Stock',
-    aiRecommendation: 'Optimal stock level',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'SKU005',
-    name: 'Programming Textbook',
-    sku: 'SKU005',
-    barcode: '',
-    category: 'Books',
-    stock: 156,
-    reorderPoint: 20,
-    price: '৳59.99',
-    purchasePrice: '৳35.00',
-    sellPrice: '৳59.99',
-    openingStock: 100,
-    unit: 'Pieces',
-    status: 'Overstocked',
-    aiRecommendation: 'Consider promotion to reduce inventory',
-    createdAt: new Date().toISOString()
-  },
-];
+const initialProducts: Product[] = [];
 
 const STORAGE_KEY = 'inventory-products';
 
@@ -133,9 +47,7 @@ export const useProducts = () => {
 
   // Save products to localStorage whenever products change
   useEffect(() => {
-    if (products.length > 0) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
-    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
   }, [products]);
 
   const addProduct = (productData: Omit<Product, 'id' | 'status' | 'aiRecommendation' | 'createdAt'>) => {
@@ -178,11 +90,18 @@ export const useProducts = () => {
     return products.find(product => product.id === id);
   };
 
+  const clearAllProducts = () => {
+    setProducts([]);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
+    console.log('All products cleared');
+  };
+
   return {
     products,
     addProduct,
     updateProduct,
     deleteProduct,
-    getProduct
+    getProduct,
+    clearAllProducts
   };
 };

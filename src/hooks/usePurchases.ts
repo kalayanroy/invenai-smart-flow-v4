@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 
 export interface Purchase {
@@ -13,41 +14,7 @@ export interface Purchase {
   notes?: string;
 }
 
-const initialPurchases: Purchase[] = [
-  {
-    id: 'PUR001',
-    productId: 'SKU001',
-    productName: 'Wireless Bluetooth Headphones',
-    supplier: 'Tech Supplies Co.',
-    quantity: 50,
-    unitPrice: '৳60.00',
-    totalAmount: '৳3,000.00',
-    date: '2024-01-10',
-    status: 'Received'
-  },
-  {
-    id: 'PUR002',
-    productId: 'SKU002',
-    productName: 'Cotton T-Shirt - Blue',
-    supplier: 'Fashion Wholesale Ltd.',
-    quantity: 100,
-    unitPrice: '৳15.00',
-    totalAmount: '৳1,500.00',
-    date: '2024-01-08',
-    status: 'Received'
-  },
-  {
-    id: 'PUR003',
-    productId: 'SKU003',
-    productName: 'Garden Watering Can',
-    supplier: 'Garden Supply Inc.',
-    quantity: 25,
-    unitPrice: '৳20.00',
-    totalAmount: '৳500.00',
-    date: '2024-01-12',
-    status: 'Pending'
-  }
-];
+const initialPurchases: Purchase[] = [];
 
 const PURCHASES_STORAGE_KEY = 'inventory-purchases';
 
@@ -71,9 +38,7 @@ export const usePurchases = () => {
   }, []);
 
   useEffect(() => {
-    if (purchases.length > 0) {
-      localStorage.setItem(PURCHASES_STORAGE_KEY, JSON.stringify(purchases));
-    }
+    localStorage.setItem(PURCHASES_STORAGE_KEY, JSON.stringify(purchases));
   }, [purchases]);
 
   const addPurchase = (purchaseData: Omit<Purchase, 'id'>) => {
@@ -98,10 +63,17 @@ export const usePurchases = () => {
     console.log('Purchase deleted:', id);
   };
 
+  const clearAllPurchases = () => {
+    setPurchases([]);
+    localStorage.setItem(PURCHASES_STORAGE_KEY, JSON.stringify([]));
+    console.log('All purchases cleared');
+  };
+
   return {
     purchases,
     addPurchase,
     updatePurchase,
-    deletePurchase
+    deletePurchase,
+    clearAllPurchases
   };
 };

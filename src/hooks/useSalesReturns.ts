@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 
 export interface SalesReturn {
@@ -18,39 +19,7 @@ export interface SalesReturn {
   processedDate?: string;
 }
 
-const initialReturns: SalesReturn[] = [
-  {
-    id: 'RET001',
-    originalSaleId: 'SALE001',
-    productId: 'SKU001',
-    productName: 'Wireless Bluetooth Headphones',
-    returnQuantity: 1,
-    originalQuantity: 2,
-    unitPrice: '৳89.99',
-    totalRefund: '৳89.99',
-    returnDate: '2024-01-16',
-    reason: 'Defective product',
-    status: 'Pending',
-    customerName: 'John Doe',
-    notes: 'Customer reported audio issues'
-  },
-  {
-    id: 'RET002',
-    originalSaleId: 'SALE002',
-    productId: 'SKU002',
-    productName: 'Cotton T-Shirt - Blue',
-    returnQuantity: 2,
-    originalQuantity: 5,
-    unitPrice: '৳24.99',
-    totalRefund: '৳49.98',
-    returnDate: '2024-01-15',
-    reason: 'Wrong size',
-    status: 'Approved',
-    customerName: 'Jane Smith',
-    processedBy: 'Admin',
-    processedDate: '2024-01-15'
-  }
-];
+const initialReturns: SalesReturn[] = [];
 
 const RETURNS_STORAGE_KEY = 'inventory-sales-returns';
 
@@ -74,9 +43,7 @@ export const useSalesReturns = () => {
   }, []);
 
   useEffect(() => {
-    if (returns.length > 0) {
-      localStorage.setItem(RETURNS_STORAGE_KEY, JSON.stringify(returns));
-    }
+    localStorage.setItem(RETURNS_STORAGE_KEY, JSON.stringify(returns));
   }, [returns]);
 
   const addReturn = (returnData: Omit<SalesReturn, 'id'>) => {
@@ -113,11 +80,18 @@ export const useSalesReturns = () => {
     updateReturn(id, updates);
   };
 
+  const clearAllReturns = () => {
+    setReturns([]);
+    localStorage.setItem(RETURNS_STORAGE_KEY, JSON.stringify([]));
+    console.log('All sales returns cleared');
+  };
+
   return {
     returns,
     addReturn,
     updateReturn,
     deleteReturn,
-    processReturn
+    processReturn,
+    clearAllReturns
   };
 };

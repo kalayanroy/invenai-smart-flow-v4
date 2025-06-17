@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 
 export interface Sale {
@@ -13,41 +14,7 @@ export interface Sale {
   notes?: string;
 }
 
-const initialSales: Sale[] = [
-  {
-    id: 'SALE001',
-    productId: 'SKU001',
-    productName: 'Wireless Bluetooth Headphones',
-    quantity: 2,
-    unitPrice: '৳89.99',
-    totalAmount: '৳179.98',
-    date: '2024-01-15',
-    status: 'Completed',
-    customerName: 'John Doe'
-  },
-  {
-    id: 'SALE002',
-    productId: 'SKU002',
-    productName: 'Cotton T-Shirt - Blue',
-    quantity: 5,
-    unitPrice: '৳24.99',
-    totalAmount: '৳124.95',
-    date: '2024-01-14',
-    status: 'Completed',
-    customerName: 'Jane Smith'
-  },
-  {
-    id: 'SALE003',
-    productId: 'SKU004',
-    productName: 'Running Shoes - Size 10',
-    quantity: 1,
-    unitPrice: '৳129.99',
-    totalAmount: '৳129.99',
-    date: '2024-01-13',
-    status: 'Pending',
-    customerName: 'Mike Johnson'
-  }
-];
+const initialSales: Sale[] = [];
 
 const SALES_STORAGE_KEY = 'inventory-sales';
 
@@ -71,9 +38,7 @@ export const useSales = () => {
   }, []);
 
   useEffect(() => {
-    if (sales.length > 0) {
-      localStorage.setItem(SALES_STORAGE_KEY, JSON.stringify(sales));
-    }
+    localStorage.setItem(SALES_STORAGE_KEY, JSON.stringify(sales));
   }, [sales]);
 
   const addSale = (saleData: Omit<Sale, 'id'>) => {
@@ -98,10 +63,17 @@ export const useSales = () => {
     console.log('Sale deleted:', id);
   };
 
+  const clearAllSales = () => {
+    setSales([]);
+    localStorage.setItem(SALES_STORAGE_KEY, JSON.stringify([]));
+    console.log('All sales cleared');
+  };
+
   return {
     sales,
     addSale,
     updateSale,
-    deleteSale
+    deleteSale,
+    clearAllSales
   };
 };
