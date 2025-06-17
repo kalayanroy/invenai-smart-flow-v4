@@ -61,7 +61,7 @@ export const StockDashboard = () => {
             { id: 'sales-returns', label: 'Sales Returns' },
             { id: 'purchases', label: 'Purchases' },
             { id: 'reports', label: 'Reports' },
-            { id: 'analytics', label: 'AI Analytics' },
+            
           ].map((tab) => (
             <button
               key={tab.id}
@@ -100,7 +100,6 @@ export const StockDashboard = () => {
             
             {activeTab === 'reports' && <Reports />}
             
-            {activeTab === 'analytics' && <AIInsights />}
           </div>
 
           {/* Sidebar */}
