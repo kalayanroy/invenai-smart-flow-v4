@@ -13,7 +13,7 @@ export interface SalesReturn {
   totalRefund: string;
   returnDate: string;
   reason: string;
-  status: 'Pending' | 'Approved' | 'Rejected';
+  status: 'Pending' | 'Approved' | 'Processed' | 'Rejected';
   customerName?: string;
   notes?: string;
   processedBy?: string;
@@ -53,7 +53,7 @@ export const useSalesReturns = () => {
         totalRefund: salesReturn.total_refund,
         returnDate: salesReturn.return_date,
         reason: salesReturn.reason,
-        status: salesReturn.status as 'Pending' | 'Approved' | 'Rejected',
+        status: salesReturn.status as 'Pending' | 'Approved' | 'Processed' | 'Rejected',
         customerName: salesReturn.customer_name,
         notes: salesReturn.notes,
         processedBy: salesReturn.processed_by,
@@ -172,6 +172,34 @@ export const useSalesReturns = () => {
     }
   };
 
+  const processReturn = async (id: string, status: 'Approved' | 'Rejected', processedBy: string) => {
+    try {
+      console.log('Processing sales return in Supabase:', id, status, processedBy);
+      
+      const updates = {
+        status: status,
+        processed_by: processedBy,
+        processed_date: new Date().toISOString().split('T')[0]
+      };
+
+      const { error } = await supabase
+        .from('sales_returns')
+        .update(updates)
+        .eq('id', id);
+
+      if (error) {
+        console.error('Supabase error processing sales return:', error);
+        throw error;
+      }
+
+      console.log('Sales return processed successfully in Supabase');
+      await fetchSalesReturns(); // Refresh the list
+    } catch (error) {
+      console.error('Error in processReturn:', error);
+      throw error;
+    }
+  };
+
   const clearAllSalesReturns = async () => {
     try {
       console.log('Clearing all sales returns from Supabase...');
@@ -196,9 +224,14 @@ export const useSalesReturns = () => {
 
   return {
     salesReturns,
+    returns: salesReturns, // Add alias for backwards compatibility
     addSalesReturn,
+    addReturn: addSalesReturn, // Add alias for backwards compatibility
     updateSalesReturn,
+    updateReturn: updateSalesReturn, // Add alias for backwards compatibility
     deleteSalesReturn,
+    deleteReturn: deleteSalesReturn, // Add alias for backwards compatibility
+    processReturn,
     clearAllSalesReturns,
     fetchSalesReturns
   };

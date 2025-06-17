@@ -11,7 +11,7 @@ export interface Purchase {
   unitPrice: string;
   totalAmount: string;
   date: string;
-  status: 'Received' | 'Pending' | 'Cancelled';
+  status: 'Ordered' | 'Received' | 'Pending' | 'Cancelled';
   notes?: string;
 }
 
