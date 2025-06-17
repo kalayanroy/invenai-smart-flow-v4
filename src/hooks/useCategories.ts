@@ -54,6 +54,47 @@ export const useCategories = () => {
     }
   };
 
+  const editCategory = async (id: string, name: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .update({ name })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error editing category:', error);
+        throw error;
+      }
+
+      await fetchCategories();
+      return data;
+    } catch (error) {
+      console.error('Error in editCategory:', error);
+      throw error;
+    }
+  };
+
+  const deleteCategory = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('categories')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error deleting category:', error);
+        throw error;
+      }
+
+      await fetchCategories();
+    } catch (error) {
+      console.error('Error in deleteCategory:', error);
+      throw error;
+    }
+  };
+
   useEffect(() => {
     fetchCategories();
   }, []);
@@ -62,6 +103,8 @@ export const useCategories = () => {
     categories,
     loading,
     addCategory,
+    editCategory,
+    deleteCategory,
     fetchCategories
   };
 };

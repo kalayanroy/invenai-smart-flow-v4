@@ -54,6 +54,47 @@ export const useUnits = () => {
     }
   };
 
+  const editUnit = async (id: string, name: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('units')
+        .update({ name })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error editing unit:', error);
+        throw error;
+      }
+
+      await fetchUnits();
+      return data;
+    } catch (error) {
+      console.error('Error in editUnit:', error);
+      throw error;
+    }
+  };
+
+  const deleteUnit = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('units')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error deleting unit:', error);
+        throw error;
+      }
+
+      await fetchUnits();
+    } catch (error) {
+      console.error('Error in deleteUnit:', error);
+      throw error;
+    }
+  };
+
   useEffect(() => {
     fetchUnits();
   }, []);
@@ -62,6 +103,8 @@ export const useUnits = () => {
     units,
     loading,
     addUnit,
+    editUnit,
+    deleteUnit,
     fetchUnits
   };
 };
