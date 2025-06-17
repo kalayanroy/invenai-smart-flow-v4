@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, Upload, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useUnits } from '@/hooks/useUnits';
+import { useCategories } from '@/hooks/useCategories';
 
 interface CreateProductFormProps {
   onProductCreated?: (productData: any) => void;
@@ -24,11 +27,11 @@ interface ProductFormData {
   image: File | null;
 }
 
-const initialUnits = ['Pieces', 'Kg', 'Liter', 'Meter', 'Box', 'Dozen'];
-const initialCategories = ['Electronics', 'Clothing', 'Food & Beverages', 'Home & Garden', 'Sports', 'Books'];
-
 export const CreateProductForm = ({ onProductCreated }: CreateProductFormProps) => {
   const { toast } = useToast();
+  const { units, addUnit } = useUnits();
+  const { categories, addCategory } = useCategories();
+  
   const [product, setProduct] = useState<ProductFormData>({
     name: '',
     sku: '',
@@ -41,8 +44,6 @@ export const CreateProductForm = ({ onProductCreated }: CreateProductFormProps) 
     image: null
   });
 
-  const [units, setUnits] = useState(initialUnits);
-  const [categories, setCategories] = useState(initialCategories);
   const [newUnit, setNewUnit] = useState('');
   const [newCategory, setNewCategory] = useState('');
   const [showUnitDialog, setShowUnitDialog] = useState(false);
@@ -72,31 +73,45 @@ export const CreateProductForm = ({ onProductCreated }: CreateProductFormProps) 
     setImagePreview(null);
   };
 
-  const addNewUnit = () => {
-    if (newUnit.trim() && !units.includes(newUnit.trim())) {
-      const updatedUnits = [...units, newUnit.trim()];
-      setUnits(updatedUnits);
-      setProduct(prev => ({ ...prev, unit: newUnit.trim() }));
-      setNewUnit('');
-      setShowUnitDialog(false);
-      toast({
-        title: "Unit Added",
-        description: `"${newUnit.trim()}" has been added to the units list.`,
-      });
+  const addNewUnit = async () => {
+    if (newUnit.trim()) {
+      try {
+        await addUnit(newUnit.trim());
+        setProduct(prev => ({ ...prev, unit: newUnit.trim() }));
+        setNewUnit('');
+        setShowUnitDialog(false);
+        toast({
+          title: "Unit Added",
+          description: `"${newUnit.trim()}" has been added to the units list.`,
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to add unit. It may already exist.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
-  const addNewCategory = () => {
-    if (newCategory.trim() && !categories.includes(newCategory.trim())) {
-      const updatedCategories = [...categories, newCategory.trim()];
-      setCategories(updatedCategories);
-      setProduct(prev => ({ ...prev, category: newCategory.trim() }));
-      setNewCategory('');
-      setShowCategoryDialog(false);
-      toast({
-        title: "Category Added",
-        description: `"${newCategory.trim()}" has been added to the categories list.`,
-      });
+  const addNewCategory = async () => {
+    if (newCategory.trim()) {
+      try {
+        await addCategory(newCategory.trim());
+        setProduct(prev => ({ ...prev, category: newCategory.trim() }));
+        setNewCategory('');
+        setShowCategoryDialog(false);
+        toast({
+          title: "Category Added",
+          description: `"${newCategory.trim()}" has been added to the categories list.`,
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to add category. It may already exist.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -279,8 +294,8 @@ export const CreateProductForm = ({ onProductCreated }: CreateProductFormProps) 
                   </SelectTrigger>
                   <SelectContent>
                     {units.map((unit) => (
-                      <SelectItem key={unit} value={unit}>
-                        {unit}
+                      <SelectItem key={unit.id} value={unit.name}>
+                        {unit.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -329,8 +344,8 @@ export const CreateProductForm = ({ onProductCreated }: CreateProductFormProps) 
                   </SelectTrigger>
                   <SelectContent>
                     {categories.map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
+                      <SelectItem key={category.id} value={category.name}>
+                        {category.name}
                       </SelectItem>
                     ))}
                   </SelectContent>

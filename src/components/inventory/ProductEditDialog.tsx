@@ -9,6 +9,8 @@ import { Product } from '@/hooks/useProducts';
 import { useToast } from '@/hooks/use-toast';
 import { Upload, X, Plus } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { useUnits } from '@/hooks/useUnits';
+import { useCategories } from '@/hooks/useCategories';
 
 interface ProductEditDialogProps {
   product: Product | null;
@@ -17,14 +19,12 @@ interface ProductEditDialogProps {
   onSave: (id: string, updates: Partial<Product>) => void;
 }
 
-const initialUnits = ['Pieces', 'Kg', 'Liter', 'Meter', 'Box', 'Dozen'];
-const initialCategories = ['Electronics', 'Clothing', 'Food & Beverages', 'Home & Garden', 'Sports', 'Books'];
-
 export const ProductEditDialog = ({ product, open, onOpenChange, onSave }: ProductEditDialogProps) => {
   const { toast } = useToast();
+  const { units, addUnit } = useUnits();
+  const { categories, addCategory } = useCategories();
+  
   const [formData, setFormData] = useState<Partial<Product>>({});
-  const [units, setUnits] = useState(initialUnits);
-  const [categories, setCategories] = useState(initialCategories);
   const [newUnit, setNewUnit] = useState('');
   const [newCategory, setNewCategory] = useState('');
   const [showUnitDialog, setShowUnitDialog] = useState(false);
@@ -70,31 +70,45 @@ export const ProductEditDialog = ({ product, open, onOpenChange, onSave }: Produ
     setFormData(prev => ({ ...prev, image: undefined }));
   };
 
-  const addNewUnit = () => {
-    if (newUnit.trim() && !units.includes(newUnit.trim())) {
-      const updatedUnits = [...units, newUnit.trim()];
-      setUnits(updatedUnits);
-      setFormData(prev => ({ ...prev, unit: newUnit.trim() }));
-      setNewUnit('');
-      setShowUnitDialog(false);
-      toast({
-        title: "Unit Added",
-        description: `"${newUnit.trim()}" has been added to the units list.`,
-      });
+  const addNewUnit = async () => {
+    if (newUnit.trim()) {
+      try {
+        await addUnit(newUnit.trim());
+        setFormData(prev => ({ ...prev, unit: newUnit.trim() }));
+        setNewUnit('');
+        setShowUnitDialog(false);
+        toast({
+          title: "Unit Added",
+          description: `"${newUnit.trim()}" has been added to the units list.`,
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to add unit. It may already exist.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
-  const addNewCategory = () => {
-    if (newCategory.trim() && !categories.includes(newCategory.trim())) {
-      const updatedCategories = [...categories, newCategory.trim()];
-      setCategories(updatedCategories);
-      setFormData(prev => ({ ...prev, category: newCategory.trim() }));
-      setNewCategory('');
-      setShowCategoryDialog(false);
-      toast({
-        title: "Category Added",
-        description: `"${newCategory.trim()}" has been added to the categories list.`,
-      });
+  const addNewCategory = async () => {
+    if (newCategory.trim()) {
+      try {
+        await addCategory(newCategory.trim());
+        setFormData(prev => ({ ...prev, category: newCategory.trim() }));
+        setNewCategory('');
+        setShowCategoryDialog(false);
+        toast({
+          title: "Category Added",
+          description: `"${newCategory.trim()}" has been added to the categories list.`,
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to add category. It may already exist.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -236,8 +250,8 @@ export const ProductEditDialog = ({ product, open, onOpenChange, onSave }: Produ
                       </SelectTrigger>
                       <SelectContent>
                         {units.map((unit) => (
-                          <SelectItem key={unit} value={unit}>
-                            {unit}
+                          <SelectItem key={unit.id} value={unit.name}>
+                            {unit.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -286,8 +300,8 @@ export const ProductEditDialog = ({ product, open, onOpenChange, onSave }: Produ
                       </SelectTrigger>
                       <SelectContent>
                         {categories.map((category) => (
-                          <SelectItem key={category} value={category}>
-                            {category}
+                          <SelectItem key={category.id} value={category.name}>
+                            {category.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
