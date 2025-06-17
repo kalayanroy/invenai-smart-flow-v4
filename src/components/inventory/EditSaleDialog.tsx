@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -8,6 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Sale } from '@/hooks/useSales';
 import { useProducts } from '@/hooks/useProducts';
+import { useSales } from '@/hooks/useSales';
+import { usePurchases } from '@/hooks/usePurchases';
+import { useSalesReturns } from '@/hooks/useSalesReturns';
 
 interface EditSaleDialogProps {
   open: boolean;
@@ -18,6 +20,9 @@ interface EditSaleDialogProps {
 
 export const EditSaleDialog = ({ open, onOpenChange, sale, onSaleUpdated }: EditSaleDialogProps) => {
   const { products } = useProducts();
+  const { sales } = useSales();
+  const { purchases } = usePurchases();
+  const { salesReturns } = useSalesReturns();
   const [formData, setFormData] = useState({
     quantity: 1,
     unitPrice: '',
@@ -26,11 +31,24 @@ export const EditSaleDialog = ({ open, onOpenChange, sale, onSaleUpdated }: Edit
     notes: ''
   });
 
+  // Calculate actual available stock using: Total Purchase + Total Return - Total Sales
+  const getCalculatedStock = (productId: string, excludeSaleId?: string) => {
+    const productSales = sales.filter(s => s.productId === productId && s.id !== excludeSaleId);
+    const productPurchases = purchases.filter(purchase => purchase.productId === productId);
+    const productReturns = salesReturns.filter(returnItem => returnItem.productId === productId);
+    
+    const totalSold = productSales.reduce((sum, s) => sum + s.quantity, 0);
+    const totalPurchased = productPurchases.reduce((sum, purchase) => sum + purchase.quantity, 0);
+    const totalReturned = productReturns.reduce((sum, returnItem) => sum + returnItem.returnQuantity, 0);
+    
+    return totalPurchased + totalReturned - totalSold;
+  };
+
   useEffect(() => {
     if (sale) {
       setFormData({
         quantity: sale.quantity,
-        unitPrice: sale.unitPrice.replace('$', ''),
+        unitPrice: sale.unitPrice.replace(/[$৳]/g, ''),
         customerName: sale.customerName || '',
         status: sale.status,
         notes: sale.notes || ''
@@ -44,9 +62,8 @@ export const EditSaleDialog = ({ open, onOpenChange, sale, onSaleUpdated }: Edit
   const unitPrice = parseFloat(formData.unitPrice) || 0;
   const totalAmount = unitPrice * formData.quantity;
   
-  // Calculate available stock (current stock + original sale quantity)
-  const currentStock = selectedProduct?.stock || 0;
-  const availableStock = currentStock + sale.quantity;
+  // Calculate available stock excluding the current sale being edited
+  const availableStock = getCalculatedStock(sale.productId, sale.id);
   const isQuantityValid = formData.quantity <= availableStock;
 
   const handleQuantityChange = (value: string) => {
@@ -92,7 +109,7 @@ export const EditSaleDialog = ({ open, onOpenChange, sale, onSaleUpdated }: Edit
                 <p className="text-sm text-gray-600">
                   Available Stock: <span className="font-medium">{availableStock}</span>
                   <span className="text-xs text-gray-500 ml-1">
-                    (includes current sale quantity)
+                    (calculated stock excluding this sale)
                   </span>
                 </p>
               </div>

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -7,6 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useProducts } from '@/hooks/useProducts';
+import { useSales } from '@/hooks/useSales';
+import { usePurchases } from '@/hooks/usePurchases';
+import { useSalesReturns } from '@/hooks/useSalesReturns';
 import { Sale } from '@/hooks/useSales';
 
 interface CreateSaleDialogProps {
@@ -17,6 +19,9 @@ interface CreateSaleDialogProps {
 
 export const CreateSaleDialog = ({ open, onOpenChange, onSaleCreated }: CreateSaleDialogProps) => {
   const { products } = useProducts();
+  const { sales } = useSales();
+  const { purchases } = usePurchases();
+  const { salesReturns } = useSalesReturns();
   const [formData, setFormData] = useState({
     productId: '',
     quantity: 1,
@@ -26,10 +31,23 @@ export const CreateSaleDialog = ({ open, onOpenChange, onSaleCreated }: CreateSa
     notes: ''
   });
 
+  // Calculate actual available stock using: Total Purchase + Total Return - Total Sales
+  const getCalculatedStock = (productId: string) => {
+    const productSales = sales.filter(sale => sale.productId === productId);
+    const productPurchases = purchases.filter(purchase => purchase.productId === productId);
+    const productReturns = salesReturns.filter(returnItem => returnItem.productId === productId);
+    
+    const totalSold = productSales.reduce((sum, sale) => sum + sale.quantity, 0);
+    const totalPurchased = productPurchases.reduce((sum, purchase) => sum + purchase.quantity, 0);
+    const totalReturned = productReturns.reduce((sum, returnItem) => sum + returnItem.returnQuantity, 0);
+    
+    return totalPurchased + totalReturned - totalSold;
+  };
+
   const selectedProduct = products.find(p => p.id === formData.productId);
   const unitPrice = formData.unitPrice ? parseFloat(formData.unitPrice) : 0;
   const totalAmount = unitPrice * formData.quantity;
-  const availableStock = selectedProduct?.stock || 0;
+  const availableStock = selectedProduct ? getCalculatedStock(selectedProduct.id) : 0;
   const isQuantityValid = formData.quantity <= availableStock;
 
   const handleProductChange = (productId: string) => {
@@ -94,11 +112,14 @@ export const CreateSaleDialog = ({ open, onOpenChange, onSaleCreated }: CreateSa
                   <SelectValue placeholder="Select a product" />
                 </SelectTrigger>
                 <SelectContent>
-                  {products.map((product) => (
-                    <SelectItem key={product.id} value={product.id}>
-                      {product.name} - {product.sellPrice} (Stock: {product.stock})
-                    </SelectItem>
-                  ))}
+                  {products.map((product) => {
+                    const calculatedStock = getCalculatedStock(product.id);
+                    return (
+                      <SelectItem key={product.id} value={product.id}>
+                        {product.name} - {product.sellPrice} (Stock: {calculatedStock})
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
               {selectedProduct && (
