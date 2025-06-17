@@ -83,13 +83,13 @@ export const StockManagement = () => {
                 <th>Total Sold</th>
                 <th>Total Purchased</th>
                 <th>Total Returned</th>
-                <th>Net Movement</th>
+                <th>Calculated Stock</th>
               </tr>
             </thead>
             <tbody>
               ${filteredProducts.map(product => {
                 const movements = getProductMovements(product.id);
-                const netMovement = (product.stock + movements.totalPurchased + movements.totalReturned) - movements.totalSold;
+                const calculatedStock = movements.totalPurchased + movements.totalReturned - movements.totalSold;
                 return `
                   <tr>
                     <td>${product.sku}</td>
@@ -101,7 +101,7 @@ export const StockManagement = () => {
                     <td>${movements.totalSold}</td>
                     <td>${movements.totalPurchased}</td>
                     <td>${movements.totalReturned}</td>
-                    <td>${netMovement}</td>
+                    <td>${calculatedStock}</td>
                   </tr>
                 `;
               }).join('')}
@@ -121,12 +121,12 @@ export const StockManagement = () => {
 
   // Export to CSV
   const handleExport = () => {
-    const headers = ['SKU', 'Product Name', 'Category', 'Current Stock', 'Reorder Point', 'Status', 'Total Sold', 'Total Purchased', 'Total Returned', 'Net Movement'];
+    const headers = ['SKU', 'Product Name', 'Category', 'Current Stock', 'Reorder Point', 'Status', 'Total Sold', 'Total Purchased', 'Total Returned', 'Calculated Stock'];
     const csvData = [
       headers.join(','),
       ...filteredProducts.map(product => {
         const movements = getProductMovements(product.id);
-        const netMovement = (product.stock + movements.totalPurchased + movements.totalReturned) - movements.totalSold;
+        const calculatedStock = movements.totalPurchased + movements.totalReturned - movements.totalSold;
         return [
           product.sku,
           `"${product.name}"`,
@@ -137,7 +137,7 @@ export const StockManagement = () => {
           movements.totalSold,
           movements.totalPurchased,
           movements.totalReturned,
-          netMovement
+          calculatedStock
         ].join(',');
       })
     ].join('\n');
@@ -304,13 +304,13 @@ export const StockManagement = () => {
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Total Sold</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Total Purchased</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Total Returned</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600">Net Movement</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-600">Calculated Stock</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredProducts.map((product) => {
                   const movements = getProductMovements(product.id);
-                  const netMovement = (product.stock + movements.totalPurchased + movements.totalReturned) - movements.totalSold;
+                  const calculatedStock = movements.totalPurchased + movements.totalReturned - movements.totalSold;
                   
                   return (
                     <tr key={product.id} className="border-b hover:bg-gray-50 transition-colors">
@@ -338,8 +338,8 @@ export const StockManagement = () => {
                       <td className="py-4 px-4 text-sm">{movements.totalPurchased}</td>
                       <td className="py-4 px-4 text-sm">{movements.totalReturned}</td>
                       <td className="py-4 px-4">
-                        <span className={`text-sm font-medium ${netMovement >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {netMovement >= 0 ? '+' : ''}{netMovement}
+                        <span className={`text-sm font-medium ${calculatedStock >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {calculatedStock}
                         </span>
                       </td>
                     </tr>
