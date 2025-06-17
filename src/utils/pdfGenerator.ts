@@ -8,7 +8,7 @@ const logoBase64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAfQAAAH0CAYAAA
 export const generateSalesInvoicePDF = (sale: Sale) => {
   const doc = new jsPDF();
   // Add logo
-  doc.addImage(logoBase64, 'PNG', 10, 10, 30, 30); // x, y, width, height
+  doc.addImage(logoBase64, 'PNG', 10, 10, 25, 25); // x, y, width, height
   // Header
   doc.setFontSize(20);
   doc.text('SALES INVOICE', 105, 20, { align: 'center' });
@@ -69,6 +69,9 @@ export const generateSalesInvoicePDF = (sale: Sale) => {
 
 export const generatePurchaseInvoicePDF = (purchase: Purchase) => {
   const doc = new jsPDF();
+
+  // Add logo
+  doc.addImage(logoBase64, 'PNG', 10, 10, 25, 25); // x, y, width, height
   
   // Header
   doc.setFontSize(20);
