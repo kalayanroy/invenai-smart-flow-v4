@@ -29,19 +29,30 @@ export const CreateSaleDialog = ({ open, onOpenChange, onSaleCreated }: CreateSa
   const selectedProduct = products.find(p => p.id === formData.productId);
   const unitPrice = formData.unitPrice ? parseFloat(formData.unitPrice) : 0;
   const totalAmount = unitPrice * formData.quantity;
+  const availableStock = selectedProduct?.stock || 0;
+  const isQuantityValid = formData.quantity <= availableStock;
 
   const handleProductChange = (productId: string) => {
     const product = products.find(p => p.id === productId);
     setFormData({
       ...formData,
       productId,
-      unitPrice: product ? product.sellPrice.replace(/[$৳]/g, '') : ''
+      unitPrice: product ? product.sellPrice.replace(/[$৳]/g, '') : '',
+      quantity: 1 // Reset quantity when product changes
+    });
+  };
+
+  const handleQuantityChange = (value: string) => {
+    const newQuantity = parseInt(value) || 1;
+    setFormData({
+      ...formData,
+      quantity: Math.min(newQuantity, availableStock) // Limit to available stock
     });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedProduct || !formData.unitPrice) return;
+    if (!selectedProduct || !formData.unitPrice || !isQuantityValid) return;
 
     const saleData: Omit<Sale, 'id'> = {
       productId: formData.productId,
@@ -85,11 +96,16 @@ export const CreateSaleDialog = ({ open, onOpenChange, onSaleCreated }: CreateSa
                 <SelectContent>
                   {products.map((product) => (
                     <SelectItem key={product.id} value={product.id}>
-                      {product.name} - {product.sellPrice}
+                      {product.name} - {product.sellPrice} (Stock: {product.stock})
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {selectedProduct && (
+                <p className="text-sm text-gray-600">
+                  Available Stock: <span className="font-medium">{availableStock}</span>
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -98,10 +114,17 @@ export const CreateSaleDialog = ({ open, onOpenChange, onSaleCreated }: CreateSa
                 id="quantity"
                 type="number"
                 min="1"
+                max={availableStock}
                 value={formData.quantity}
-                onChange={(e) => setFormData({...formData, quantity: parseInt(e.target.value) || 1})}
+                onChange={(e) => handleQuantityChange(e.target.value)}
                 required
+                className={!isQuantityValid ? 'border-red-500' : ''}
               />
+              {!isQuantityValid && (
+                <p className="text-sm text-red-600">
+                  Quantity cannot exceed available stock ({availableStock})
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -175,7 +198,10 @@ export const CreateSaleDialog = ({ open, onOpenChange, onSaleCreated }: CreateSa
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={!formData.productId || !formData.unitPrice}>
+            <Button 
+              type="submit" 
+              disabled={!formData.productId || !formData.unitPrice || !isQuantityValid}
+            >
               Record Sale
             </Button>
           </div>

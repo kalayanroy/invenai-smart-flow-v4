@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Sale } from '@/hooks/useSales';
+import { useProducts } from '@/hooks/useProducts';
 
 interface EditSaleDialogProps {
   open: boolean;
@@ -16,6 +17,7 @@ interface EditSaleDialogProps {
 }
 
 export const EditSaleDialog = ({ open, onOpenChange, sale, onSaleUpdated }: EditSaleDialogProps) => {
+  const { products } = useProducts();
   const [formData, setFormData] = useState({
     quantity: 1,
     unitPrice: '',
@@ -38,11 +40,27 @@ export const EditSaleDialog = ({ open, onOpenChange, sale, onSaleUpdated }: Edit
 
   if (!sale) return null;
 
+  const selectedProduct = products.find(p => p.id === sale.productId);
   const unitPrice = parseFloat(formData.unitPrice) || 0;
   const totalAmount = unitPrice * formData.quantity;
+  
+  // Calculate available stock (current stock + original sale quantity)
+  const currentStock = selectedProduct?.stock || 0;
+  const availableStock = currentStock + sale.quantity;
+  const isQuantityValid = formData.quantity <= availableStock;
+
+  const handleQuantityChange = (value: string) => {
+    const newQuantity = parseInt(value) || 1;
+    setFormData({
+      ...formData,
+      quantity: Math.min(newQuantity, availableStock) // Limit to available stock
+    });
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!isQuantityValid) return;
 
     const updates: Partial<Sale> = {
       quantity: formData.quantity,
@@ -71,6 +89,12 @@ export const EditSaleDialog = ({ open, onOpenChange, sale, onSaleUpdated }: Edit
               <div className="bg-gray-50 p-3 rounded border">
                 <p className="font-medium">{sale.productName}</p>
                 <p className="text-sm text-gray-500">SKU: {sale.productId}</p>
+                <p className="text-sm text-gray-600">
+                  Available Stock: <span className="font-medium">{availableStock}</span>
+                  <span className="text-xs text-gray-500 ml-1">
+                    (includes current sale quantity)
+                  </span>
+                </p>
               </div>
             </div>
 
@@ -80,10 +104,17 @@ export const EditSaleDialog = ({ open, onOpenChange, sale, onSaleUpdated }: Edit
                 id="quantity"
                 type="number"
                 min="1"
+                max={availableStock}
                 value={formData.quantity}
-                onChange={(e) => setFormData({...formData, quantity: parseInt(e.target.value) || 1})}
+                onChange={(e) => handleQuantityChange(e.target.value)}
                 required
+                className={!isQuantityValid ? 'border-red-500' : ''}
               />
+              {!isQuantityValid && (
+                <p className="text-sm text-red-600">
+                  Quantity cannot exceed available stock ({availableStock})
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -155,7 +186,7 @@ export const EditSaleDialog = ({ open, onOpenChange, sale, onSaleUpdated }: Edit
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit">
+            <Button type="submit" disabled={!isQuantityValid}>
               Update Sale
             </Button>
           </div>
