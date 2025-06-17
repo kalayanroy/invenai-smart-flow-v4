@@ -105,7 +105,7 @@ export const ProductTable = () => {
                   <th className="text-left py-3 px-4 font-medium text-gray-600">SKU</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Stock</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Status</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600">AI Recommendation</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-600" hidden>AI Recommendation</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Actions</th>
                 </tr>
               </thead>
@@ -139,7 +139,7 @@ export const ProductTable = () => {
                         {product.status}
                       </Badge>
                     </td>
-                    <td className="py-4 px-4">
+                    <td className="py-4 px-4" hidden>
                       <div className="text-sm text-blue-600 bg-blue-50 p-2 rounded-lg max-w-xs">
                         {product.aiRecommendation}
                       </div>
