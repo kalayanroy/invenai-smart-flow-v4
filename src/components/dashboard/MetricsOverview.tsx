@@ -1,10 +1,24 @@
 import React from 'react';
+import { LucideProps } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp, TrendingDown, Package, ShoppingCart, DollarSign, AlertTriangle } from 'lucide-react';
 import { useProducts } from '@/hooks/useProducts';
 import { useSales } from '@/hooks/useSales';
 import { usePurchases } from '@/hooks/usePurchases';
 import { useIsMobile } from '@/hooks/use-mobile';
+export const BdtSign = (props: LucideProps) => (
+  <svg
+    {...props}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <text x="4" y="20" fontSize="16">৳</text>
+  </svg>
+);
 
 export const MetricsOverview = () => {
   const { products } = useProducts();
@@ -51,7 +65,7 @@ export const MetricsOverview = () => {
       value: `${totalSalesValue.toLocaleString()}`,
       change: '+8.2%',
       changeType: 'positive' as const,
-      icon: ৳,
+      icon: BdtSign,
       color: 'text-green-600',
       bgColor: 'bg-green-50',
     },
