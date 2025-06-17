@@ -16,7 +16,7 @@ export const BdtSign = (props: LucideProps) => (
     strokeLinecap="round"
     strokeLinejoin="round"
   >
-    <text x="4" y="20" fontSize="36">৳</text>
+    <text x="4" y="20" fontSize="33">৳</text>
   </svg>
 );
 
