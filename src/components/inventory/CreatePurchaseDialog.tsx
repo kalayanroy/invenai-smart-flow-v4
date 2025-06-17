@@ -119,14 +119,14 @@ export const CreatePurchaseDialog = ({ open, onOpenChange, onPurchaseCreated }: 
 
             <div className="space-y-2 md:col-span-2">
               <Label htmlFor="status">Status</Label>
-              <Select value={formData.status} onValueChange={(value: Purchase['status']) => setFormData({...formData, status: value})}>
+              <Select defaultValue="Received" value={formData.status} onValueChange={(value: Purchase['status']) => setFormData({...formData, status: value})}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Ordered">Ordered</SelectItem>
                   <SelectItem value="Pending">Pending</SelectItem>
-                  <SelectItem value="Received" selected>Received</SelectItem>
+                  <SelectItem value="Received">Received</SelectItem>
                   <SelectItem value="Cancelled">Cancelled</SelectItem>
                 </SelectContent>
               </Select>
