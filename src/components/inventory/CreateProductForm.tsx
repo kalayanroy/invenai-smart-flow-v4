@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -116,7 +115,16 @@ export const CreateProductForm = ({ onProductCreated }: CreateProductFormProps) 
     setImagePreview(null);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const convertImageToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Validation
@@ -129,34 +137,50 @@ export const CreateProductForm = ({ onProductCreated }: CreateProductFormProps) 
       return;
     }
 
-    // Create product data
-    const productData = {
-      name: product.name,
-      sku: product.sku,
-      barcode: product.barcode,
-      category: product.category,
-      purchasePrice: product.purchasePrice,
-      sellPrice: product.sellPrice,
-      price: product.sellPrice,
-      openingStock: parseInt(product.openingStock) || 0,
-      unit: product.unit,
-      image: imagePreview || undefined
-    };
+    try {
+      // Convert image to base64 if present
+      let imageBase64 = undefined;
+      if (product.image) {
+        imageBase64 = await convertImageToBase64(product.image);
+        console.log('Image converted to base64:', imageBase64?.substring(0, 100) + '...');
+      }
 
-    console.log('Product data:', productData);
-    
-    // Call the callback if provided
-    if (onProductCreated) {
-      onProductCreated(productData);
+      // Create product data
+      const productData = {
+        name: product.name,
+        sku: product.sku,
+        barcode: product.barcode,
+        category: product.category,
+        purchasePrice: product.purchasePrice,
+        sellPrice: product.sellPrice,
+        price: product.sellPrice,
+        openingStock: parseInt(product.openingStock) || 0,
+        unit: product.unit,
+        image: imageBase64
+      };
+
+      console.log('Product data to be saved:', { ...productData, image: productData.image ? 'base64 data present' : 'no image' });
+      
+      // Call the callback if provided
+      if (onProductCreated) {
+        await onProductCreated(productData);
+      }
+      
+      toast({
+        title: "Product Created",
+        description: `Product "${product.name}" has been created successfully.`,
+      });
+
+      // Reset form
+      resetForm();
+    } catch (error) {
+      console.error('Error creating product:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create product. Please try again.",
+        variant: "destructive",
+      });
     }
-    
-    toast({
-      title: "Product Created",
-      description: `Product "${product.name}" has been created successfully.`,
-    });
-
-    // Reset form
-    resetForm();
   };
 
   return (
