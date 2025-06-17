@@ -63,7 +63,7 @@ export const LoginForm = () => {
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
             <div className="bg-blue-600 p-3 rounded-full">
-              //<Lock className="h-6 w-6 text-white" />
+              
               <img
             src="https://placehold.co/24x24/ffffff/000000?text=🔒"
             alt="Lock Icon"
