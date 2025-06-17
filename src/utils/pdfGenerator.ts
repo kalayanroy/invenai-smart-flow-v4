@@ -12,10 +12,10 @@ export const generateSalesInvoicePDF = (sale: Sale) => {
   
   // Company info (you can customize this)
   doc.setFontSize(12);
-  doc.text('Your Company Name', 20, 40);
-  doc.text('Your Address Line 1', 20, 50);
-  doc.text('Your Address Line 2', 20, 60);
-  doc.text('Phone: Your Phone Number', 20, 70);
+  doc.text('Nahar Enterprise', 20, 40);
+  doc.text('Abdul Kadar market, member bari road,', 20, 50);
+  doc.text('National University, gazipur city corporation.', 20, 60);
+  doc.text('Phone: 01712014171', 20, 70);
   
   // Invoice details
   doc.text(`Invoice ID: ${sale.id}`, 120, 40);
@@ -74,7 +74,8 @@ export const generatePurchaseInvoicePDF = (purchase: Purchase) => {
   // Company info
   doc.setFontSize(12);
   doc.text('Nahar Enterprise', 20, 40);
-  doc.text('Abdul Kadar market, member bari road, National University, gazipur city corporation.', 20, 50);
+  doc.text('Abdul Kadar market, member bari road,', 20, 50);
+  doc.text('National University, gazipur city corporation.', 20, 60);
   doc.text('Phone: 01712014171', 20, 70);
   
   // Purchase order details
