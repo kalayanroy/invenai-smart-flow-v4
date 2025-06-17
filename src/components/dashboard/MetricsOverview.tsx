@@ -48,10 +48,10 @@ export const MetricsOverview = () => {
     },
     {
       title: 'Sales Revenue',
-      value: `৳${totalSalesValue.toLocaleString()}`,
+      value: `${totalSalesValue.toLocaleString()}`,
       change: '+8.2%',
       changeType: 'positive' as const,
-      icon: DollarSign,
+      icon: ৳,
       color: 'text-green-600',
       bgColor: 'bg-green-50',
     },
