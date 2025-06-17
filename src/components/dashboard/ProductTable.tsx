@@ -171,14 +171,7 @@ export const ProductTable = () => {
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleMoreActions(product)}
-                          title="More Actions"
-                        >
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
+                        
                       </div>
                     </td>
                   </tr>
