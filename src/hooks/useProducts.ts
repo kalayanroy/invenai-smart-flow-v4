@@ -96,7 +96,7 @@ export const useProducts = () => {
         sell_price: productData.sellPrice,
         opening_stock: productData.openingStock || 0,
         unit: productData.unit,
-        status: (productData.openingStock || 0) > 50 ? 'In Stock' : (productData.openingStock || 0) > 0 ? 'Low Stock' : 'Out of Stock',
+        status: 'In Stock',//(productData.openingStock || 0) > 50 ? 'In Stock' : (productData.openingStock || 0) > 0 ? 'Low Stock' : 'Out of Stock',
         ai_recommendation: (productData.openingStock || 0) > 50 ? 'Optimal stock level' : 'Consider restocking',
         image: cleanImage
       };
