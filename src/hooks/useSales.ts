@@ -24,6 +24,7 @@ export const useSales = () => {
 
   const fetchSales = async () => {
     try {
+      console.log('Fetching sales from Supabase...');
       const { data, error } = await supabase
         .from('sales')
         .select('*')
@@ -33,6 +34,8 @@ export const useSales = () => {
         console.error('Error fetching sales:', error);
         return;
       }
+
+      console.log('Raw sales data from Supabase:', data);
 
       const mappedSales = data.map(sale => ({
         id: sale.id,
@@ -47,6 +50,7 @@ export const useSales = () => {
         notes: sale.notes
       }));
 
+      console.log('Mapped sales:', mappedSales);
       setSales(mappedSales);
     } catch (error) {
       console.error('Error in fetchSales:', error);
@@ -55,6 +59,8 @@ export const useSales = () => {
 
   const addSale = async (saleData: Omit<Sale, 'id'>) => {
     try {
+      console.log('Adding sale to Supabase:', saleData);
+
       const newSale = {
         id: `SALE${String(sales.length + 1).padStart(3, '0')}`,
         product_id: saleData.productId,
@@ -64,9 +70,11 @@ export const useSales = () => {
         total_amount: saleData.totalAmount,
         date: saleData.date,
         status: saleData.status,
-        customer_name: saleData.customerName,
-        notes: saleData.notes
+        customer_name: saleData.customerName || null,
+        notes: saleData.notes || null
       };
+
+      console.log('Prepared sale data for Supabase:', newSale);
 
       const { data, error } = await supabase
         .from('sales')
@@ -75,21 +83,23 @@ export const useSales = () => {
         .single();
 
       if (error) {
-        console.error('Error adding sale:', error);
-        return null;
+        console.error('Supabase error adding sale:', error);
+        throw error;
       }
 
-      console.log('New sale added:', data.id);
+      console.log('Sale successfully added to Supabase:', data);
       await fetchSales(); // Refresh the list
       return data;
     } catch (error) {
       console.error('Error in addSale:', error);
-      return null;
+      throw error;
     }
   };
 
   const updateSale = async (id: string, updates: Partial<Sale>) => {
     try {
+      console.log('Updating sale in Supabase:', id, updates);
+      
       const dbUpdates: any = {};
       
       if (updates.productId) dbUpdates.product_id = updates.productId;
@@ -108,52 +118,59 @@ export const useSales = () => {
         .eq('id', id);
 
       if (error) {
-        console.error('Error updating sale:', error);
-        return;
+        console.error('Supabase error updating sale:', error);
+        throw error;
       }
 
-      console.log('Sale updated:', id);
+      console.log('Sale updated successfully in Supabase');
       await fetchSales(); // Refresh the list
     } catch (error) {
       console.error('Error in updateSale:', error);
+      throw error;
     }
   };
 
   const deleteSale = async (id: string) => {
     try {
+      console.log('Deleting sale from Supabase:', id);
+      
       const { error } = await supabase
         .from('sales')
         .delete()
         .eq('id', id);
 
       if (error) {
-        console.error('Error deleting sale:', error);
-        return;
+        console.error('Supabase error deleting sale:', error);
+        throw error;
       }
 
-      console.log('Sale deleted:', id);
+      console.log('Sale deleted successfully from Supabase');
       await fetchSales(); // Refresh the list
     } catch (error) {
       console.error('Error in deleteSale:', error);
+      throw error;
     }
   };
 
   const clearAllSales = async () => {
     try {
+      console.log('Clearing all sales from Supabase...');
+      
       const { error } = await supabase
         .from('sales')
         .delete()
         .neq('id', ''); // Delete all records
 
       if (error) {
-        console.error('Error clearing sales:', error);
-        return;
+        console.error('Supabase error clearing sales:', error);
+        throw error;
       }
 
-      console.log('All sales cleared');
+      console.log('All sales cleared from Supabase');
       setSales([]);
     } catch (error) {
       console.error('Error in clearAllSales:', error);
+      throw error;
     }
   };
 

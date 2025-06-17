@@ -31,6 +31,7 @@ export const useProducts = () => {
 
   const fetchProducts = async () => {
     try {
+      console.log('Fetching products from Supabase...');
       const { data, error } = await supabase
         .from('products')
         .select('*')
@@ -40,6 +41,8 @@ export const useProducts = () => {
         console.error('Error fetching products:', error);
         return;
       }
+
+      console.log('Raw products data from Supabase:', data);
 
       const mappedProducts = data.map(product => ({
         id: product.id,
@@ -60,6 +63,7 @@ export const useProducts = () => {
         createdAt: product.created_at
       }));
 
+      console.log('Mapped products:', mappedProducts);
       setProducts(mappedProducts);
     } catch (error) {
       console.error('Error in fetchProducts:', error);
@@ -68,23 +72,36 @@ export const useProducts = () => {
 
   const addProduct = async (productData: Omit<Product, 'id' | 'status' | 'aiRecommendation' | 'createdAt'>) => {
     try {
+      console.log('Adding product to Supabase:', productData);
+
+      // Clean up the image data - check if it's a valid base64 string or URL
+      let cleanImage = undefined;
+      if (productData.image && typeof productData.image === 'string' && productData.image.length > 0) {
+        // Only use the image if it's a valid data URL or HTTP URL
+        if (productData.image.startsWith('data:') || productData.image.startsWith('http')) {
+          cleanImage = productData.image;
+        }
+      }
+
       const newProduct = {
-        id: productData.sku,
+        id: productData.sku, // Use SKU as ID
         name: productData.name,
         sku: productData.sku,
-        barcode: productData.barcode,
+        barcode: productData.barcode || null,
         category: productData.category,
-        stock: productData.openingStock,
-        reorder_point: Math.max(10, Math.floor(productData.openingStock * 0.2)),
-        price: productData.price,
+        stock: productData.openingStock || 0,
+        reorder_point: Math.max(10, Math.floor((productData.openingStock || 0) * 0.2)),
+        price: productData.sellPrice,
         purchase_price: productData.purchasePrice,
         sell_price: productData.sellPrice,
-        opening_stock: productData.openingStock,
+        opening_stock: productData.openingStock || 0,
         unit: productData.unit,
-        status: productData.openingStock > 50 ? 'In Stock' : productData.openingStock > 0 ? 'Low Stock' : 'Out of Stock',
-        ai_recommendation: productData.openingStock > 50 ? 'Optimal stock level' : 'Consider restocking',
-        image: productData.image
+        status: (productData.openingStock || 0) > 50 ? 'In Stock' : (productData.openingStock || 0) > 0 ? 'Low Stock' : 'Out of Stock',
+        ai_recommendation: (productData.openingStock || 0) > 50 ? 'Optimal stock level' : 'Consider restocking',
+        image: cleanImage
       };
+
+      console.log('Prepared product data for Supabase:', newProduct);
 
       const { data, error } = await supabase
         .from('products')
@@ -93,21 +110,23 @@ export const useProducts = () => {
         .single();
 
       if (error) {
-        console.error('Error adding product:', error);
-        return null;
+        console.error('Supabase error adding product:', error);
+        throw error;
       }
 
-      console.log('New product added:', data.name);
+      console.log('Product successfully added to Supabase:', data);
       await fetchProducts(); // Refresh the list
       return data;
     } catch (error) {
       console.error('Error in addProduct:', error);
-      return null;
+      throw error;
     }
   };
 
   const updateProduct = async (id: string, updates: Partial<Product>) => {
     try {
+      console.log('Updating product in Supabase:', id, updates);
+      
       const dbUpdates: any = {};
       
       if (updates.name) dbUpdates.name = updates.name;
@@ -131,22 +150,25 @@ export const useProducts = () => {
         .eq('id', id);
 
       if (error) {
-        console.error('Error updating product:', error);
-        return;
+        console.error('Supabase error updating product:', error);
+        throw error;
       }
 
-      console.log('Product updated:', id);
+      console.log('Product updated successfully in Supabase');
       await fetchProducts(); // Refresh the list
     } catch (error) {
       console.error('Error in updateProduct:', error);
+      throw error;
     }
   };
 
   const deleteProduct = async (id: string) => {
     try {
+      console.log('Deleting product from Supabase:', id);
+      
       const productToDelete = products.find(p => p.id === id);
       if (productToDelete) {
-        console.log(`Product deleted: ${productToDelete.name} (${productToDelete.sku})`);
+        console.log(`Preparing to delete product: ${productToDelete.name} (${productToDelete.sku})`);
       }
 
       const { error } = await supabase
@@ -155,13 +177,15 @@ export const useProducts = () => {
         .eq('id', id);
 
       if (error) {
-        console.error('Error deleting product:', error);
-        return;
+        console.error('Supabase error deleting product:', error);
+        throw error;
       }
 
+      console.log('Product deleted successfully from Supabase');
       await fetchProducts(); // Refresh the list
     } catch (error) {
       console.error('Error in deleteProduct:', error);
+      throw error;
     }
   };
 
@@ -171,20 +195,23 @@ export const useProducts = () => {
 
   const clearAllProducts = async () => {
     try {
+      console.log('Clearing all products from Supabase...');
+      
       const { error } = await supabase
         .from('products')
         .delete()
         .neq('id', ''); // Delete all records
 
       if (error) {
-        console.error('Error clearing products:', error);
-        return;
+        console.error('Supabase error clearing products:', error);
+        throw error;
       }
 
-      console.log('All products cleared');
+      console.log('All products cleared from Supabase');
       setProducts([]);
     } catch (error) {
       console.error('Error in clearAllProducts:', error);
+      throw error;
     }
   };
 

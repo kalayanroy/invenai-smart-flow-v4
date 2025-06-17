@@ -13,7 +13,7 @@ export interface SalesReturn {
   totalRefund: string;
   returnDate: string;
   reason: string;
-  status: 'Pending' | 'Approved' | 'Rejected' | 'Processed';
+  status: 'Pending' | 'Approved' | 'Rejected';
   customerName?: string;
   notes?: string;
   processedBy?: string;
@@ -21,90 +21,100 @@ export interface SalesReturn {
 }
 
 export const useSalesReturns = () => {
-  const [returns, setReturns] = useState<SalesReturn[]>([]);
+  const [salesReturns, setSalesReturns] = useState<SalesReturn[]>([]);
 
   useEffect(() => {
-    fetchReturns();
+    fetchSalesReturns();
   }, []);
 
-  const fetchReturns = async () => {
+  const fetchSalesReturns = async () => {
     try {
+      console.log('Fetching sales returns from Supabase...');
       const { data, error } = await supabase
         .from('sales_returns')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching returns:', error);
+        console.error('Error fetching sales returns:', error);
         return;
       }
 
-      const mappedReturns = data.map(returnItem => ({
-        id: returnItem.id,
-        originalSaleId: returnItem.original_sale_id,
-        productId: returnItem.product_id,
-        productName: returnItem.product_name,
-        returnQuantity: returnItem.return_quantity,
-        originalQuantity: returnItem.original_quantity,
-        unitPrice: returnItem.unit_price,
-        totalRefund: returnItem.total_refund,
-        returnDate: returnItem.return_date,
-        reason: returnItem.reason,
-        status: returnItem.status as 'Pending' | 'Approved' | 'Rejected' | 'Processed',
-        customerName: returnItem.customer_name,
-        notes: returnItem.notes,
-        processedBy: returnItem.processed_by,
-        processedDate: returnItem.processed_date
+      console.log('Raw sales returns data from Supabase:', data);
+
+      const mappedSalesReturns = data.map(salesReturn => ({
+        id: salesReturn.id,
+        originalSaleId: salesReturn.original_sale_id,
+        productId: salesReturn.product_id,
+        productName: salesReturn.product_name,
+        returnQuantity: salesReturn.return_quantity,
+        originalQuantity: salesReturn.original_quantity,
+        unitPrice: salesReturn.unit_price,
+        totalRefund: salesReturn.total_refund,
+        returnDate: salesReturn.return_date,
+        reason: salesReturn.reason,
+        status: salesReturn.status as 'Pending' | 'Approved' | 'Rejected',
+        customerName: salesReturn.customer_name,
+        notes: salesReturn.notes,
+        processedBy: salesReturn.processed_by,
+        processedDate: salesReturn.processed_date
       }));
 
-      setReturns(mappedReturns);
+      console.log('Mapped sales returns:', mappedSalesReturns);
+      setSalesReturns(mappedSalesReturns);
     } catch (error) {
-      console.error('Error in fetchReturns:', error);
+      console.error('Error in fetchSalesReturns:', error);
     }
   };
 
-  const addReturn = async (returnData: Omit<SalesReturn, 'id'>) => {
+  const addSalesReturn = async (salesReturnData: Omit<SalesReturn, 'id'>) => {
     try {
-      const newReturn = {
-        id: `RET${String(returns.length + 1).padStart(3, '0')}`,
-        original_sale_id: returnData.originalSaleId,
-        product_id: returnData.productId,
-        product_name: returnData.productName,
-        return_quantity: returnData.returnQuantity,
-        original_quantity: returnData.originalQuantity,
-        unit_price: returnData.unitPrice,
-        total_refund: returnData.totalRefund,
-        return_date: returnData.returnDate,
-        reason: returnData.reason,
-        status: returnData.status,
-        customer_name: returnData.customerName,
-        notes: returnData.notes,
-        processed_by: returnData.processedBy,
-        processed_date: returnData.processedDate
+      console.log('Adding sales return to Supabase:', salesReturnData);
+
+      const newSalesReturn = {
+        id: `RET${String(salesReturns.length + 1).padStart(3, '0')}`,
+        original_sale_id: salesReturnData.originalSaleId,
+        product_id: salesReturnData.productId,
+        product_name: salesReturnData.productName,
+        return_quantity: salesReturnData.returnQuantity,
+        original_quantity: salesReturnData.originalQuantity,
+        unit_price: salesReturnData.unitPrice,
+        total_refund: salesReturnData.totalRefund,
+        return_date: salesReturnData.returnDate,
+        reason: salesReturnData.reason,
+        status: salesReturnData.status,
+        customer_name: salesReturnData.customerName || null,
+        notes: salesReturnData.notes || null,
+        processed_by: salesReturnData.processedBy || null,
+        processed_date: salesReturnData.processedDate || null
       };
+
+      console.log('Prepared sales return data for Supabase:', newSalesReturn);
 
       const { data, error } = await supabase
         .from('sales_returns')
-        .insert([newReturn])
+        .insert([newSalesReturn])
         .select()
         .single();
 
       if (error) {
-        console.error('Error adding return:', error);
-        return null;
+        console.error('Supabase error adding sales return:', error);
+        throw error;
       }
 
-      console.log('New return added:', data.id);
-      await fetchReturns(); // Refresh the list
+      console.log('Sales return successfully added to Supabase:', data);
+      await fetchSalesReturns(); // Refresh the list
       return data;
     } catch (error) {
-      console.error('Error in addReturn:', error);
-      return null;
+      console.error('Error in addSalesReturn:', error);
+      throw error;
     }
   };
 
-  const updateReturn = async (id: string, updates: Partial<SalesReturn>) => {
+  const updateSalesReturn = async (id: string, updates: Partial<SalesReturn>) => {
     try {
+      console.log('Updating sales return in Supabase:', id, updates);
+      
       const dbUpdates: any = {};
       
       if (updates.originalSaleId) dbUpdates.original_sale_id = updates.originalSaleId;
@@ -128,74 +138,68 @@ export const useSalesReturns = () => {
         .eq('id', id);
 
       if (error) {
-        console.error('Error updating return:', error);
-        return;
+        console.error('Supabase error updating sales return:', error);
+        throw error;
       }
 
-      console.log('Return updated:', id);
-      await fetchReturns(); // Refresh the list
+      console.log('Sales return updated successfully in Supabase');
+      await fetchSalesReturns(); // Refresh the list
     } catch (error) {
-      console.error('Error in updateReturn:', error);
+      console.error('Error in updateSalesReturn:', error);
+      throw error;
     }
   };
 
-  const deleteReturn = async (id: string) => {
+  const deleteSalesReturn = async (id: string) => {
     try {
+      console.log('Deleting sales return from Supabase:', id);
+      
       const { error } = await supabase
         .from('sales_returns')
         .delete()
         .eq('id', id);
 
       if (error) {
-        console.error('Error deleting return:', error);
-        return;
+        console.error('Supabase error deleting sales return:', error);
+        throw error;
       }
 
-      console.log('Return deleted:', id);
-      await fetchReturns(); // Refresh the list
+      console.log('Sales return deleted successfully from Supabase');
+      await fetchSalesReturns(); // Refresh the list
     } catch (error) {
-      console.error('Error in deleteReturn:', error);
+      console.error('Error in deleteSalesReturn:', error);
+      throw error;
     }
   };
 
-  const processReturn = async (id: string, status: 'Approved' | 'Rejected', processedBy: string) => {
-    const updates: Partial<SalesReturn> = {
-      status,
-      processedBy,
-      processedDate: new Date().toISOString().split('T')[0]
-    };
-    if (status === 'Approved') {
-      updates.status = 'Processed';
-    }
-    await updateReturn(id, updates);
-  };
-
-  const clearAllReturns = async () => {
+  const clearAllSalesReturns = async () => {
     try {
+      console.log('Clearing all sales returns from Supabase...');
+      
       const { error } = await supabase
         .from('sales_returns')
         .delete()
         .neq('id', ''); // Delete all records
 
       if (error) {
-        console.error('Error clearing returns:', error);
-        return;
+        console.error('Supabase error clearing sales returns:', error);
+        throw error;
       }
 
-      console.log('All sales returns cleared');
-      setReturns([]);
+      console.log('All sales returns cleared from Supabase');
+      setSalesReturns([]);
     } catch (error) {
-      console.error('Error in clearAllReturns:', error);
+      console.error('Error in clearAllSalesReturns:', error);
+      throw error;
     }
   };
 
   return {
-    returns,
-    addReturn,
-    updateReturn,
-    deleteReturn,
-    processReturn,
-    clearAllReturns,
-    fetchReturns
+    salesReturns,
+    addSalesReturn,
+    updateSalesReturn,
+    deleteSalesReturn,
+    clearAllSalesReturns,
+    fetchSalesReturns
   };
 };

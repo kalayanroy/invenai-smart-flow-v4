@@ -11,7 +11,7 @@ export interface Purchase {
   unitPrice: string;
   totalAmount: string;
   date: string;
-  status: 'Received' | 'Pending' | 'Ordered' | 'Cancelled';
+  status: 'Received' | 'Pending' | 'Cancelled';
   notes?: string;
 }
 
@@ -24,6 +24,7 @@ export const usePurchases = () => {
 
   const fetchPurchases = async () => {
     try {
+      console.log('Fetching purchases from Supabase...');
       const { data, error } = await supabase
         .from('purchases')
         .select('*')
@@ -34,6 +35,8 @@ export const usePurchases = () => {
         return;
       }
 
+      console.log('Raw purchases data from Supabase:', data);
+
       const mappedPurchases = data.map(purchase => ({
         id: purchase.id,
         productId: purchase.product_id,
@@ -43,10 +46,11 @@ export const usePurchases = () => {
         unitPrice: purchase.unit_price,
         totalAmount: purchase.total_amount,
         date: purchase.date,
-        status: purchase.status as 'Received' | 'Pending' | 'Ordered' | 'Cancelled',
+        status: purchase.status as 'Received' | 'Pending' | 'Cancelled',
         notes: purchase.notes
       }));
 
+      console.log('Mapped purchases:', mappedPurchases);
       setPurchases(mappedPurchases);
     } catch (error) {
       console.error('Error in fetchPurchases:', error);
@@ -55,6 +59,8 @@ export const usePurchases = () => {
 
   const addPurchase = async (purchaseData: Omit<Purchase, 'id'>) => {
     try {
+      console.log('Adding purchase to Supabase:', purchaseData);
+
       const newPurchase = {
         id: `PUR${String(purchases.length + 1).padStart(3, '0')}`,
         product_id: purchaseData.productId,
@@ -65,8 +71,10 @@ export const usePurchases = () => {
         total_amount: purchaseData.totalAmount,
         date: purchaseData.date,
         status: purchaseData.status,
-        notes: purchaseData.notes
+        notes: purchaseData.notes || null
       };
+
+      console.log('Prepared purchase data for Supabase:', newPurchase);
 
       const { data, error } = await supabase
         .from('purchases')
@@ -75,21 +83,23 @@ export const usePurchases = () => {
         .single();
 
       if (error) {
-        console.error('Error adding purchase:', error);
-        return null;
+        console.error('Supabase error adding purchase:', error);
+        throw error;
       }
 
-      console.log('New purchase added:', data.id);
+      console.log('Purchase successfully added to Supabase:', data);
       await fetchPurchases(); // Refresh the list
       return data;
     } catch (error) {
       console.error('Error in addPurchase:', error);
-      return null;
+      throw error;
     }
   };
 
   const updatePurchase = async (id: string, updates: Partial<Purchase>) => {
     try {
+      console.log('Updating purchase in Supabase:', id, updates);
+      
       const dbUpdates: any = {};
       
       if (updates.productId) dbUpdates.product_id = updates.productId;
@@ -108,52 +118,59 @@ export const usePurchases = () => {
         .eq('id', id);
 
       if (error) {
-        console.error('Error updating purchase:', error);
-        return;
+        console.error('Supabase error updating purchase:', error);
+        throw error;
       }
 
-      console.log('Purchase updated:', id);
+      console.log('Purchase updated successfully in Supabase');
       await fetchPurchases(); // Refresh the list
     } catch (error) {
       console.error('Error in updatePurchase:', error);
+      throw error;
     }
   };
 
   const deletePurchase = async (id: string) => {
     try {
+      console.log('Deleting purchase from Supabase:', id);
+      
       const { error } = await supabase
         .from('purchases')
         .delete()
         .eq('id', id);
 
       if (error) {
-        console.error('Error deleting purchase:', error);
-        return;
+        console.error('Supabase error deleting purchase:', error);
+        throw error;
       }
 
-      console.log('Purchase deleted:', id);
+      console.log('Purchase deleted successfully from Supabase');
       await fetchPurchases(); // Refresh the list
     } catch (error) {
       console.error('Error in deletePurchase:', error);
+      throw error;
     }
   };
 
   const clearAllPurchases = async () => {
     try {
+      console.log('Clearing all purchases from Supabase...');
+      
       const { error } = await supabase
         .from('purchases')
         .delete()
         .neq('id', ''); // Delete all records
 
       if (error) {
-        console.error('Error clearing purchases:', error);
-        return;
+        console.error('Supabase error clearing purchases:', error);
+        throw error;
       }
 
-      console.log('All purchases cleared');
+      console.log('All purchases cleared from Supabase');
       setPurchases([]);
     } catch (error) {
       console.error('Error in clearAllPurchases:', error);
+      throw error;
     }
   };
 
