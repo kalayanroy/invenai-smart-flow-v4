@@ -27,9 +27,12 @@ export const SalesSection = () => {
     }
   };
 
-  const totalSales = sales.reduce((sum, sale) => 
-    sum + parseFloat(sale.totalAmount.replace('৳', '').replace(',', '')), 0
-  );
+  const totalSales = sales.reduce((sum, sale) => {
+    // Handle both $ and ৳ currency symbols
+    const cleanAmount = sale.totalAmount.replace(/[$৳,]/g, '');
+    const amount = parseFloat(cleanAmount) || 0;
+    return sum + amount;
+  }, 0);
 
   const handleSaleCreated = (saleData: any) => {
     addSale(saleData);
@@ -89,7 +92,7 @@ export const SalesSection = () => {
               <DollarSign className="h-5 w-5 text-green-600" />
               <div>
                 <p className="text-sm text-gray-600">Sales Revenue</p>
-                <p className="text-2xl font-bold">৳{totalSales.toFixed(2)}</p>
+                <p className="text-2xl font-bold">৳{totalSales.toLocaleString()}</p>
               </div>
             </div>
           </CardContent>
@@ -101,7 +104,7 @@ export const SalesSection = () => {
               <TrendingUp className="h-5 w-5 text-purple-600" />
               <div>
                 <p className="text-sm text-gray-600">Avg. Sale Value</p>
-                <p className="text-2xl font-bold">৳{sales.length > 0 ? (totalSales / sales.length).toFixed(2) : '0.00'}</p>
+                <p className="text-2xl font-bold">৳{sales.length > 0 ? (totalSales / sales.length).toLocaleString() : '0'}</p>
               </div>
             </div>
           </CardContent>

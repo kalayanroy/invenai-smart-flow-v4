@@ -35,7 +35,7 @@ export const CreateSaleDialog = ({ open, onOpenChange, onSaleCreated }: CreateSa
     setFormData({
       ...formData,
       productId,
-      unitPrice: product ? product.sellPrice.replace('$', '') : ''
+      unitPrice: product ? product.sellPrice.replace(/[$৳]/g, '') : ''
     });
   };
 
@@ -47,8 +47,8 @@ export const CreateSaleDialog = ({ open, onOpenChange, onSaleCreated }: CreateSa
       productId: formData.productId,
       productName: selectedProduct.name,
       quantity: formData.quantity,
-      unitPrice: `$${parseFloat(formData.unitPrice).toFixed(2)}`,
-      totalAmount: `$${totalAmount.toFixed(2)}`,
+      unitPrice: `৳${parseFloat(formData.unitPrice).toFixed(2)}`,
+      totalAmount: `৳${totalAmount.toFixed(2)}`,
       date: new Date().toISOString().split('T')[0],
       status: formData.status,
       customerName: formData.customerName,
@@ -105,7 +105,7 @@ export const CreateSaleDialog = ({ open, onOpenChange, onSaleCreated }: CreateSa
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="unitPrice">Unit Price *</Label>
+              <Label htmlFor="unitPrice">Unit Price (৳) *</Label>
               <Input
                 id="unitPrice"
                 type="number"
@@ -148,13 +148,13 @@ export const CreateSaleDialog = ({ open, onOpenChange, onSaleCreated }: CreateSa
               <h4 className="font-medium mb-2">Sale Summary</h4>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="text-gray-600">Unit Price:</span> ${parseFloat(formData.unitPrice).toFixed(2)}
+                  <span className="text-gray-600">Unit Price:</span> ৳{parseFloat(formData.unitPrice).toFixed(2)}
                 </div>
                 <div>
                   <span className="text-gray-600">Quantity:</span> {formData.quantity}
                 </div>
                 <div className="col-span-2 text-lg font-semibold">
-                  <span className="text-gray-600">Total Amount:</span> ${totalAmount.toFixed(2)}
+                  <span className="text-gray-600">Total Amount:</span> ৳{totalAmount.toFixed(2)}
                 </div>
               </div>
             </div>

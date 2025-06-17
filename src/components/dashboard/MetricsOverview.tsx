@@ -2,43 +2,71 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp, TrendingDown, Package, AlertTriangle, DollarSign, ShoppingCart } from 'lucide-react';
-
-const metrics = [
-  {
-    title: 'Total Products',
-    value: '12,847',
-    change: '+5.2%',
-    trend: 'up',
-    icon: Package,
-    color: 'blue'
-  },
-  {
-    title: 'Low Stock Items',
-    value: '23',
-    change: '-12%',
-    trend: 'down',
-    icon: AlertTriangle,
-    color: 'orange'
-  },
-  {
-    title: 'Inventory Value',
-    value: '$2.4M',
-    change: '+8.1%',
-    trend: 'up',
-    icon: DollarSign,
-    color: 'green'
-  },
-  {
-    title: 'Monthly Orders',
-    value: '1,456',
-    change: '+15.3%',
-    trend: 'up',
-    icon: ShoppingCart,
-    color: 'purple'
-  },
-];
+import { useProducts } from '@/hooks/useProducts';
+import { useSales } from '@/hooks/useSales';
+import { usePurchases } from '@/hooks/usePurchases';
 
 export const MetricsOverview = () => {
+  const { products } = useProducts();
+  const { sales } = useSales();
+  const { purchases } = usePurchases();
+
+  // Calculate total inventory value
+  const inventoryValue = products.reduce((sum, product) => {
+    const price = parseFloat(product.sellPrice.replace(/[$৳,]/g, '')) || 0;
+    return sum + (price * product.stock);
+  }, 0);
+
+  // Calculate low stock items (where stock is at or below reorder point)
+  const lowStockItems = products.filter(product => product.stock <= product.reorderPoint).length;
+
+  // Calculate total sales revenue
+  const salesRevenue = sales.reduce((sum, sale) => {
+    const amount = parseFloat(sale.totalAmount.replace(/[$৳,]/g, '')) || 0;
+    return sum + amount;
+  }, 0);
+
+  // Calculate stock movement (current stock + purchases - sales)
+  const totalPurchaseQuantity = purchases.reduce((sum, purchase) => sum + purchase.quantity, 0);
+  const totalSalesQuantity = sales.reduce((sum, sale) => sum + sale.quantity, 0);
+  const currentStock = products.reduce((sum, product) => sum + product.stock, 0);
+  const stockMovement = currentStock + totalPurchaseQuantity - totalSalesQuantity;
+
+  const metrics = [
+    {
+      title: 'Total Products',
+      value: products.length.toLocaleString(),
+      change: '+5.2%',
+      trend: 'up',
+      icon: Package,
+      color: 'blue'
+    },
+    {
+      title: 'Low Stock Items',
+      value: lowStockItems.toString(),
+      change: lowStockItems > 0 ? '+12%' : '-12%',
+      trend: lowStockItems > 0 ? 'up' : 'down',
+      icon: AlertTriangle,
+      color: 'orange'
+    },
+    {
+      title: 'Inventory Value',
+      value: `৳${inventoryValue.toLocaleString()}`,
+      change: '+8.1%',
+      trend: 'up',
+      icon: DollarSign,
+      color: 'green'
+    },
+    {
+      title: 'Stock Movement',
+      value: stockMovement.toLocaleString(),
+      change: stockMovement > 0 ? '+15.3%' : '-15.3%',
+      trend: stockMovement > 0 ? 'up' : 'down',
+      icon: ShoppingCart,
+      color: 'purple'
+    },
+  ];
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {metrics.map((metric) => {
