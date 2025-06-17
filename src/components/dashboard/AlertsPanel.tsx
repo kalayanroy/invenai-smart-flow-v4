@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,11 +10,11 @@ export const AlertsPanel = () => {
   const isMobile = useIsMobile();
 
   const lowStockProducts = products.filter(product => 
-    product.current_stock <= product.reorder_level
+    product.stock <= product.reorderPoint
   );
 
   const outOfStockProducts = products.filter(product => 
-    product.current_stock === 0
+    product.stock === 0
   );
 
   const alerts = [
@@ -24,7 +23,7 @@ export const AlertsPanel = () => {
       type: 'warning',
       icon: AlertTriangle,
       title: 'Low Stock Alert',
-      message: `${product.name} has only ${product.current_stock} units left`,
+      message: `${product.name} has only ${product.stock} units left`,
       time: '2 hours ago',
       priority: 'medium'
     })),

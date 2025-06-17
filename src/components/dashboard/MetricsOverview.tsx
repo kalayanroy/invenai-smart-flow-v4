@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp, TrendingDown, Package, ShoppingCart, DollarSign, AlertTriangle } from 'lucide-react';
@@ -15,24 +14,24 @@ export const MetricsOverview = () => {
 
   // Calculate metrics
   const totalProducts = products.length;
-  const lowStockProducts = products.filter(p => p.current_stock <= p.reorder_level).length;
+  const lowStockProducts = products.filter(p => p.stock <= p.reorderPoint).length;
   
   const totalSalesValue = sales.reduce((sum, sale) => {
-    const price = typeof sale.unit_price === 'string' 
-      ? parseFloat(sale.unit_price.replace(/[৳$,]/g, '')) || 0
-      : sale.unit_price || 0;
+    const price = typeof sale.unitPrice === 'string' 
+      ? parseFloat(sale.unitPrice.replace(/[৳$,]/g, '')) || 0
+      : sale.unitPrice || 0;
     return sum + (price * sale.quantity);
   }, 0);
 
   const totalPurchaseValue = purchases.reduce((sum, purchase) => {
-    const price = typeof purchase.unit_cost === 'string' 
-      ? parseFloat(purchase.unit_cost.replace(/[৳$,]/g, '')) || 0
-      : purchase.unit_cost || 0;
+    const price = typeof purchase.unitPrice === 'string' 
+      ? parseFloat(purchase.unitPrice.replace(/[৳$,]/g, '')) || 0
+      : purchase.unitPrice || 0;
     return sum + (price * purchase.quantity);
   }, 0);
 
   // Calculate stock movement (current stock + purchases - sales)
-  const totalCurrentStock = products.reduce((sum, product) => sum + product.current_stock, 0);
+  const totalCurrentStock = products.reduce((sum, product) => sum + product.stock, 0);
   const totalPurchaseQuantity = purchases.reduce((sum, purchase) => sum + purchase.quantity, 0);
   const totalSalesQuantity = sales.reduce((sum, sale) => sum + sale.quantity, 0);
   const stockMovement = totalCurrentStock + totalPurchaseQuantity - totalSalesQuantity;

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
@@ -13,13 +12,13 @@ export const InventoryChart = () => {
   const stockData = products.slice(0, isMobile ? 6 : 10).map(product => ({
     name: isMobile ? product.name.substring(0, 8) + '...' : product.name,
     fullName: product.name,
-    stock: product.current_stock,
-    reorderLevel: product.reorder_level
+    stock: product.stock,
+    reorderLevel: product.reorderPoint
   }));
 
   const categoryData = products.reduce((acc, product) => {
     const category = product.category || 'Uncategorized';
-    acc[category] = (acc[category] || 0) + product.current_stock;
+    acc[category] = (acc[category] || 0) + product.stock;
     return acc;
   }, {} as Record<string, number>);
 
