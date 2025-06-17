@@ -1,105 +1,117 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingUp, TrendingDown, Package, AlertTriangle, DollarSign, ShoppingCart } from 'lucide-react';
+import { TrendingUp, TrendingDown, Package, ShoppingCart, DollarSign, AlertTriangle } from 'lucide-react';
 import { useProducts } from '@/hooks/useProducts';
 import { useSales } from '@/hooks/useSales';
 import { usePurchases } from '@/hooks/usePurchases';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export const MetricsOverview = () => {
   const { products } = useProducts();
   const { sales } = useSales();
   const { purchases } = usePurchases();
+  const isMobile = useIsMobile();
 
-  // Calculate total inventory value
-  const inventoryValue = products.reduce((sum, product) => {
-    const price = parseFloat(product.sellPrice.replace(/[$৳,]/g, '')) || 0;
-    return sum + (price * product.stock);
+  // Calculate metrics
+  const totalProducts = products.length;
+  const lowStockProducts = products.filter(p => p.current_stock <= p.reorder_level).length;
+  
+  const totalSalesValue = sales.reduce((sum, sale) => {
+    const price = typeof sale.unit_price === 'string' 
+      ? parseFloat(sale.unit_price.replace(/[৳$,]/g, '')) || 0
+      : sale.unit_price || 0;
+    return sum + (price * sale.quantity);
   }, 0);
 
-  // Calculate low stock items (where stock is at or below reorder point)
-  const lowStockItems = products.filter(product => product.stock <= product.reorderPoint).length;
-
-  // Calculate total sales revenue
-  const salesRevenue = sales.reduce((sum, sale) => {
-    const amount = parseFloat(sale.totalAmount.replace(/[$৳,]/g, '')) || 0;
-    return sum + amount;
+  const totalPurchaseValue = purchases.reduce((sum, purchase) => {
+    const price = typeof purchase.unit_cost === 'string' 
+      ? parseFloat(purchase.unit_cost.replace(/[৳$,]/g, '')) || 0
+      : purchase.unit_cost || 0;
+    return sum + (price * purchase.quantity);
   }, 0);
 
   // Calculate stock movement (current stock + purchases - sales)
+  const totalCurrentStock = products.reduce((sum, product) => sum + product.current_stock, 0);
   const totalPurchaseQuantity = purchases.reduce((sum, purchase) => sum + purchase.quantity, 0);
   const totalSalesQuantity = sales.reduce((sum, sale) => sum + sale.quantity, 0);
-  const currentStock = products.reduce((sum, product) => sum + product.stock, 0);
-  const stockMovement = currentStock + totalPurchaseQuantity - totalSalesQuantity;
+  const stockMovement = totalCurrentStock + totalPurchaseQuantity - totalSalesQuantity;
 
   const metrics = [
     {
       title: 'Total Products',
-      value: products.length.toLocaleString(),
-      change: '+5.2%',
-      trend: 'up',
+      value: totalProducts.toString(),
+      change: '+12%',
+      changeType: 'positive' as const,
       icon: Package,
-      color: 'blue'
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-50',
     },
     {
-      title: 'Low Stock Items',
-      value: lowStockItems.toString(),
-      change: lowStockItems > 0 ? '+12%' : '-12%',
-      trend: lowStockItems > 0 ? 'up' : 'down',
-      icon: AlertTriangle,
-      color: 'orange'
-    },
-    {
-      title: 'Inventory Value',
-      value: `৳${inventoryValue.toLocaleString()}`,
-      change: '+8.1%',
-      trend: 'up',
+      title: 'Sales Revenue',
+      value: `৳${totalSalesValue.toLocaleString()}`,
+      change: '+8.2%',
+      changeType: 'positive' as const,
       icon: DollarSign,
-      color: 'green'
+      color: 'text-green-600',
+      bgColor: 'bg-green-50',
     },
     {
       title: 'Stock Movement',
-      value: stockMovement.toLocaleString(),
-      change: stockMovement > 0 ? '+15.3%' : '-15.3%',
-      trend: stockMovement > 0 ? 'up' : 'down',
-      icon: ShoppingCart,
-      color: 'purple'
+      value: stockMovement.toString(),
+      change: stockMovement >= 0 ? '+5.1%' : '-2.3%',
+      changeType: stockMovement >= 0 ? 'positive' as const : 'negative' as const,
+      icon: TrendingUp,
+      color: stockMovement >= 0 ? 'text-green-600' : 'text-red-600',
+      bgColor: stockMovement >= 0 ? 'bg-green-50' : 'bg-red-50',
+    },
+    {
+      title: 'Low Stock Items',
+      value: lowStockProducts.toString(),
+      change: '-15%',
+      changeType: 'negative' as const,
+      icon: AlertTriangle,
+      color: 'text-orange-600',
+      bgColor: 'bg-orange-50',
     },
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      {metrics.map((metric) => {
-        const Icon = metric.icon;
-        const isPositive = metric.trend === 'up';
-        
-        return (
-          <Card key={metric.title} className="hover:shadow-lg transition-shadow duration-200">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">
-                {metric.title}
-              </CardTitle>
-              <div className={`p-2 rounded-lg bg-${metric.color}-100`}>
-                <Icon className={`h-4 w-4 text-${metric.color}-600`} />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-gray-900">{metric.value}</div>
-              <div className="flex items-center space-x-1 mt-1">
-                {isPositive ? (
-                  <TrendingUp className="h-4 w-4 text-green-500" />
-                ) : (
-                  <TrendingDown className="h-4 w-4 text-red-500" />
-                )}
-                <span className={`text-sm ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-                  {metric.change}
-                </span>
-                <span className="text-sm text-gray-500">vs last month</span>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })}
+    <div className={`grid ${isMobile ? 'grid-cols-2 gap-3' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6'}`}>
+      {metrics.map((metric, index) => (
+        <Card key={index} className="hover:shadow-lg transition-shadow duration-200">
+          <CardHeader className={`flex flex-row items-center justify-between space-y-0 ${isMobile ? 'pb-2' : 'pb-2'}`}>
+            <CardTitle className={`${isMobile ? 'text-xs' : 'text-sm'} font-medium text-gray-600`}>
+              {metric.title}
+            </CardTitle>
+            <div className={`${metric.bgColor} p-2 rounded-full`}>
+              <metric.icon className={`h-4 w-4 ${metric.color}`} />
+            </div>
+          </CardHeader>
+          <CardContent className={isMobile ? 'pt-0' : ''}>
+            <div className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold text-gray-900`}>
+              {metric.value}
+            </div>
+            <div className="flex items-center space-x-2 mt-1">
+              {metric.changeType === 'positive' ? (
+                <TrendingUp className="h-3 w-3 text-green-500" />
+              ) : (
+                <TrendingDown className="h-3 w-3 text-red-500" />
+              )}
+              <span
+                className={`${isMobile ? 'text-xs' : 'text-sm'} font-medium ${
+                  metric.changeType === 'positive' ? 'text-green-600' : 'text-red-600'
+                }`}
+              >
+                {metric.change}
+              </span>
+              <span className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-500`}>
+                {isMobile ? 'vs last' : 'vs last month'}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 };

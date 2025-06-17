@@ -2,142 +2,102 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { AlertTriangle, Clock, CheckCircle, X } from 'lucide-react';
-
-const alerts = [
-  {
-    id: 1,
-    type: 'critical',
-    title: 'Stock Out Alert',
-    message: 'Garden Watering Can (SKU003) is out of stock',
-    time: '5 min ago',
-    action: 'Reorder Now'
-  },
-  {
-    id: 2,
-    type: 'warning',
-    title: 'Low Stock Warning',
-    message: 'Cotton T-Shirt Blue has 12 units left',
-    time: '15 min ago',
-    action: 'Review Stock'
-  },
-  {
-    id: 3,
-    type: 'info',
-    title: 'AI Prediction',
-    message: 'Electronics demand will increase 35% next month',
-    time: '1 hour ago',
-    action: 'View Details'
-  },
-  {
-    id: 4,
-    type: 'success',
-    title: 'Order Completed',
-    message: 'Purchase order PO-2024-001 delivered successfully',
-    time: '2 hours ago',
-    action: 'Mark Complete'
-  },
-];
-
-const upcomingTasks = [
-  {
-    task: 'Cycle count - Electronics section',
-    due: 'Today, 3:00 PM',
-    priority: 'High'
-  },
-  {
-    task: 'Supplier review meeting',
-    due: 'Tomorrow, 10:00 AM',
-    priority: 'Medium'
-  },
-  {
-    task: 'Monthly inventory report',
-    due: 'Dec 30, 2024',
-    priority: 'Low'
-  },
-];
+import { AlertTriangle, Package, TrendingDown, Clock } from 'lucide-react';
+import { useProducts } from '@/hooks/useProducts';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export const AlertsPanel = () => {
-  const getAlertIcon = (type: string) => {
-    switch (type) {
-      case 'critical': return <AlertTriangle className="h-4 w-4 text-red-500" />;
-      case 'warning': return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
-      case 'success': return <CheckCircle className="h-4 w-4 text-green-500" />;
-      default: return <Clock className="h-4 w-4 text-blue-500" />;
-    }
-  };
+  const { products } = useProducts();
+  const isMobile = useIsMobile();
 
-  const getAlertColor = (type: string) => {
-    switch (type) {
-      case 'critical': return 'border-l-red-500 bg-red-50';
-      case 'warning': return 'border-l-yellow-500 bg-yellow-50';
-      case 'success': return 'border-l-green-500 bg-green-50';
-      default: return 'border-l-blue-500 bg-blue-50';
-    }
-  };
+  const lowStockProducts = products.filter(product => 
+    product.current_stock <= product.reorder_level
+  );
+
+  const outOfStockProducts = products.filter(product => 
+    product.current_stock === 0
+  );
+
+  const alerts = [
+    ...lowStockProducts.map(product => ({
+      id: `low-${product.id}`,
+      type: 'warning',
+      icon: AlertTriangle,
+      title: 'Low Stock Alert',
+      message: `${product.name} has only ${product.current_stock} units left`,
+      time: '2 hours ago',
+      priority: 'medium'
+    })),
+    ...outOfStockProducts.map(product => ({
+      id: `out-${product.id}`,
+      type: 'danger',
+      icon: Package,
+      title: 'Out of Stock',
+      message: `${product.name} is completely out of stock`,
+      time: '1 hour ago',
+      priority: 'high'
+    }))
+  ].slice(0, isMobile ? 3 : 5);
 
   return (
-    <div className="space-y-6">
-      {/* Alerts */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>Smart Alerts</span>
-            <Badge variant="secondary">{alerts.length}</Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {alerts.map((alert) => (
-              <div key={alert.id} className={`border-l-4 p-3 rounded-r-lg ${getAlertColor(alert.type)}`}>
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start space-x-2">
-                    {getAlertIcon(alert.type)}
-                    <div className="flex-1">
-                      <h4 className="text-sm font-medium text-gray-900">{alert.title}</h4>
-                      <p className="text-xs text-gray-600 mt-1">{alert.message}</p>
-                      <p className="text-xs text-gray-400 mt-1">{alert.time}</p>
-                    </div>
-                  </div>
-                  <Button variant="ghost" size="sm">
-                    <X className="h-3 w-3" />
-                  </Button>
-                </div>
-                <Button variant="outline" size="sm" className="mt-2 w-full">
-                  {alert.action}
-                </Button>
-              </div>
-            ))}
+    <Card className={`${isMobile ? 'mt-4' : ''}`}>
+      <CardHeader>
+        <CardTitle className={`${isMobile ? 'text-lg' : 'text-xl'} font-bold text-gray-900 flex items-center gap-2`}>
+          <AlertTriangle className="h-5 w-5 text-orange-500" />
+          {isMobile ? 'Alerts' : 'Recent Alerts'}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {alerts.length === 0 ? (
+          <div className="text-center py-8">
+            <Package className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-500">No alerts at the moment</p>
+            <p className="text-sm text-gray-400">All inventory levels are normal</p>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Upcoming Tasks */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Upcoming Tasks</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {upcomingTasks.map((task, index) => (
-              <div key={index} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
-                <Clock className="h-4 w-4 text-gray-400 mt-0.5" />
-                <div className="flex-1">
-                  <h4 className="text-sm font-medium text-gray-900">{task.task}</h4>
-                  <p className="text-xs text-gray-500">{task.due}</p>
-                </div>
-                <Badge 
-                  variant={task.priority === 'High' ? 'destructive' : task.priority === 'Medium' ? 'secondary' : 'outline'}
-                  className="text-xs"
-                >
-                  {task.priority}
-                </Badge>
+        ) : (
+          alerts.map((alert) => (
+            <div key={alert.id} className="flex items-start space-x-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+              <div className={`p-2 rounded-full ${
+                alert.type === 'danger' ? 'bg-red-100' : 'bg-orange-100'
+              }`}>
+                <alert.icon className={`h-4 w-4 ${
+                  alert.type === 'danger' ? 'text-red-600' : 'text-orange-600'
+                }`} />
               </div>
-            ))}
+              
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-1">
+                  <h4 className={`${isMobile ? 'text-sm' : 'text-sm'} font-medium text-gray-900`}>
+                    {alert.title}
+                  </h4>
+                  <Badge variant={alert.type === 'danger' ? 'destructive' : 'secondary'} className="text-xs">
+                    {alert.priority}
+                  </Badge>
+                </div>
+                
+                <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-600 mb-2`}>
+                  {isMobile && alert.message.length > 40 
+                    ? `${alert.message.substring(0, 40)}...`
+                    : alert.message}
+                </p>
+                
+                <div className="flex items-center text-xs text-gray-400">
+                  <Clock className="h-3 w-3 mr-1" />
+                  {alert.time}
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+        
+        {alerts.length > 0 && (
+          <div className="pt-4 border-t">
+            <button className={`w-full ${isMobile ? 'text-sm' : 'text-sm'} text-blue-600 hover:text-blue-800 font-medium`}>
+              View All Alerts ({lowStockProducts.length + outOfStockProducts.length})
+            </button>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };

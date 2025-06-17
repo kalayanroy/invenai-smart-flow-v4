@@ -13,74 +13,152 @@ import { SalesReturnSection } from './inventory/SalesReturnSection';
 import { Reports } from '../pages/Reports';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { User, LogOut } from 'lucide-react';
+import { User, LogOut, Menu, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export const StockDashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState('overview');
+  const [showSidebar, setShowSidebar] = useState(false);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
+  const tabs = [
+    { id: 'overview', label: 'Overview' },
+    { id: 'inventory', label: 'Inventory' },
+    { id: 'stock-management', label: 'Stock Mgmt' },
+    { id: 'sales', label: 'Sales' },
+    { id: 'sales-returns', label: 'Returns' },
+    { id: 'purchases', label: 'Purchases' },
+    { id: 'reports', label: 'Reports' },
+  ];
+
+  const handleTabChange = (tabId: string) => {
+    setActiveTab(tabId);
+    if (isMobile) {
+      setShowSidebar(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      {/* Header with User Info */}
+      {/* Mobile Header */}
       <div className="bg-white shadow-sm border-b">
-        <div className="container mx-auto px-6 py-4">
+        <div className={`${isMobile ? 'px-4 py-3' : 'container mx-auto px-6 py-4'}`}>
           <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Inventory Management System</h1>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 text-sm">
-                <User className="h-4 w-4" />
-                <span className="font-medium">{user?.username}</span>
-                <span className="text-gray-500">({user?.role})</span>
+            <div className="flex items-center gap-3">
+              {isMobile && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowSidebar(!showSidebar)}
+                  className="p-2"
+                >
+                  {showSidebar ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                </Button>
+              )}
+              <div>
+                <h1 className={`font-bold text-gray-900 ${isMobile ? 'text-lg' : 'text-2xl'}`}>
+                  {isMobile ? 'InvenAI' : 'Inventory Management System'}
+                </h1>
+                {!isMobile && <p className="text-sm text-gray-500">Smart Inventory Control</p>}
               </div>
-              <Button variant="outline" size="sm" onClick={handleLogout} className="flex items-center gap-2">
-                <LogOut className="h-4 w-4" />
-                Logout
+            </div>
+            <div className="flex items-center gap-2">
+              <div className={`flex items-center gap-2 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                <User className="h-4 w-4" />
+                <span className="font-medium">{isMobile ? user?.username : user?.username}</span>
+                {!isMobile && <span className="text-gray-500">({user?.role})</span>}
+              </div>
+              <Button 
+                variant="outline" 
+                size={isMobile ? "sm" : "sm"} 
+                onClick={handleLogout} 
+                className="flex items-center gap-1"
+              >
+                <LogOut className="h-3 w-3" />
+                {!isMobile && 'Logout'}
               </Button>
             </div>
           </div>
         </div>
       </div>
       
-      <div className="container mx-auto px-6 py-8">
-        {/* Navigation Tabs */}
-        <div className="flex space-x-1 bg-white p-1 rounded-xl shadow-sm mb-8 w-fit">
-          {[
-            { id: 'overview', label: 'Overview' },
-            { id: 'inventory', label: 'Inventory' },
-            { id: 'stock-management', label: 'Stock Management' },
-            { id: 'sales', label: 'Sales' },
-            { id: 'sales-returns', label: 'Sales Returns' },
-            { id: 'purchases', label: 'Purchases' },
-            { id: 'reports', label: 'Reports' },
+      <div className={`${isMobile ? 'px-2 py-4' : 'container mx-auto px-6 py-8'}`}>
+        {/* Navigation - Mobile Sidebar / Desktop Tabs */}
+        {isMobile ? (
+          <>
+            {/* Mobile Sidebar Overlay */}
+            {showSidebar && (
+              <div 
+                className="fixed inset-0 bg-black bg-opacity-50 z-40"
+                onClick={() => setShowSidebar(false)}
+              />
+            )}
             
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
-                activeTab === tab.id
-                  ? 'bg-blue-600 text-white shadow-lg'
-                  : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+            {/* Mobile Sidebar */}
+            <div className={`fixed left-0 top-0 h-full w-64 bg-white shadow-lg z-50 transform transition-transform duration-300 ${
+              showSidebar ? 'translate-x-0' : '-translate-x-full'
+            }`}>
+              <div className="p-4 border-b">
+                <div className="flex items-center justify-between">
+                  <h2 className="font-semibold text-gray-900">Menu</h2>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowSidebar(false)}
+                    className="p-1"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              <div className="py-2">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => handleTabChange(tab.id)}
+                    className={`w-full text-left px-4 py-3 text-sm font-medium transition-colors ${
+                      activeTab === tab.id
+                        ? 'bg-blue-50 text-blue-600 border-r-2 border-blue-600'
+                        : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>
+        ) : (
+          /* Desktop Navigation Tabs */
+          <div className="flex space-x-1 bg-white p-1 rounded-xl shadow-sm mb-8 w-fit overflow-x-auto">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 whitespace-nowrap ${
+                  activeTab === tab.id
+                    ? 'bg-blue-600 text-white shadow-lg'
+                    : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <div className={`${isMobile ? 'space-y-4' : 'grid grid-cols-1 lg:grid-cols-4 gap-8'}`}>
           {/* Main Panel */}
-          <div className="lg:col-span-3 space-y-8">
+          <div className={`${isMobile ? '' : 'lg:col-span-3'} space-y-6`}>
             {activeTab === 'overview' && (
               <>
                 <MetricsOverview />
@@ -99,13 +177,14 @@ export const StockDashboard = () => {
             {activeTab === 'purchases' && <PurchaseSection />}
             
             {activeTab === 'reports' && <Reports />}
-            
           </div>
 
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
-            <AlertsPanel />
-          </div>
+          {/* Sidebar - Hidden on mobile unless overview tab */}
+          {(!isMobile || activeTab === 'overview') && (
+            <div className={`${isMobile ? '' : 'lg:col-span-1'}`}>
+              <AlertsPanel />
+            </div>
+          )}
         </div>
       </div>
     </div>
