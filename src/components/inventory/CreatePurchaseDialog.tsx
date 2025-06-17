@@ -39,8 +39,8 @@ export const CreatePurchaseDialog = ({ open, onOpenChange, onPurchaseCreated }: 
       productName: selectedProduct.name,
       supplier: formData.supplier,
       quantity: formData.quantity,
-      unitPrice: formData.unitPrice.startsWith('৳') ? formData.unitPrice : `৳${formData.unitPrice}`,
-      totalAmount: `৳${totalAmount.toFixed(2)}`,
+      unitPrice: `${formData.unitPrice}`,
+      totalAmount: `${totalAmount.toFixed(2)}`,
       date: new Date().toISOString().split('T')[0],
       status: formData.status,
       notes: formData.notes
@@ -126,7 +126,7 @@ export const CreatePurchaseDialog = ({ open, onOpenChange, onPurchaseCreated }: 
                 <SelectContent>
                   <SelectItem value="Ordered">Ordered</SelectItem>
                   <SelectItem value="Pending">Pending</SelectItem>
-                  <SelectItem value="Received">Received</SelectItem>
+                  <SelectItem value="Received" selected>Received</SelectItem>
                   <SelectItem value="Cancelled">Cancelled</SelectItem>
                 </SelectContent>
               </Select>
