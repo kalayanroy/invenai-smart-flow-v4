@@ -35,6 +35,15 @@ const users: { [key: string]: { password: string; user: User } } = {
       role: 'admin',
       permissions: ['create', 'read', 'update', 'delete', 'manage_users']
     }
+  },
+  mahsohel24: {
+    password: '445566',
+    user: {
+      id: '3',
+      username: 'mahsohel24',
+      role: 'admin',
+      permissions: ['create', 'read', 'update', 'delete', 'manage_users']
+    }
   }
 };
 
