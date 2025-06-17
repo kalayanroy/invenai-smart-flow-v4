@@ -39,12 +39,12 @@ export const EditReturnDialog = ({ open, onOpenChange, returnItem, onReturnUpdat
     if (!returnItem) return;
 
     // Fix the unit price parsing to handle both ৳ and $ currencies
-    const cleanUnitPrice = returnItem.unitPrice.replace(/[৳$,]/g, '');
+    const cleanUnitPrice = returnItem.unitPrice.replace(/[$,]/g, '');
     const unitPriceNum = parseFloat(cleanUnitPrice) || 0;
     
     const updates = {
       ...formData,
-      totalRefund: `৳${(unitPriceNum * formData.returnQuantity).toFixed(2)}`
+      totalRefund: `${(unitPriceNum * formData.returnQuantity).toFixed(2)}`
     };
 
     onReturnUpdated(returnItem.id, updates);
@@ -54,7 +54,7 @@ export const EditReturnDialog = ({ open, onOpenChange, returnItem, onReturnUpdat
   if (!returnItem) return null;
 
   // Calculate the refund amount for display
-  const cleanUnitPrice = returnItem.unitPrice.replace(/[৳$,]/g, '');
+  const cleanUnitPrice = returnItem.unitPrice.replace(/[$,]/g, '');
   const unitPriceNum = parseFloat(cleanUnitPrice) || 0;
   const refundAmount = unitPriceNum * formData.returnQuantity;
 

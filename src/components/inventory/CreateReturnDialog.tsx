@@ -41,7 +41,7 @@ export const CreateReturnDialog = ({ open, onOpenChange, onReturnCreated }: Crea
         originalQuantity: sale.quantity,
         unitPrice: sale.unitPrice,
         customerName: sale.customerName || '',
-        totalRefund: `$${(unitPriceNum * prev.returnQuantity).toFixed(2)}`
+        totalRefund: `${(unitPriceNum * prev.returnQuantity).toFixed(2)}`
       }));
     }
   };
