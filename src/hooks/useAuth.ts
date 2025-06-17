@@ -26,6 +26,15 @@ const users: { [key: string]: { password: string; user: User } } = {
       role: 'guest',
       permissions: ['read']
     }
+  },
+  nahar: {
+    password: 'n445566e',
+    user: {
+      id: '3',
+      username: 'Nahar',
+      role: 'admin',
+      permissions: ['create', 'read', 'update', 'delete', 'manage_users']
+    }
   }
 };
 
