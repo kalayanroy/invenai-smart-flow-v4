@@ -46,11 +46,16 @@ export const SalesReturnSection = () => {
 
   const totalReturns = returns.length;
   const pendingReturns = returns.filter(r => r.status === 'Pending').length;
+  
+  // Fix the refund amount calculation
   const totalRefundAmount = returns
     .filter(r => r.status === 'Processed')
-    .reduce((sum, returnItem) => 
-      sum + parseFloat(returnItem.totalRefund.replace('$', '').replace(',', '')), 0
-    );
+    .reduce((sum, returnItem) => {
+      // Handle both ৳ and $ currencies and remove any non-numeric characters except decimal points
+      const cleanAmount = returnItem.totalRefund.replace(/[৳$,]/g, '');
+      const amount = parseFloat(cleanAmount) || 0;
+      return sum + amount;
+    }, 0);
 
   const handleReturnCreated = (returnData: any) => {
     addReturn(returnData);
@@ -156,7 +161,7 @@ export const SalesReturnSection = () => {
               <DollarSign className="h-5 w-5 text-green-600" />
               <div>
                 <p className="text-sm text-gray-600">Total Refunds</p>
-                <p className="text-2xl font-bold">${totalRefundAmount.toFixed(2)}</p>
+                <p className="text-2xl font-bold">৳{totalRefundAmount.toFixed(2)}</p>
               </div>
             </div>
           </CardContent>
@@ -167,7 +172,7 @@ export const SalesReturnSection = () => {
             <div className="flex items-center gap-2">
               <Package className="h-5 w-5 text-purple-600" />
               <div>
-                <p className="text-sm text-gray-600">Processed Returns</p>
+                <p className="text-sim text-gray-600">Processed Returns</p>
                 <p className="text-2xl font-bold">{returns.filter(r => r.status === 'Processed').length}</p>
               </div>
             </div>
@@ -314,7 +319,7 @@ export const SalesReturnSection = () => {
                           </>
                         )}
                         
-                        {hasPermission('delete') && (
+                        {hasPermission('delete')  && (
                           <Button 
                             variant="ghost" 
                             size="sm"

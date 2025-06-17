@@ -9,24 +9,28 @@ import { Search, Filter, Printer, Download, Package, AlertTriangle, CheckCircle 
 import { useProducts } from '@/hooks/useProducts';
 import { useSales } from '@/hooks/useSales';
 import { usePurchases } from '@/hooks/usePurchases';
+import { useSalesReturns } from '@/hooks/useSalesReturns';
 
 export const StockManagement = () => {
   const { products } = useProducts();
   const { sales } = useSales();
   const { purchases } = usePurchases();
+  const { salesReturns } = useSalesReturns();
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
 
-  // Calculate stock movements
+  // Calculate stock movements including returns
   const getProductMovements = (productId: string) => {
     const productSales = sales.filter(sale => sale.productId === productId);
     const productPurchases = purchases.filter(purchase => purchase.productId === productId);
+    const productReturns = salesReturns.filter(returnItem => returnItem.productId === productId);
     
     const totalSold = productSales.reduce((sum, sale) => sum + sale.quantity, 0);
     const totalPurchased = productPurchases.reduce((sum, purchase) => sum + purchase.quantity, 0);
+    const totalReturned = productReturns.reduce((sum, returnItem) => sum + returnItem.returnQuantity, 0);
     
-    return { totalSold, totalPurchased };
+    return { totalSold, totalPurchased, totalReturned };
   };
 
   // Filter products
@@ -78,11 +82,14 @@ export const StockManagement = () => {
                 <th>Status</th>
                 <th>Total Sold</th>
                 <th>Total Purchased</th>
+                <th>Total Returned</th>
+                <th>Net Movement</th>
               </tr>
             </thead>
             <tbody>
               ${filteredProducts.map(product => {
                 const movements = getProductMovements(product.id);
+                const netMovement = (product.stock + movements.totalPurchased + movements.totalReturned) - movements.totalSold;
                 return `
                   <tr>
                     <td>${product.sku}</td>
@@ -93,6 +100,8 @@ export const StockManagement = () => {
                     <td>${product.status}</td>
                     <td>${movements.totalSold}</td>
                     <td>${movements.totalPurchased}</td>
+                    <td>${movements.totalReturned}</td>
+                    <td>${netMovement}</td>
                   </tr>
                 `;
               }).join('')}
@@ -112,11 +121,12 @@ export const StockManagement = () => {
 
   // Export to CSV
   const handleExport = () => {
-    const headers = ['SKU', 'Product Name', 'Category', 'Current Stock', 'Reorder Point', 'Status', 'Total Sold', 'Total Purchased'];
+    const headers = ['SKU', 'Product Name', 'Category', 'Current Stock', 'Reorder Point', 'Status', 'Total Sold', 'Total Purchased', 'Total Returned', 'Net Movement'];
     const csvData = [
       headers.join(','),
       ...filteredProducts.map(product => {
         const movements = getProductMovements(product.id);
+        const netMovement = (product.stock + movements.totalPurchased + movements.totalReturned) - movements.totalSold;
         return [
           product.sku,
           `"${product.name}"`,
@@ -125,7 +135,9 @@ export const StockManagement = () => {
           product.reorderPoint,
           product.status,
           movements.totalSold,
-          movements.totalPurchased
+          movements.totalPurchased,
+          movements.totalReturned,
+          netMovement
         ].join(',');
       })
     ].join('\n');
@@ -291,13 +303,14 @@ export const StockManagement = () => {
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Status</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Total Sold</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Total Purchased</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-600">Total Returned</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Net Movement</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredProducts.map((product) => {
                   const movements = getProductMovements(product.id);
-                  const netMovement = movements.totalPurchased - movements.totalSold;
+                  const netMovement = (product.stock + movements.totalPurchased + movements.totalReturned) - movements.totalSold;
                   
                   return (
                     <tr key={product.id} className="border-b hover:bg-gray-50 transition-colors">
@@ -323,6 +336,7 @@ export const StockManagement = () => {
                       </td>
                       <td className="py-4 px-4 text-sm">{movements.totalSold}</td>
                       <td className="py-4 px-4 text-sm">{movements.totalPurchased}</td>
+                      <td className="py-4 px-4 text-sm">{movements.totalReturned}</td>
                       <td className="py-4 px-4">
                         <span className={`text-sm font-medium ${netMovement >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                           {netMovement >= 0 ? '+' : ''}{netMovement}

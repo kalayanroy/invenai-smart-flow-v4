@@ -38,10 +38,13 @@ export const EditReturnDialog = ({ open, onOpenChange, returnItem, onReturnUpdat
     e.preventDefault();
     if (!returnItem) return;
 
-    const unitPriceNum = parseFloat(returnItem.unitPrice.replace('$', ''));
+    // Fix the unit price parsing to handle both ৳ and $ currencies
+    const cleanUnitPrice = returnItem.unitPrice.replace(/[৳$,]/g, '');
+    const unitPriceNum = parseFloat(cleanUnitPrice) || 0;
+    
     const updates = {
       ...formData,
-      totalRefund: `$${(unitPriceNum * formData.returnQuantity).toFixed(2)}`
+      totalRefund: `৳${(unitPriceNum * formData.returnQuantity).toFixed(2)}`
     };
 
     onReturnUpdated(returnItem.id, updates);
@@ -49,6 +52,11 @@ export const EditReturnDialog = ({ open, onOpenChange, returnItem, onReturnUpdat
   };
 
   if (!returnItem) return null;
+
+  // Calculate the refund amount for display
+  const cleanUnitPrice = returnItem.unitPrice.replace(/[৳$,]/g, '');
+  const unitPriceNum = parseFloat(cleanUnitPrice) || 0;
+  const refundAmount = unitPriceNum * formData.returnQuantity;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -112,7 +120,7 @@ export const EditReturnDialog = ({ open, onOpenChange, returnItem, onReturnUpdat
           <div className="space-y-2">
             <Label>Total Refund Amount</Label>
             <div className="p-2 bg-green-50 rounded border font-semibold text-green-700">
-              ${(parseFloat(returnItem.unitPrice.replace('$', '')) * formData.returnQuantity).toFixed(2)}
+              ৳{refundAmount.toFixed(2)}
             </div>
           </div>
 
