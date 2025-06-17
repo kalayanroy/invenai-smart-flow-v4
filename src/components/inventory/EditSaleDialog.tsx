@@ -46,8 +46,8 @@ export const EditSaleDialog = ({ open, onOpenChange, sale, onSaleUpdated }: Edit
 
     const updates: Partial<Sale> = {
       quantity: formData.quantity,
-      unitPrice: `$${unitPrice.toFixed(2)}`,
-      totalAmount: `$${totalAmount.toFixed(2)}`,
+      unitPrice: `${unitPrice.toFixed(2)}`,
+      totalAmount: `${totalAmount.toFixed(2)}`,
       customerName: formData.customerName,
       status: formData.status,
       notes: formData.notes
@@ -129,13 +129,13 @@ export const EditSaleDialog = ({ open, onOpenChange, sale, onSaleUpdated }: Edit
             <h4 className="font-medium mb-2">Sale Summary</h4>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <span className="text-gray-600">Unit Price:</span> ${unitPrice.toFixed(2)}
+                <span className="text-gray-600">Unit Price:</span> ৳{unitPrice.toFixed(2)}
               </div>
               <div>
                 <span className="text-gray-600">Quantity:</span> {formData.quantity}
               </div>
               <div className="col-span-2 text-lg font-semibold">
-                <span className="text-gray-600">Total Amount:</span> ${totalAmount.toFixed(2)}
+                <span className="text-gray-600">Total Amount:</span> ৳{totalAmount.toFixed(2)}
               </div>
             </div>
           </div>
