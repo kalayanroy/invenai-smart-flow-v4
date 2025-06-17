@@ -3,12 +3,13 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Plus, ShoppingCart, Package, DollarSign, Eye, Edit, Trash2 } from 'lucide-react';
+import { Plus, ShoppingCart, Package, DollarSign, Eye, Edit, Trash2, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { usePurchases, Purchase } from '@/hooks/usePurchases';
 import { CreatePurchaseDialog } from './CreatePurchaseDialog';
 import { ViewPurchaseDialog } from './ViewPurchaseDialog';
 import { EditPurchaseDialog } from './EditPurchaseDialog';
+import { generatePurchaseInvoicePDF } from '@/utils/pdfGenerator';
 
 export const PurchaseSection = () => {
   const { toast } = useToast();
@@ -66,6 +67,14 @@ export const PurchaseSection = () => {
         description: `Purchase ${purchase.id} has been deleted.`,
       });
     }
+  };
+
+  const handlePrintInvoice = (purchase: Purchase) => {
+    generatePurchaseInvoicePDF(purchase);
+    toast({
+      title: "Purchase Order Generated",
+      description: `Purchase order for ${purchase.id} has been generated.`,
+    });
   };
 
   return (
@@ -176,6 +185,15 @@ export const PurchaseSection = () => {
                           title="Edit Purchase"
                         >
                           <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handlePrintInvoice(purchase)}
+                          title="Print Purchase Order"
+                          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                        >
+                          <FileText className="h-4 w-4" />
                         </Button>
                         <Button 
                           variant="ghost" 

@@ -3,12 +3,13 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Plus, TrendingUp, DollarSign, Eye, Edit, Trash2 } from 'lucide-react';
+import { Plus, TrendingUp, DollarSign, ShoppingBag, Eye, Edit, Trash2, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSales, Sale } from '@/hooks/useSales';
 import { CreateSaleDialog } from './CreateSaleDialog';
 import { ViewSaleDialog } from './ViewSaleDialog';
 import { EditSaleDialog } from './EditSaleDialog';
+import { generateSalesInvoicePDF } from '@/utils/pdfGenerator';
 
 export const SalesSection = () => {
   const { toast } = useToast();
@@ -27,12 +28,9 @@ export const SalesSection = () => {
     }
   };
 
-  const totalSales = sales.reduce((sum, sale) => {
-    // Handle both $ and ৳ currency symbols
-    const cleanAmount = sale.totalAmount.replace(/[$৳,]/g, '');
-    const amount = parseFloat(cleanAmount) || 0;
-    return sum + amount;
-  }, 0);
+  const totalRevenue = sales.reduce((sum, sale) => 
+    sum + parseFloat(sale.totalAmount.replace('৳', '').replace(',', '')), 0
+  );
 
   const handleSaleCreated = (saleData: any) => {
     addSale(saleData);
@@ -70,6 +68,14 @@ export const SalesSection = () => {
     }
   };
 
+  const handlePrintInvoice = (sale: Sale) => {
+    generateSalesInvoicePDF(sale);
+    toast({
+      title: "Invoice Generated",
+      description: `Sales invoice for ${sale.id} has been generated.`,
+    });
+  };
+
   return (
     <div className="space-y-6">
       {/* Sales Overview */}
@@ -77,7 +83,7 @@ export const SalesSection = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-blue-600" />
+              <TrendingUp className="h-5 w-5 text-green-600" />
               <div>
                 <p className="text-sm text-gray-600">Total Sales</p>
                 <p className="text-2xl font-bold">{sales.length}</p>
@@ -89,10 +95,10 @@ export const SalesSection = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-green-600" />
+              <DollarSign className="h-5 w-5 text-blue-600" />
               <div>
-                <p className="text-sm text-gray-600">Sales Revenue</p>
-                <p className="text-2xl font-bold">৳{totalSales.toLocaleString()}</p>
+                <p className="text-sm text-gray-600">Revenue</p>
+                <p className="text-2xl font-bold">৳{totalRevenue.toLocaleString()}</p>
               </div>
             </div>
           </CardContent>
@@ -101,10 +107,12 @@ export const SalesSection = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-purple-600" />
+              <ShoppingBag className="h-5 w-5 text-purple-600" />
               <div>
-                <p className="text-sm text-gray-600">Avg. Sale Value</p>
-                <p className="text-2xl font-bold">৳{sales.length > 0 ? (totalSales / sales.length).toLocaleString() : '0'}</p>
+                <p className="text-sm text-gray-600">Items Sold</p>
+                <p className="text-2xl font-bold">
+                  {sales.reduce((sum, sale) => sum + sale.quantity, 0)}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -115,7 +123,7 @@ export const SalesSection = () => {
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
-            <CardTitle>Recent Sales ({sales.length} records)</CardTitle>
+            <CardTitle>Sales Records ({sales.length} transactions)</CardTitle>
             <Button 
               className="flex items-center gap-2"
               onClick={() => setShowCreateSale(true)}
@@ -149,7 +157,7 @@ export const SalesSection = () => {
                       <div className="font-medium text-gray-900">{sale.productName}</div>
                       <div className="text-sm text-gray-500">SKU: {sale.productId}</div>
                     </td>
-                    <td className="py-4 px-4 text-sm">{sale.customerName || 'N/A'}</td>
+                    <td className="py-4 px-4 text-sm">{sale.customerName || 'Walk-in Customer'}</td>
                     <td className="py-4 px-4">{sale.quantity}</td>
                     <td className="py-4 px-4">{sale.unitPrice}</td>
                     <td className="py-4 px-4 font-semibold">{sale.totalAmount}</td>
@@ -176,6 +184,15 @@ export const SalesSection = () => {
                           title="Edit Sale"
                         >
                           <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handlePrintInvoice(sale)}
+                          title="Print Invoice"
+                          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                        >
+                          <FileText className="h-4 w-4" />
                         </Button>
                         <Button 
                           variant="ghost" 
