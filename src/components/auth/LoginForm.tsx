@@ -130,31 +130,7 @@ export const LoginForm = () => {
             </Button>
           </form>
 
-          <div className="mt-6 space-y-3">
-            <div className="text-center text-sm text-gray-600">
-              Demo Accounts (Password: 123456)
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex-1"
-                onClick={() => handleDemoLogin('admin')}
-                disabled={isLoggingIn}
-              >
-                Admin User
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex-1"
-                onClick={() => handleDemoLogin('guest')}
-                disabled={isLoggingIn}
-              >
-                Guest User
-              </Button>
-            </div>
-          </div>
+          
         </CardContent>
       </Card>
     </div>
