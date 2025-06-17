@@ -29,7 +29,7 @@ export const Reports = () => {
     { id: 'purchases', label: 'Purchase Report', icon: TrendingUp },
     { id: 'returns', label: 'Sales Returns Report', icon: RefreshCw },
     { id: 'profit-loss', label: 'Profit & Loss Report', icon: DollarSign },
-    { id: 'analytics', label: 'Analytics Report', icon: FileText }
+   
   ];
 
   const categories = [...new Set(products.map(p => p.category))];
