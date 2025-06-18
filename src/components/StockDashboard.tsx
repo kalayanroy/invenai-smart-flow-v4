@@ -13,7 +13,7 @@ import { SalesReturnSection } from './inventory/SalesReturnSection';
 import { Reports } from '../pages/Reports';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { User, LogOut, Menu, X } from 'lucide-react';
+import { User, LogOut, Menu, X, BarChart3, Package, Boxes, ShoppingCart, RotateCcw, ShoppingBag, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -30,13 +30,13 @@ export const StockDashboard = () => {
   };
 
   const tabs = [
-    { id: 'overview', label: 'Overview' },
-    { id: 'inventory', label: 'Inventory' },
-    { id: 'stock-management', label: 'Stock Mgmt' },
-    { id: 'sales', label: 'Sales' },
-    { id: 'sales-returns', label: 'Returns' },
-    { id: 'purchases', label: 'Purchases' },
-    { id: 'reports', label: 'Reports' },
+    { id: 'overview', label: 'Overview', icon: BarChart3 },
+    { id: 'inventory', label: 'Inventory', icon: Package },
+    { id: 'stock-management', label: 'Stock Mgmt', icon: Boxes },
+    { id: 'sales', label: 'Sales', icon: ShoppingCart },
+    { id: 'sales-returns', label: 'Returns', icon: RotateCcw },
+    { id: 'purchases', label: 'Purchases', icon: ShoppingBag },
+    { id: 'reports', label: 'Reports', icon: FileText },
   ];
 
   const handleTabChange = (tabId: string) => {
@@ -120,38 +120,46 @@ export const StockDashboard = () => {
                 </div>
               </div>
               <div className="py-2">
-                {tabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => handleTabChange(tab.id)}
-                    className={`w-full text-left px-4 py-3 text-sm font-medium transition-colors ${
-                      activeTab === tab.id
-                        ? 'bg-blue-50 text-blue-600 border-r-2 border-blue-600'
-                        : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
+                {tabs.map((tab) => {
+                  const IconComponent = tab.icon;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => handleTabChange(tab.id)}
+                      className={`w-full text-left px-4 py-3 text-sm font-medium transition-colors flex items-center gap-3 ${
+                        activeTab === tab.id
+                          ? 'bg-blue-50 text-blue-600 border-r-2 border-blue-600'
+                          : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
+                      }`}
+                    >
+                      <IconComponent className="h-4 w-4" />
+                      {tab.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </>
         ) : (
           /* Desktop Navigation Tabs */
           <div className="flex space-x-1 bg-white p-1 rounded-xl shadow-sm mb-8 w-fit overflow-x-auto">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 whitespace-nowrap ${
-                  activeTab === tab.id
-                    ? 'bg-blue-600 text-white shadow-lg'
-                    : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
+            {tabs.map((tab) => {
+              const IconComponent = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${
+                    activeTab === tab.id
+                      ? 'bg-blue-600 text-white shadow-lg'
+                      : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
+                  }`}
+                >
+                  <IconComponent className="h-4 w-4" />
+                  {tab.label}
+                </button>
+              );
+            })}
           </div>
         )}
 
