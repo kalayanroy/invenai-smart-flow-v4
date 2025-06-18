@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { DashboardHeader } from './dashboard/DashboardHeader';
 import { MetricsOverview } from './dashboard/MetricsOverview';
@@ -62,7 +61,8 @@ export const StockDashboard = () => {
                   variant="ghost"
                   size="sm"
                   onClick={() => setShowSidebar(!showSidebar)}
-                  className="p-2">
+                  className="p-2"
+                >
                   {showSidebar ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
                 </Button>
               )}
@@ -83,7 +83,8 @@ export const StockDashboard = () => {
                 variant="outline" 
                 size={isMobile ? "sm" : "sm"} 
                 onClick={handleLogout} 
-                className="flex items-center gap-1">
+                className="flex items-center gap-1"
+              >
                 <LogOut className="h-3 w-3" />
                 {!isMobile && 'Logout'}
               </Button>
@@ -114,7 +115,8 @@ export const StockDashboard = () => {
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowSidebar(false)}
-                    className="p-1">
+                    className="p-1"
+                  >
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
@@ -131,7 +133,8 @@ export const StockDashboard = () => {
                           ? 'bg-blue-50 text-blue-600 border-r-2 border-blue-600'
                           : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
                       }`}
-                      title={tab.label}>
+                      title={tab.icon}
+                    >
                       <IconComponent className="h-5 w-5" />
                     </button>
                   );
@@ -152,7 +155,8 @@ export const StockDashboard = () => {
                     activeTab === tab.id
                       ? 'bg-blue-600 text-white shadow-lg'
                       : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
-                  }`}>
+                  }`}
+                >
                   <IconComponent className="h-4 w-4" />
                   {tab.label}
                 </button>
