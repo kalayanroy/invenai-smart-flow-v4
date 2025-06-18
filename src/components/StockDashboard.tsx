@@ -53,28 +53,30 @@ export const StockDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 relative">
-      {/* Fixed Sidebar for Mobile */}
-      {isMobile && (
-        <div className="fixed left-0 top-0 h-full w-16 bg-white shadow-md z-50 flex flex-col items-center py-4 space-y-4">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => handleTabChange(tab.id)}
-                className={`p-3 rounded-lg transition-colors ${
-                  activeTab === tab.id
-                    ? 'bg-blue-100 text-blue-600'
-                    : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
-                }`}
-                title={tab.label}
-              >
-                <Icon className="h-5 w-5" />
-              </button>
-            );
-          })}
-        </div>
-      )}
+      {/* Mobile Horizontal Icon Navigation */}
+{isMobile && (
+  <div className="flex overflow-x-auto bg-white px-2 py-3 space-x-4 shadow-sm border-b">
+    {tabs.map((tab) => {
+      const Icon = tab.icon;
+      const isActive = activeTab === tab.id;
+      return (
+        <button
+          key={tab.id}
+          onClick={() => handleTabChange(tab.id)}
+          className={`flex-shrink-0 p-3 rounded-lg transition-colors ${
+            isActive
+              ? 'bg-blue-600 text-white'
+              : 'text-gray-600 hover:text-blue-600 hover:bg-blue-100'
+          }`}
+          title={tab.label}
+        >
+          <Icon className="h-5 w-5" />
+        </button>
+      );
+    })}
+  </div>
+)}
+
 
       {/* Top Header */}
       <div className="bg-white shadow-sm border-b">
