@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { DashboardHeader } from './dashboard/DashboardHeader';
 import { MetricsOverview } from './dashboard/MetricsOverview';
@@ -103,12 +102,11 @@ export const StockDashboard = () => {
             )}
             
             {/* Mobile Sidebar */}
-            <div className={`fixed left-0 top-0 h-full w-64 bg-white shadow-lg z-50 transform transition-transform duration-300 ${
+            <div className={`fixed left-0 top-0 h-full w-20 bg-white shadow-lg z-50 transform transition-transform duration-300 ${
               showSidebar ? 'translate-x-0' : '-translate-x-full'
             }`}>
               <div className="p-4 border-b">
-                <div className="flex items-center justify-between">
-                  <h2 className="font-semibold text-gray-900">Menu</h2>
+                <div className="flex items-center justify-center">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -126,14 +124,14 @@ export const StockDashboard = () => {
                     <button
                       key={tab.id}
                       onClick={() => handleTabChange(tab.id)}
-                      className={`w-full text-left px-4 py-3 text-sm font-medium transition-colors flex items-center gap-3 ${
+                      className={`w-full px-4 py-4 transition-colors flex items-center justify-center ${
                         activeTab === tab.id
                           ? 'bg-blue-50 text-blue-600 border-r-2 border-blue-600'
                           : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
                       }`}
+                      title={tab.label}
                     >
-                      <IconComponent className="h-4 w-4" />
-                      {tab.label}
+                      <IconComponent className="h-5 w-5" />
                     </button>
                   );
                 })}
