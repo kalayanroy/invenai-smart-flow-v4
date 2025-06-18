@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { DashboardHeader } from './dashboard/DashboardHeader';
 import { MetricsOverview } from './dashboard/MetricsOverview';
@@ -130,7 +131,7 @@ export const StockDashboard = () => {
                           ? 'bg-blue-50 text-blue-600 border-r-2 border-blue-600'
                           : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
                       }`}
-                      title={tab.icon}>
+                      title={tab.label}>
                       <IconComponent className="h-5 w-5" />
                     </button>
                   );
