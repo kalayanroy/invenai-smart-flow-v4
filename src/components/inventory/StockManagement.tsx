@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -20,17 +19,19 @@ export const StockManagement = () => {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
 
-  // Calculate stock movements including returns
+  // Calculate stock movements including opening stock and returns
   const getProductMovements = (productId: string) => {
+    const product = products.find(p => p.id === productId);
     const productSales = sales.filter(sale => sale.productId === productId);
     const productPurchases = purchases.filter(purchase => purchase.productId === productId);
     const productReturns = salesReturns.filter(returnItem => returnItem.productId === productId);
     
+    const openingStock = product?.openingStock || 0;
     const totalSold = productSales.reduce((sum, sale) => sum + sale.quantity, 0);
     const totalPurchased = productPurchases.reduce((sum, purchase) => sum + purchase.quantity, 0);
     const totalReturned = productReturns.reduce((sum, returnItem) => sum + returnItem.returnQuantity, 0);
     
-    return { totalSold, totalPurchased, totalReturned };
+    return { openingStock, totalSold, totalPurchased, totalReturned };
   };
 
   // Filter products
@@ -77,6 +78,7 @@ export const StockManagement = () => {
                 <th>SKU</th>
                 <th>Product Name</th>
                 <th>Category</th>
+                <th>Opening Stock</th>
                 <th>Current Stock</th>
                 <th>Reorder Point</th>
                 <th>Status</th>
@@ -89,12 +91,13 @@ export const StockManagement = () => {
             <tbody>
               ${filteredProducts.map(product => {
                 const movements = getProductMovements(product.id);
-                const calculatedStock = movements.totalPurchased + movements.totalReturned - movements.totalSold;
+                const calculatedStock = movements.openingStock + movements.totalPurchased + movements.totalReturned - movements.totalSold;
                 return `
                   <tr>
                     <td>${product.sku}</td>
                     <td>${product.name}</td>
                     <td>${product.category}</td>
+                    <td>${movements.openingStock}</td>
                     <td>${product.stock}</td>
                     <td>${product.reorderPoint}</td>
                     <td>${product.status}</td>
@@ -121,16 +124,17 @@ export const StockManagement = () => {
 
   // Export to CSV
   const handleExport = () => {
-    const headers = ['SKU', 'Product Name', 'Category', 'Current Stock', 'Reorder Point', 'Status', 'Total Sold', 'Total Purchased', 'Total Returned', 'Calculated Stock'];
+    const headers = ['SKU', 'Product Name', 'Category', 'Opening Stock', 'Current Stock', 'Reorder Point', 'Status', 'Total Sold', 'Total Purchased', 'Total Returned', 'Calculated Stock'];
     const csvData = [
       headers.join(','),
       ...filteredProducts.map(product => {
         const movements = getProductMovements(product.id);
-        const calculatedStock = movements.totalPurchased + movements.totalReturned - movements.totalSold;
+        const calculatedStock = movements.openingStock + movements.totalPurchased + movements.totalReturned - movements.totalSold;
         return [
           product.sku,
           `"${product.name}"`,
           product.category,
+          movements.openingStock,
           product.stock,
           product.reorderPoint,
           product.status,
@@ -298,6 +302,7 @@ export const StockManagement = () => {
                 <tr className="border-b">
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Product</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Category</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-600">Opening Stock</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Current Stock</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Reorder Point</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Status</th>
@@ -310,7 +315,7 @@ export const StockManagement = () => {
               <tbody>
                 {filteredProducts.map((product) => {
                   const movements = getProductMovements(product.id);
-                  const calculatedStock = movements.totalPurchased + movements.totalReturned - movements.totalSold;
+                  const calculatedStock = movements.openingStock + movements.totalPurchased + movements.totalReturned - movements.totalSold;
                   
                   return (
                     <tr key={product.id} className="border-b hover:bg-gray-50 transition-colors">
@@ -324,6 +329,10 @@ export const StockManagement = () => {
                         </div>
                       </td>
                       <td className="py-4 px-4 text-sm">{product.category}</td>
+                      <td className="py-4 px-4">
+                        <span className="font-semibold">{movements.openingStock}</span>
+                        <span className="text-sm text-gray-500 ml-1">{product.unit}</span>
+                      </td>
                       <td className="py-4 px-4">
                         <span className="font-semibold">{product.stock}</span>
                         <span className="text-sm text-gray-500 ml-1">{product.unit}</span>
