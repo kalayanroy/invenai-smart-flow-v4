@@ -1,11 +1,17 @@
 import React from 'react';
 import { LucideProps } from 'lucide-react';
+import {
+  TrendingUp,
+  TrendingDown,
+  Package,
+  AlertTriangle,
+} from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingUp, TrendingDown, Package, ShoppingCart, DollarSign, AlertTriangle } from 'lucide-react';
 import { useProducts } from '@/hooks/useProducts';
 import { useSales } from '@/hooks/useSales';
 import { usePurchases } from '@/hooks/usePurchases';
 import { useIsMobile } from '@/hooks/use-mobile';
+
 export const BdtSign = (props: LucideProps) => (
   <svg
     {...props}
@@ -26,25 +32,23 @@ export const MetricsOverview = () => {
   const { purchases } = usePurchases();
   const isMobile = useIsMobile();
 
-  // Calculate metrics
   const totalProducts = products.length;
   const lowStockProducts = products.filter(p => p.stock <= p.reorderPoint).length;
-  
+
   const totalSalesValue = sales.reduce((sum, sale) => {
-    const price = typeof sale.unitPrice === 'string' 
+    const price = typeof sale.unitPrice === 'string'
       ? parseFloat(sale.unitPrice.replace(/[৳$,]/g, '')) || 0
       : sale.unitPrice || 0;
     return sum + (price * sale.quantity);
   }, 0);
 
   const totalPurchaseValue = purchases.reduce((sum, purchase) => {
-    const price = typeof purchase.unitPrice === 'string' 
+    const price = typeof purchase.unitPrice === 'string'
       ? parseFloat(purchase.unitPrice.replace(/[৳$,]/g, '')) || 0
       : purchase.unitPrice || 0;
     return sum + (price * purchase.quantity);
   }, 0);
 
-  // Calculate stock movement (current stock + purchases - sales)
   const totalCurrentStock = products.reduce((sum, product) => sum + product.stock, 0);
   const totalPurchaseQuantity = purchases.reduce((sum, purchase) => sum + purchase.quantity, 0);
   const totalSalesQuantity = sales.reduce((sum, sale) => sum + sale.quantity, 0);
@@ -59,6 +63,7 @@ export const MetricsOverview = () => {
       icon: Package,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
+      watermark: <Package className="absolute right-2 bottom-2 opacity-10 h-16 w-16 text-blue-400" />,
     },
     {
       title: 'Sales Revenue',
@@ -68,15 +73,17 @@ export const MetricsOverview = () => {
       icon: BdtSign,
       color: 'text-green-600',
       bgColor: 'bg-green-50',
+      watermark: <BdtSign className="absolute right-2 bottom-2 opacity-10 h-16 w-16 text-green-400" />,
     },
     {
       title: 'Stock Movement',
       value: stockMovement.toString(),
       change: stockMovement >= 0 ? '+5.1%' : '-2.3%',
-      changeType: stockMovement >= 0 ? 'positive' as const : 'negative' as const,
+      changeType: stockMovement >= 0 ? 'positive' : 'negative',
       icon: TrendingUp,
       color: stockMovement >= 0 ? 'text-green-600' : 'text-red-600',
       bgColor: stockMovement >= 0 ? 'bg-green-50' : 'bg-red-50',
+      watermark: <TrendingUp className="absolute right-2 bottom-2 opacity-10 h-16 w-16 text-green-400" />,
     },
     {
       title: 'Low Stock Items',
@@ -86,22 +93,30 @@ export const MetricsOverview = () => {
       icon: AlertTriangle,
       color: 'text-orange-600',
       bgColor: 'bg-orange-50',
+      watermark: <AlertTriangle className="absolute right-2 bottom-2 opacity-10 h-16 w-16 text-orange-400" />,
     },
   ];
 
   return (
     <div className={`grid ${isMobile ? 'grid-cols-2 gap-3' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6'}`}>
       {metrics.map((metric, index) => (
-        <Card key={index} className="hover:shadow-lg transition-shadow duration-200">
-          <CardHeader className={`flex flex-row items-center justify-between space-y-0 ${isMobile ? 'pb-2' : 'pb-2'}`}>
-            <CardTitle className={`${isMobile ? 'text-xs' : 'text-sm'} font-medium text-gray-600`}>
+        <Card
+          key={index}
+          className={`relative overflow-hidden hover:shadow-md transition duration-300 ${metric.bgColor}`}
+        >
+          {/* Watermark background icon */}
+          {metric.watermark}
+
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 z-10 relative">
+            <CardTitle className={`font-medium ${isMobile ? 'text-xs' : 'text-sm'} text-gray-700`}>
               {metric.title}
             </CardTitle>
-            <div className={`${metric.bgColor} p-2 rounded-full`}>
+            <div className={`p-2 rounded-full ${metric.bgColor}`}>
               <metric.icon className={`h-4 w-4 ${metric.color}`} />
             </div>
           </CardHeader>
-          <CardContent className={isMobile ? 'pt-0' : ''}>
+
+          <CardContent className="pt-0 z-10 relative">
             <div className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold text-gray-900`}>
               {metric.value}
             </div>
@@ -111,11 +126,7 @@ export const MetricsOverview = () => {
               ) : (
                 <TrendingDown className="h-3 w-3 text-red-500" />
               )}
-              <span
-                className={`${isMobile ? 'text-xs' : 'text-sm'} font-medium ${
-                  metric.changeType === 'positive' ? 'text-green-600' : 'text-red-600'
-                }`}
-              >
+              <span className={`${isMobile ? 'text-xs' : 'text-sm'} font-medium ${metric.changeType === 'positive' ? 'text-green-600' : 'text-red-600'}`}>
                 {metric.change}
               </span>
               <span className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-500`}>
