@@ -31,17 +31,19 @@ export const EditSaleDialog = ({ open, onOpenChange, sale, onSaleUpdated }: Edit
     notes: ''
   });
 
-  // Calculate actual available stock using: Total Purchase + Total Return - Total Sales
+  // Calculate actual available stock using: Opening Stock + Total Purchase + Total Return - Total Sales (excluding current sale)
   const getCalculatedStock = (productId: string, excludeSaleId?: string) => {
+    const product = products.find(p => p.id === productId);
     const productSales = sales.filter(s => s.productId === productId && s.id !== excludeSaleId);
     const productPurchases = purchases.filter(purchase => purchase.productId === productId);
     const productReturns = salesReturns.filter(returnItem => returnItem.productId === productId);
     
+    const openingStock = product?.openingStock || 0;
     const totalSold = productSales.reduce((sum, s) => sum + s.quantity, 0);
     const totalPurchased = productPurchases.reduce((sum, purchase) => sum + purchase.quantity, 0);
     const totalReturned = productReturns.reduce((sum, returnItem) => sum + returnItem.returnQuantity, 0);
     
-    return totalPurchased + totalReturned - totalSold;
+    return openingStock + totalPurchased + totalReturned - totalSold;
   };
 
   useEffect(() => {
