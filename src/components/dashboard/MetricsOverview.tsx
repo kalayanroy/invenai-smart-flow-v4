@@ -63,7 +63,7 @@ export const MetricsOverview = () => {
       icon: Package,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
-      watermark: <Package className="absolute right-2 bottom-2 opacity-10 h-12 w-12 text-blue-400" />,
+      watermark: <Package className="absolute right-1 bottom-1 opacity-10 h-12 w-12 text-blue-400" />,
     },
     {
       title: 'Sales Revenue',
@@ -73,7 +73,7 @@ export const MetricsOverview = () => {
       icon: BdtSign,
       color: 'text-green-600',
       bgColor: 'bg-green-50',
-      watermark: <BdtSign className="absolute right-2 bottom-2 opacity-10 h-12 w-12 text-green-400" />,
+      watermark: <BdtSign className="absolute right-1 bottom-1 opacity-10 h-12 w-12 text-green-400" />,
     },
     {
       title: 'Stock Movement',
@@ -83,7 +83,7 @@ export const MetricsOverview = () => {
       icon: TrendingUp,
       color: stockMovement >= 0 ? 'text-green-600' : 'text-red-600',
       bgColor: stockMovement >= 0 ? 'bg-green-50' : 'bg-red-50',
-      watermark: <TrendingUp className="absolute right-2 bottom-2 opacity-10 h-12 w-12 text-green-400" />,
+      watermark: <TrendingUp className="absolute right-1 bottom-1 opacity-10 h-12 w-12 text-green-400" />,
     },
     {
       title: 'Low Stock Items',
@@ -93,12 +93,12 @@ export const MetricsOverview = () => {
       icon: AlertTriangle,
       color: 'text-orange-600',
       bgColor: 'bg-orange-50',
-      watermark: <AlertTriangle className="absolute right-2 bottom-2 opacity-10 h-12 w-12 text-orange-400" />,
+      watermark: <AlertTriangle className="absolute right-1 bottom-1 opacity-10 h-12 w-12 text-orange-400" />,
     },
   ];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-2 md:grid-cols-4">
       {metrics.map((metric, index) => (
         <Card
           key={index}
@@ -123,10 +123,12 @@ export const MetricsOverview = () => {
               ) : (
                 <TrendingDown className="h-3 w-3 text-red-500" />
               )}
-              <span className={`text-xs sm:text-sm font-medium ${metric.changeType === 'positive' ? 'text-green-600' : 'text-red-600'}`}>
+              <span className="text-xs sm:text-sm font-medium text-gray-600">
                 {metric.change}
               </span>
-              <span className="text-xs sm:text-sm text-gray-500">vs last</span>
+              <span className="text-[10px] sm:text-xs text-gray-500">
+                vs last
+              </span>
             </div>
           </CardContent>
         </Card>
