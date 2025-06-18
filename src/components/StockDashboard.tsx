@@ -38,6 +38,10 @@ export const StockDashboard = () => {
     { id: 'reports', label: 'Reports', icon: FileText },
   ];
 
+  React.useEffect(() => {
+  console.log("Is mobile:", isMobile)
+}, [isMobile])
+  
   const handleTabChange = (tabId: string) => {
     setActiveTab(tabId);
     if (isMobile) {
