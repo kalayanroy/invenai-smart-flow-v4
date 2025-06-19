@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { DashboardHeader } from './dashboard/DashboardHeader';
 import { MetricsOverview } from './dashboard/MetricsOverview';
@@ -10,13 +11,14 @@ import { PurchaseSection } from './inventory/PurchaseSection';
 import { StockManagement } from './inventory/StockManagement';
 import { SalesReturnSection } from './inventory/SalesReturnSection';
 import { Reports } from '../pages/Reports';
+import { POSSystem } from './pos/POSSystem';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import {
   User, LogOut, Menu, X,
   BarChart3, Package, Boxes,
   ShoppingCart, RotateCcw,
-  ShoppingBag, FileText
+  ShoppingBag, FileText, CreditCard
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -36,6 +38,7 @@ export const StockDashboard = () => {
     { id: 'overview', label: 'Overview', icon: BarChart3 },
     { id: 'inventory', label: 'Inventory', icon: Package },
     { id: 'stock-management', label: 'Stock Mgmt', icon: Boxes },
+    { id: 'pos', label: 'POS', icon: CreditCard },
     { id: 'sales', label: 'Sales', icon: ShoppingCart },
     { id: 'sales-returns', label: 'Returns', icon: RotateCcw },
     { id: 'purchases', label: 'Purchases', icon: ShoppingBag },
@@ -108,24 +111,26 @@ export const StockDashboard = () => {
 
       {/* Desktop Tabs */}
       {!isMobile && (
-        <div className="flex space-x-1 bg-white p-1 rounded-xl shadow-sm mb-8 w-fit overflow-x-auto">
-          {tabs.map((tab) => {
-            const IconComponent = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${
-                  activeTab === tab.id
-                    ? 'bg-blue-600 text-white shadow-lg'
-                    : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
-                }`}
-              >
-                <IconComponent className="h-4 w-4" />
-                {tab.label}
-              </button>
-            );
-          })}
+        <div className="container mx-auto px-6 py-4">
+          <div className="flex space-x-1 bg-white p-1 rounded-xl shadow-sm mb-8 w-fit overflow-x-auto">
+            {tabs.map((tab) => {
+              const IconComponent = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${
+                    activeTab === tab.id
+                      ? 'bg-blue-600 text-white shadow-lg'
+                      : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
+                  }`}
+                >
+                  <IconComponent className="h-4 w-4" />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
 
@@ -141,6 +146,7 @@ export const StockDashboard = () => {
             )}
             {activeTab === 'inventory' && <ProductTable />}
             {activeTab === 'stock-management' && <StockManagement />}
+            {activeTab === 'pos' && <POSSystem />}
             {activeTab === 'sales' && <SalesSection />}
             {activeTab === 'sales-returns' && <SalesReturnSection />}
             {activeTab === 'purchases' && <PurchaseSection />}
