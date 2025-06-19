@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -220,6 +220,15 @@ export const POSSystem = () => {
       return;
     }
 
+    if (!customerName.trim()) {
+      toast({
+        title: "Customer Name Required",
+        description: "Please enter customer name before processing sale",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
       const invoiceNumber = generateInvoiceNumber();
       const saleDate = new Date().toISOString().split('T')[0];
@@ -233,7 +242,7 @@ export const POSSystem = () => {
           totalAmount: `৳${item.price * item.quantity}`,
           date: saleDate,
           status: 'Completed',
-          customerName: customerName || 'Walk-in Customer',
+          customerName: customerName.trim(),
           notes: `POS Sale - Payment: ${paymentMethod} - Invoice: ${invoiceNumber}`
         });
       }
@@ -242,7 +251,7 @@ export const POSSystem = () => {
       const invoiceData: InvoiceData = {
         invoiceNumber,
         date: new Date().toLocaleDateString(),
-        customerName: customerName || 'Walk-in Customer',
+        customerName: customerName.trim(),
         items: cart,
         total: getTotalAmount(),
         paymentMethod: paymentMethod.toUpperCase()
@@ -265,75 +274,6 @@ export const POSSystem = () => {
       });
     }
   };
-
-  // Memoize the payment dialog to prevent re-renders
-  const PaymentDialog = useCallback(() => (
-    <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
-      <DialogContent className={`${isMobile ? 'w-[95vw] max-w-none' : 'max-w-md'}`}>
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5" />
-            Process Payment
-          </DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="customer">Customer Name (Optional)</Label>
-            <Input
-              id="customer"
-              value={customerName}
-              onChange={(e) => setCustomerName(e.target.value)}
-              placeholder="Enter customer name"
-            />
-          </div>
-          
-          <div>
-            <Label>Payment Method</Label>
-            <div className="flex gap-2 mt-2">
-              <Button
-                variant={paymentMethod === 'cash' ? 'default' : 'outline'}
-                onClick={() => setPaymentMethod('cash')}
-                className="flex-1"
-              >
-                Cash
-              </Button>
-              <Button
-                variant={paymentMethod === 'card' ? 'default' : 'outline'}
-                onClick={() => setPaymentMethod('card')}
-                className="flex-1"
-              >
-                Card
-              </Button>
-              <Button
-                variant={paymentMethod === 'upi' ? 'default' : 'outline'}
-                onClick={() => setPaymentMethod('upi')}
-                className="flex-1"
-              >
-                UPI
-              </Button>
-            </div>
-          </div>
-
-          <div className="border-t pt-4">
-            <div className="flex justify-between text-lg font-semibold">
-              <span>Total Amount:</span>
-              <span>৳{getTotalAmount().toFixed(2)}</span>
-            </div>
-          </div>
-
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setShowPaymentDialog(false)} className="flex-1">
-              Cancel
-            </Button>
-            <Button onClick={processSale} className="flex-1">
-              <Receipt className="h-4 w-4 mr-2" />
-              Complete Sale
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  ), [showPaymentDialog, customerName, paymentMethod, cart, isMobile]);
 
   return (
     <div className="space-y-6">
@@ -373,7 +313,7 @@ export const POSSystem = () => {
                   >
                     <div className="mb-2">
                       <img
-                        src={`https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=100&h=100&fit=crop&crop=center`}
+                        src={product.image || `https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=100&h=100&fit=crop&crop=center`}
                         alt={product.name}
                         className="w-full h-20 object-cover rounded"
                         onError={(e) => {
@@ -492,7 +432,73 @@ export const POSSystem = () => {
         </div>
       </div>
 
-      <PaymentDialog />
+      {/* Payment Dialog */}
+      <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
+        <DialogContent className={`${isMobile ? 'w-[95vw] max-w-none' : 'max-w-md'}`}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5" />
+              Process Payment
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="customer">Customer Name (Required)</Label>
+              <Input
+                id="customer"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                placeholder="Enter customer name"
+                required
+              />
+            </div>
+            
+            <div>
+              <Label>Payment Method</Label>
+              <div className="flex gap-2 mt-2">
+                <Button
+                  variant={paymentMethod === 'cash' ? 'default' : 'outline'}
+                  onClick={() => setPaymentMethod('cash')}
+                  className="flex-1"
+                >
+                  Cash
+                </Button>
+                <Button
+                  variant={paymentMethod === 'card' ? 'default' : 'outline'}
+                  onClick={() => setPaymentMethod('card')}
+                  className="flex-1"
+                >
+                  Card
+                </Button>
+                <Button
+                  variant={paymentMethod === 'upi' ? 'default' : 'outline'}
+                  onClick={() => setPaymentMethod('upi')}
+                  className="flex-1"
+                >
+                  UPI
+                </Button>
+              </div>
+            </div>
+
+            <div className="border-t pt-4">
+              <div className="flex justify-between text-lg font-semibold">
+                <span>Total Amount:</span>
+                <span>৳{getTotalAmount().toFixed(2)}</span>
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setShowPaymentDialog(false)} className="flex-1">
+                Cancel
+              </Button>
+              <Button onClick={processSale} className="flex-1" disabled={!customerName.trim()}>
+                <Receipt className="h-4 w-4 mr-2" />
+                Complete Sale
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
