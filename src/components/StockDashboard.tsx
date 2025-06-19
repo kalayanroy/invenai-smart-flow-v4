@@ -13,25 +13,27 @@ import { SalesReturnSection } from './inventory/SalesReturnSection';
 import { Reports } from '../pages/Reports';
 import { POSSystem } from './pos/POSSystem';
 import { UserManagement } from './admin/UserManagement';
+import { CompanyManagement } from './admin/CompanyManagement';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   User, LogOut, Menu, X,
   BarChart3, Package, Boxes,
   ShoppingCart, RotateCcw,
-  ShoppingBag, FileText, CreditCard, Users
+  ShoppingBag, FileText, CreditCard, Users, Building2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 export const StockDashboard = () => {
-  const { user, logout } = useAuth();
+  const { userProfile, logout, company } = useAuth();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState('overview');
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/login');
   };
 
@@ -46,17 +48,35 @@ export const StockDashboard = () => {
     { id: 'reports', label: 'Reports', icon: FileText },
   ];
 
-  // Add User Management tab only for admin users
-  const tabs = user?.role === 'admin' 
-    ? [...baseTabs, { id: 'user-management', label: 'Users', icon: Users }]
-    : baseTabs;
+  // Add management tabs based on user role
+  const managementTabs = [];
+  
+  if (userProfile?.role === 'admin' || userProfile?.role === 'super_admin') {
+    managementTabs.push({ id: 'user-management', label: 'Users', icon: Users });
+  }
+  
+  if (userProfile?.role === 'super_admin') {
+    managementTabs.push({ id: 'company-management', label: 'Companies', icon: Building2 });
+  }
+
+  const tabs = [...baseTabs, ...managementTabs];
 
   React.useEffect(() => {
     console.log("Is mobile:", isMobile);
   }, [isMobile]);
 
-  const handleTabChange = (tabId) => {
+  const handleTabChange = (tabId: string) => {
     setActiveTab(tabId);
+  };
+
+  const getRoleBadgeVariant = (role: string) => {
+    switch (role) {
+      case 'super_admin': return 'destructive';
+      case 'admin': return 'default';
+      case 'manager': return 'secondary';
+      case 'staff': return 'outline';
+      default: return 'secondary';
+    }
   };
 
   return (
@@ -70,14 +90,23 @@ export const StockDashboard = () => {
                 <h1 className={`font-bold text-gray-900 ${isMobile ? 'text-lg' : 'text-2xl'}`}>
                   {isMobile ? 'InvenAI' : 'Inventory Management System'}
                 </h1>
-                {!isMobile && <p className="text-sm text-gray-500">Smart Inventory Control</p>}
+                {!isMobile && company && (
+                  <p className="text-sm text-gray-500 flex items-center gap-2">
+                    <Building2 className="h-3 w-3" />
+                    {company.name}
+                  </p>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-2">
               <div className={`flex items-center gap-2 ${isMobile ? 'text-xs' : 'text-sm'}`}>
                 <User className="h-4 w-4" />
-                <span className="font-medium">{user?.username}</span>
-                {!isMobile && <span className="text-gray-500">({user?.role})</span>}
+                <span className="font-medium">{userProfile?.username}</span>
+                {!isMobile && (
+                  <Badge variant={getRoleBadgeVariant(userProfile?.role || '')}>
+                    {userProfile?.role?.replace('_', ' ')}
+                  </Badge>
+                )}
               </div>
               <Button 
                 variant="outline" 
@@ -158,6 +187,7 @@ export const StockDashboard = () => {
             {activeTab === 'purchases' && <PurchaseSection />}
             {activeTab === 'reports' && <Reports />}
             {activeTab === 'user-management' && <UserManagement />}
+            {activeTab === 'company-management' && <CompanyManagement />}
           </div>
 
           {/* Only show AlertsPanel on Overview tab */}

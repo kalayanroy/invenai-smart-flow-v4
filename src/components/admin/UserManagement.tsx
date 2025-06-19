@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,67 +31,119 @@ import {
 import { Users, UserPlus, Edit, Trash2, Shield, User } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface UserData {
   id: string;
+  user_id: string;
   username: string;
-  role: 'admin' | 'guest';
-  permissions: string[];
+  role: 'super_admin' | 'admin' | 'manager' | 'staff' | 'guest';
+  company_id: string | null;
+  is_active: boolean;
+  company?: {
+    id: string;
+    name: string;
+  };
+}
+
+interface Company {
+  id: string;
+  name: string;
 }
 
 export const UserManagement = () => {
-  const { user: currentUser } = useAuth();
+  const { userProfile } = useAuth();
   const { toast } = useToast();
-  const [users, setUsers] = useState<UserData[]>([
-    {
-      id: '1',
-      username: 'Admin',
-      role: 'admin',
-      permissions: ['create', 'read', 'update', 'delete', 'manage_users']
-    },
-    {
-      id: '2',
-      username: 'Guest',
-      role: 'guest',
-      permissions: ['read']
-    },
-    {
-      id: '3',
-      username: 'Nahar',
-      role: 'admin',
-      permissions: ['create', 'read', 'update', 'delete', 'manage_users']
-    },
-    {
-      id: '4',
-      username: 'mahsohel24',
-      role: 'admin',
-      permissions: ['create', 'read', 'update', 'delete', 'manage_users']
-    }
-  ]);
-
+  const [users, setUsers] = useState<UserData[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [formData, setFormData] = useState({
     username: '',
+    email: '',
     password: '',
-    role: 'guest' as 'admin' | 'guest'
+    role: 'guest' as 'super_admin' | 'admin' | 'manager' | 'staff' | 'guest',
+    company_id: ''
   });
 
-  // Only allow admin users to access this component
-  if (currentUser?.role !== 'admin') {
+  // Check if user has permission to manage users
+  const canManageUsers = userProfile?.role === 'super_admin' || userProfile?.role === 'admin';
+
+  if (!canManageUsers) {
     return (
       <Alert>
         <Shield className="h-4 w-4" />
         <AlertDescription>
-          Access denied. Only admin users can manage users.
+          Access denied. Only admin and super admin users can manage users.
         </AlertDescription>
       </Alert>
     );
   }
 
-  const handleCreateUser = () => {
-    if (!formData.username || !formData.password) {
+  const fetchUsers = async () => {
+    try {
+      setIsLoading(true);
+      
+      let query = supabase
+        .from('user_profiles')
+        .select(`
+          *,
+          company:companies(id, name)
+        `)
+        .order('created_at', { ascending: false });
+
+      // If not super admin, only show users from the same company
+      if (userProfile?.role !== 'super_admin') {
+        query = query.eq('company_id', userProfile?.company_id);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        throw error;
+      }
+
+      setUsers(data || []);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch users",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchCompanies = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('companies')
+        .select('id, name')
+        .order('name');
+
+      if (error) {
+        throw error;
+      }
+
+      setCompanies(data || []);
+    } catch (error) {
+      console.error('Error fetching companies:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+    if (userProfile?.role === 'super_admin') {
+      fetchCompanies();
+    }
+  }, [userProfile]);
+
+  const handleCreateUser = async () => {
+    if (!formData.username || !formData.email || !formData.password) {
       toast({
         title: "Error",
         description: "Please fill in all required fields",
@@ -100,26 +152,57 @@ export const UserManagement = () => {
       return;
     }
 
-    const newUser: UserData = {
-      id: (users.length + 1).toString(),
-      username: formData.username,
-      role: formData.role,
-      permissions: formData.role === 'admin' 
-        ? ['create', 'read', 'update', 'delete', 'manage_users']
-        : ['read']
-    };
+    if (userProfile?.role !== 'super_admin' && !formData.company_id) {
+      formData.company_id = userProfile?.company_id || '';
+    }
 
-    setUsers([...users, newUser]);
-    setFormData({ username: '', password: '', role: 'guest' });
-    setIsCreateDialogOpen(false);
-    
-    toast({
-      title: "Success",
-      description: "User created successfully"
-    });
+    try {
+      // Create auth user first
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email: formData.email,
+        password: formData.password,
+        user_metadata: {
+          username: formData.username
+        }
+      });
+
+      if (authError) {
+        throw authError;
+      }
+
+      // Update user profile
+      const { error: profileError } = await supabase
+        .from('user_profiles')
+        .update({
+          username: formData.username,
+          role: formData.role,
+          company_id: formData.company_id || null
+        })
+        .eq('user_id', authData.user.id);
+
+      if (profileError) {
+        throw profileError;
+      }
+
+      toast({
+        title: "Success",
+        description: "User created successfully"
+      });
+
+      setFormData({ username: '', email: '', password: '', role: 'guest', company_id: '' });
+      setIsCreateDialogOpen(false);
+      fetchUsers();
+    } catch (error: any) {
+      console.error('Error creating user:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create user",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleEditUser = () => {
+  const handleEditUser = async () => {
     if (!selectedUser || !formData.username) {
       toast({
         title: "Error",
@@ -129,32 +212,41 @@ export const UserManagement = () => {
       return;
     }
 
-    const updatedUsers = users.map(user => 
-      user.id === selectedUser.id 
-        ? {
-            ...user,
-            username: formData.username,
-            role: formData.role,
-            permissions: formData.role === 'admin' 
-              ? ['create', 'read', 'update', 'delete', 'manage_users']
-              : ['read']
-          }
-        : user
-    );
+    try {
+      const { error } = await supabase
+        .from('user_profiles')
+        .update({
+          username: formData.username,
+          role: formData.role,
+          company_id: formData.company_id || null
+        })
+        .eq('id', selectedUser.id);
 
-    setUsers(updatedUsers);
-    setIsEditDialogOpen(false);
-    setSelectedUser(null);
-    setFormData({ username: '', password: '', role: 'guest' });
-    
-    toast({
-      title: "Success",
-      description: "User updated successfully"
-    });
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Success",
+        description: "User updated successfully"
+      });
+
+      setIsEditDialogOpen(false);
+      setSelectedUser(null);
+      setFormData({ username: '', email: '', password: '', role: 'guest', company_id: '' });
+      fetchUsers();
+    } catch (error: any) {
+      console.error('Error updating user:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update user",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleDeleteUser = (userId: string) => {
-    if (userId === currentUser?.id) {
+  const handleDeleteUser = async (userId: string) => {
+    if (userId === userProfile?.user_id) {
       toast({
         title: "Error",
         description: "You cannot delete your own account",
@@ -163,31 +255,72 @@ export const UserManagement = () => {
       return;
     }
 
-    setUsers(users.filter(user => user.id !== userId));
-    toast({
-      title: "Success",
-      description: "User deleted successfully"
-    });
+    try {
+      const { error } = await supabase
+        .from('user_profiles')
+        .delete()
+        .eq('id', userId);
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Success",
+        description: "User deleted successfully"
+      });
+
+      fetchUsers();
+    } catch (error: any) {
+      console.error('Error deleting user:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete user",
+        variant: "destructive"
+      });
+    }
   };
 
   const openEditDialog = (user: UserData) => {
     setSelectedUser(user);
     setFormData({
       username: user.username,
+      email: '',
       password: '',
-      role: user.role
+      role: user.role,
+      company_id: user.company_id || ''
     });
     setIsEditDialogOpen(true);
   };
 
   const getRoleBadgeVariant = (role: string) => {
-    return role === 'admin' ? 'default' : 'secondary';
+    switch (role) {
+      case 'super_admin': return 'destructive';
+      case 'admin': return 'default';
+      case 'manager': return 'secondary';
+      case 'staff': return 'outline';
+      default: return 'secondary';
+    }
   };
 
   const resetForm = () => {
-    setFormData({ username: '', password: '', role: 'guest' });
+    setFormData({ 
+      username: '', 
+      email: '', 
+      password: '', 
+      role: 'guest', 
+      company_id: userProfile?.role === 'super_admin' ? '' : userProfile?.company_id || ''
+    });
     setSelectedUser(null);
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -211,7 +344,7 @@ export const UserManagement = () => {
                 </DialogHeader>
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="username">Username</Label>
+                    <Label htmlFor="username">Username *</Label>
                     <Input
                       id="username"
                       value={formData.username}
@@ -220,7 +353,17 @@ export const UserManagement = () => {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="password">Password</Label>
+                    <Label htmlFor="email">Email *</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      placeholder="Enter email"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="password">Password *</Label>
                     <Input
                       id="password"
                       type="password"
@@ -231,16 +374,39 @@ export const UserManagement = () => {
                   </div>
                   <div>
                     <Label htmlFor="role">Role</Label>
-                    <Select value={formData.role} onValueChange={(value: 'admin' | 'guest') => setFormData({ ...formData, role: value })}>
+                    <Select value={formData.role} onValueChange={(value: any) => setFormData({ ...formData, role: value })}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select role" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="guest">Guest</SelectItem>
+                        <SelectItem value="staff">Staff</SelectItem>
+                        <SelectItem value="manager">Manager</SelectItem>
                         <SelectItem value="admin">Admin</SelectItem>
+                        {userProfile?.role === 'super_admin' && (
+                          <SelectItem value="super_admin">Super Admin</SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
+                  {userProfile?.role === 'super_admin' && (
+                    <div>
+                      <Label htmlFor="company">Company</Label>
+                      <Select value={formData.company_id} onValueChange={(value) => setFormData({ ...formData, company_id: value })}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select company" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">No Company</SelectItem>
+                          {companies.map((company) => (
+                            <SelectItem key={company.id} value={company.id}>
+                              {company.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                   <div className="flex gap-2 pt-4">
                     <Button onClick={handleCreateUser} className="flex-1">
                       Create User
@@ -265,9 +431,10 @@ export const UserManagement = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Username</TableHead>
+                <TableHead>User</TableHead>
                 <TableHead>Role</TableHead>
-                <TableHead>Permissions</TableHead>
+                <TableHead>Company</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -278,24 +445,23 @@ export const UserManagement = () => {
                     <div className="flex items-center gap-2">
                       <User className="h-4 w-4" />
                       {user.username}
-                      {user.id === currentUser?.id && (
+                      {user.user_id === userProfile?.user_id && (
                         <Badge variant="outline" className="text-xs">You</Badge>
                       )}
                     </div>
                   </TableCell>
                   <TableCell>
                     <Badge variant={getRoleBadgeVariant(user.role)}>
-                      {user.role}
+                      {user.role.replace('_', ' ')}
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <div className="flex flex-wrap gap-1">
-                      {user.permissions.map((permission) => (
-                        <Badge key={permission} variant="outline" className="text-xs">
-                          {permission}
-                        </Badge>
-                      ))}
-                    </div>
+                    {user.company?.name || 'No Company'}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={user.is_active ? 'default' : 'secondary'}>
+                      {user.is_active ? 'Active' : 'Inactive'}
+                    </Badge>
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-2">
@@ -310,7 +476,7 @@ export const UserManagement = () => {
                         variant="outline"
                         size="sm"
                         onClick={() => handleDeleteUser(user.id)}
-                        disabled={user.id === currentUser?.id}
+                        disabled={user.user_id === userProfile?.user_id}
                         className="text-red-600 hover:text-red-700"
                       >
                         <Trash2 className="h-3 w-3" />
@@ -341,27 +507,40 @@ export const UserManagement = () => {
               />
             </div>
             <div>
-              <Label htmlFor="edit-password">New Password (optional)</Label>
-              <Input
-                id="edit-password"
-                type="password"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                placeholder="Leave blank to keep current password"
-              />
-            </div>
-            <div>
               <Label htmlFor="edit-role">Role</Label>
-              <Select value={formData.role} onValueChange={(value: 'admin' | 'guest') => setFormData({ ...formData, role: value })}>
+              <Select value={formData.role} onValueChange={(value: any) => setFormData({ ...formData, role: value })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="guest">Guest</SelectItem>
+                  <SelectItem value="staff">Staff</SelectItem>
+                  <SelectItem value="manager">Manager</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
+                  {userProfile?.role === 'super_admin' && (
+                    <SelectItem value="super_admin">Super Admin</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
             </div>
+            {userProfile?.role === 'super_admin' && (
+              <div>
+                <Label htmlFor="edit-company">Company</Label>
+                <Select value={formData.company_id} onValueChange={(value) => setFormData({ ...formData, company_id: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select company" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">No Company</SelectItem>
+                    {companies.map((company) => (
+                      <SelectItem key={company.id} value={company.id}>
+                        {company.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="flex gap-2 pt-4">
               <Button onClick={handleEditUser} className="flex-1">
                 Update User
