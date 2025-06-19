@@ -6,19 +6,4 @@ import type { Database } from './types';
 const SUPABASE_URL = "https://kzsgrvvpozehfdbtlczg.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY ="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6c2dydnZwb3plaGZkYnRsY3pnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAxODUxOTQsImV4cCI6MjA2NTc2MTE5NH0.MAuv2ZfV_LT5uiov4rpHji_pWSDS4qFcQLu54P-ofw0";
 
-// Standard client for regular operations
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
-
-// Admin client with service role key for admin operations
-const SUPABASE_SERVICE_ROLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6c2dydnZwb3plaGZkYnRsY3pnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MDE4NTE5NCwiZXhwIjoyMDY1NzYxMTk0fQ.kc9ZW6lmzr7XObdTqrIOA4KdXHIjeSBqJe8mmR-mRJg";
-
-export const supabaseAdmin = createClient<Database>(
-  SUPABASE_URL, 
-  SUPABASE_SERVICE_ROLE_KEY,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  }
-);

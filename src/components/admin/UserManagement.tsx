@@ -30,7 +30,7 @@ import {
 import { Users, UserPlus, Edit, Trash2, Shield, User } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { supabase, supabaseAdmin } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 
 interface UserData {
   id: string;
@@ -159,55 +159,37 @@ export const UserManagement = () => {
     }
 
     try {
-      console.log('Creating user with supabaseAdmin.auth.admin.createUser...');
+      console.log('Creating user via Edge Function...');
       
-      // Create auth user using admin client with service role
-      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-        email: formData.email,
-        password: formData.password,
-        user_metadata: {
-          username: formData.username
+      // Get the current session token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No active session');
+      }
+
+      // Call the Edge Function
+      const response = await fetch(`${supabase.supabaseUrl}/functions/v1/create-user`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
         },
-        email_confirm: true
+        body: JSON.stringify({
+          username: formData.username,
+          email: formData.email,
+          password: formData.password,
+          role: formData.role,
+          company_id: finalCompanyId
+        })
       });
 
-      if (authError) {
-        console.error('Auth creation error:', authError);
-        throw authError;
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to create user');
       }
 
-      if (!authData.user) {
-        throw new Error('User creation failed - no user data returned');
-      }
-
-      console.log('Auth user created successfully:', authData.user.id);
-
-      // Create the user profile using admin client
-      const { error: profileError } = await supabaseAdmin
-        .from('user_profiles')
-        .insert({
-          user_id: authData.user.id,
-          username: formData.username,
-          role: formData.role,
-          company_id: finalCompanyId === 'none' ? null : finalCompanyId,
-          is_active: true
-        });
-
-      if (profileError) {
-        console.error('Profile creation error:', profileError);
-        
-        // If profile creation fails, try to clean up the auth user
-        try {
-          await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
-          console.log('Cleaned up auth user after profile creation failure');
-        } catch (cleanupError) {
-          console.error('Failed to cleanup auth user:', cleanupError);
-        }
-        
-        throw new Error(`Failed to create user profile: ${profileError.message}`);
-      }
-
-      console.log('User profile created successfully');
+      console.log('User created successfully via Edge Function');
 
       toast({
         title: "Success",
