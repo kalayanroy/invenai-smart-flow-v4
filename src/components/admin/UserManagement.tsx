@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -161,7 +159,9 @@ export const UserManagement = () => {
     }
 
     try {
-      // Create auth user first
+      console.log('Creating user with admin.createUser...');
+      
+      // Create auth user first using admin API
       const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email: formData.email,
         password: formData.password,
@@ -172,6 +172,7 @@ export const UserManagement = () => {
       });
 
       if (authError) {
+        console.error('Auth creation error:', authError);
         throw authError;
       }
 
@@ -179,7 +180,9 @@ export const UserManagement = () => {
         throw new Error('User creation failed - no user data returned');
       }
 
-      // Insert user profile directly (bypassing RLS since we're admin)
+      console.log('Auth user created successfully:', authData.user.id);
+
+      // Now create the user profile using service role
       const { error: profileError } = await supabase
         .from('user_profiles')
         .insert({
@@ -192,14 +195,19 @@ export const UserManagement = () => {
 
       if (profileError) {
         console.error('Profile creation error:', profileError);
+        
         // If profile creation fails, try to clean up the auth user
         try {
           await supabase.auth.admin.deleteUser(authData.user.id);
+          console.log('Cleaned up auth user after profile creation failure');
         } catch (cleanupError) {
           console.error('Failed to cleanup auth user:', cleanupError);
         }
-        throw profileError;
+        
+        throw new Error(`Failed to create user profile: ${profileError.message}`);
       }
+
+      console.log('User profile created successfully');
 
       toast({
         title: "Success",
@@ -579,4 +587,3 @@ export const UserManagement = () => {
     </div>
   );
 };
-
