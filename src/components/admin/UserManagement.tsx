@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -52,6 +51,7 @@ interface Company {
 }
 
 export const UserManagement = () => {
+  // Move ALL hooks to the top before any conditional logic
   const { userProfile } = useAuth();
   const { toast } = useToast();
   const [users, setUsers] = useState<UserData[]>([]);
