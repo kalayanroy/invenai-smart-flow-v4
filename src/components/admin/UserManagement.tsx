@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -51,7 +52,7 @@ interface Company {
 }
 
 export const UserManagement = () => {
-  // Move ALL hooks to the top before any conditional logic
+  // ALL hooks MUST be called at the top, before any conditional logic
   const { userProfile } = useAuth();
   const { toast } = useToast();
   const [users, setUsers] = useState<UserData[]>([]);
@@ -68,20 +69,7 @@ export const UserManagement = () => {
     company_id: ''
   });
 
-  // Check if user has permission to manage users
-  const canManageUsers = userProfile?.role === 'super_admin' || userProfile?.role === 'admin';
-
-  if (!canManageUsers) {
-    return (
-      <Alert>
-        <Shield className="h-4 w-4" />
-        <AlertDescription>
-          Access denied. Only admin and super admin users can manage users.
-        </AlertDescription>
-      </Alert>
-    );
-  }
-
+  // Define functions before useEffect
   const fetchUsers = async () => {
     try {
       setIsLoading(true);
@@ -135,12 +123,30 @@ export const UserManagement = () => {
     }
   };
 
+  // useEffect hooks must also be called unconditionally
   useEffect(() => {
-    fetchUsers();
-    if (userProfile?.role === 'super_admin') {
-      fetchCompanies();
+    if (userProfile?.role === 'super_admin' || userProfile?.role === 'admin') {
+      fetchUsers();
+      if (userProfile?.role === 'super_admin') {
+        fetchCompanies();
+      }
     }
   }, [userProfile]);
+
+  // Check permission AFTER all hooks are called
+  const canManageUsers = userProfile?.role === 'super_admin' || userProfile?.role === 'admin';
+
+  // Early return AFTER all hooks
+  if (!canManageUsers) {
+    return (
+      <Alert>
+        <Shield className="h-4 w-4" />
+        <AlertDescription>
+          Access denied. Only admin and super admin users can manage users.
+        </AlertDescription>
+      </Alert>
+    );
+  }
 
   const handleCreateUser = async () => {
     if (!formData.username || !formData.email || !formData.password) {
