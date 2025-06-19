@@ -12,13 +12,14 @@ import { StockManagement } from './inventory/StockManagement';
 import { SalesReturnSection } from './inventory/SalesReturnSection';
 import { Reports } from '../pages/Reports';
 import { POSSystem } from './pos/POSSystem';
+import { UserManagement } from './admin/UserManagement';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import {
   User, LogOut, Menu, X,
   BarChart3, Package, Boxes,
   ShoppingCart, RotateCcw,
-  ShoppingBag, FileText, CreditCard
+  ShoppingBag, FileText, CreditCard, Users
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -34,7 +35,7 @@ export const StockDashboard = () => {
     navigate('/login');
   };
 
-  const tabs = [
+  const baseTabs = [
     { id: 'overview', label: 'Overview', icon: BarChart3 },
     { id: 'inventory', label: 'Inventory', icon: Package },
     { id: 'stock-management', label: 'Stock Mgmt', icon: Boxes },
@@ -44,6 +45,11 @@ export const StockDashboard = () => {
     { id: 'purchases', label: 'Purchases', icon: ShoppingBag },
     { id: 'reports', label: 'Reports', icon: FileText },
   ];
+
+  // Add User Management tab only for admin users
+  const tabs = user?.role === 'admin' 
+    ? [...baseTabs, { id: 'user-management', label: 'Users', icon: Users }]
+    : baseTabs;
 
   React.useEffect(() => {
     console.log("Is mobile:", isMobile);
@@ -151,6 +157,7 @@ export const StockDashboard = () => {
             {activeTab === 'sales-returns' && <SalesReturnSection />}
             {activeTab === 'purchases' && <PurchaseSection />}
             {activeTab === 'reports' && <Reports />}
+            {activeTab === 'user-management' && <UserManagement />}
           </div>
 
           {/* Only show AlertsPanel on Overview tab */}
