@@ -98,7 +98,7 @@ export const ProductTableFilters = ({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Stock Levels</SelectItem>
-            <SelectItem value="high">High Stock (>50)</SelectItem>
+            <SelectItem value="high">High Stock (&gt;50)</SelectItem>
             <SelectItem value="medium">Medium Stock (11-50)</SelectItem>
             <SelectItem value="low">Low Stock (1-10)</SelectItem>
             <SelectItem value="empty">Out of Stock (0)</SelectItem>
