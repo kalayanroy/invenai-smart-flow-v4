@@ -30,7 +30,7 @@ import {
 import { Users, UserPlus, Edit, Trash2, Shield, User } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAdmin } from '@/integrations/supabase/client';
 
 interface UserData {
   id: string;
@@ -159,10 +159,10 @@ export const UserManagement = () => {
     }
 
     try {
-      console.log('Creating user with admin.createUser...');
+      console.log('Creating user with supabaseAdmin.auth.admin.createUser...');
       
-      // Create auth user first using admin API
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      // Create auth user using admin client with service role
+      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
         email: formData.email,
         password: formData.password,
         user_metadata: {
@@ -182,8 +182,8 @@ export const UserManagement = () => {
 
       console.log('Auth user created successfully:', authData.user.id);
 
-      // Now create the user profile using service role
-      const { error: profileError } = await supabase
+      // Create the user profile using admin client
+      const { error: profileError } = await supabaseAdmin
         .from('user_profiles')
         .insert({
           user_id: authData.user.id,
@@ -198,7 +198,7 @@ export const UserManagement = () => {
         
         // If profile creation fails, try to clean up the auth user
         try {
-          await supabase.auth.admin.deleteUser(authData.user.id);
+          await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
           console.log('Cleaned up auth user after profile creation failure');
         } catch (cleanupError) {
           console.error('Failed to cleanup auth user:', cleanupError);
