@@ -1,8 +1,8 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, TrendingUp, DollarSign, ShoppingBag, Eye, Edit, Trash2, FileText, Receipt } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSales, Sale } from '@/hooks/useSales';
@@ -86,13 +86,13 @@ export const SalesSection = () => {
   return (
     <div className="space-y-6">
       {/* Sales Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-green-600" />
               <div>
-                <p className="text-sm text-gray-600">Total Sales</p>
+                <p className="text-sm text-gray-600">Individual Sales</p>
                 <p className="text-2xl font-bold">{sales.length}</p>
               </div>
             </div>
@@ -116,18 +116,6 @@ export const SalesSection = () => {
             <div className="flex items-center gap-2">
               <DollarSign className="h-5 w-5 text-blue-600" />
               <div>
-                <p className="text-sm text-gray-600">Individual Sales</p>
-                <p className="text-2xl font-bold">৳{totalRevenue.toLocaleString()}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <ShoppingBag className="h-5 w-5 text-orange-600" />
-              <div>
                 <p className="text-sm text-gray-600">Total Revenue</p>
                 <p className="text-2xl font-bold">৳{totalCombinedRevenue.toLocaleString()}</p>
               </div>
@@ -136,148 +124,128 @@ export const SalesSection = () => {
         </Card>
       </div>
 
-      <Tabs defaultValue="individual" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="individual">Individual Sales</TabsTrigger>
-          <TabsTrigger value="vouchers">Sales Vouchers</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="individual">
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle>Individual Sales ({sales.length} transactions)</CardTitle>
-                <Button 
-                  className="flex items-center gap-2"
-                  onClick={() => setShowCreateSale(true)}
-                >
-                  <Plus className="h-4 w-4" />
-                  Record Sale
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Sale ID</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Product</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Customer</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Quantity</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Total</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Date</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Status</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sales.map((sale) => (
-                      <tr key={sale.id} className="border-b hover:bg-gray-50 transition-colors">
-                        <td className="py-4 px-4 text-sm font-mono">{sale.id}</td>
-                        <td className="py-4 px-4">
-                          <div className="font-medium text-gray-900">{sale.productName}</div>
-                          <div className="text-sm text-gray-500">SKU: {sale.productId}</div>
-                        </td>
-                        <td className="py-4 px-4 text-sm">{sale.customerName || 'Walk-in Customer'}</td>
-                        <td className="py-4 px-4">{sale.quantity}</td>
-                        <td className="py-4 px-4 font-semibold">{sale.totalAmount}</td>
-                        <td className="py-4 px-4 text-sm">{new Date(sale.date).toLocaleDateString()}</td>
-                        <td className="py-4 px-4">
-                          <Badge className={getStatusColor(sale.status)}>
-                            {sale.status}
-                          </Badge>
-                        </td>
-                        <td className="py-4 px-4">
-                          <div className="flex space-x-1">
-                            <Button variant="ghost" size="sm" onClick={() => handleViewSale(sale)} title="View Sale">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleEditSale(sale)} title="Edit Sale">
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm" onClick={() => handlePrintInvoice(sale)} title="Print Invoice" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50">
-                              <FileText className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleDeleteSale(sale)} title="Delete Sale" className="text-red-600 hover:text-red-700 hover:bg-red-50">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              
-              {sales.length === 0 && (
-                <div className="text-center py-8 text-gray-500">
-                  <p>No individual sales found. Record your first sale to get started.</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="vouchers">
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle>Sales Vouchers ({salesVouchers.length} vouchers)</CardTitle>
-                <Button 
-                  className="flex items-center gap-2"
-                  onClick={() => setShowCreateVoucher(true)}
-                >
-                  <Plus className="h-4 w-4" />
-                  Create Voucher
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Voucher #</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Customer</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Items</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Total Amount</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Discount</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Final Amount</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Date</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {salesVouchers.map((voucher) => (
-                      <tr key={voucher.id} className="border-b hover:bg-gray-50 transition-colors">
-                        <td className="py-4 px-4 text-sm font-mono">{voucher.voucherNumber}</td>
-                        <td className="py-4 px-4 text-sm">{voucher.customerName || 'Walk-in Customer'}</td>
-                        <td className="py-4 px-4 text-sm">{voucher.items.length} items</td>
-                        <td className="py-4 px-4 font-semibold">৳{voucher.totalAmount.toFixed(2)}</td>
-                        <td className="py-4 px-4 text-sm">৳{voucher.discountAmount.toFixed(2)}</td>
-                        <td className="py-4 px-4 font-bold text-green-600">৳{voucher.finalAmount.toFixed(2)}</td>
-                        <td className="py-4 px-4 text-sm">{new Date(voucher.date).toLocaleDateString()}</td>
-                        <td className="py-4 px-4">
-                          <Badge className={getStatusColor(voucher.status)}>
-                            {voucher.status}
-                          </Badge>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              
-              {salesVouchers.length === 0 && (
-                <div className="text-center py-8 text-gray-500">
-                  <p>No sales vouchers found. Create your first voucher to get started.</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      {/* Unified Sales Table */}
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <CardTitle>All Sales ({sales.length + salesVouchers.length} transactions)</CardTitle>
+            <div className="flex gap-2">
+              <Button 
+                className="flex items-center gap-2"
+                onClick={() => setShowCreateSale(true)}
+              >
+                <Plus className="h-4 w-4" />
+                Record Sale
+              </Button>
+              <Button 
+                variant="outline"
+                className="flex items-center gap-2"
+                onClick={() => setShowCreateVoucher(true)}
+              >
+                <Plus className="h-4 w-4" />
+                Create Voucher
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left py-3 px-4 font-medium text-gray-600">ID / Voucher #</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-600">Type</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-600">Customer</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-600">Items</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-600">Total</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-600">Date</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-600">Status</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-600">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {/* Individual Sales */}
+                {sales.map((sale) => (
+                  <tr key={`sale-${sale.id}`} className="border-b hover:bg-gray-50 transition-colors">
+                    <td className="py-4 px-4 text-sm font-mono">{sale.id}</td>
+                    <td className="py-4 px-4">
+                      <Badge variant="outline" className="bg-blue-50 text-blue-700">Individual</Badge>
+                    </td>
+                    <td className="py-4 px-4 text-sm">{sale.customerName || 'Walk-in Customer'}</td>
+                    <td className="py-4 px-4">
+                      <div className="font-medium text-gray-900">{sale.productName}</div>
+                      <div className="text-sm text-gray-500">Qty: {sale.quantity}</div>
+                    </td>
+                    <td className="py-4 px-4 font-semibold">{sale.totalAmount}</td>
+                    <td className="py-4 px-4 text-sm">{new Date(sale.date).toLocaleDateString()}</td>
+                    <td className="py-4 px-4">
+                      <Badge className={getStatusColor(sale.status)}>
+                        {sale.status}
+                      </Badge>
+                    </td>
+                    <td className="py-4 px-4">
+                      <div className="flex space-x-1">
+                        <Button variant="ghost" size="sm" onClick={() => handleViewSale(sale)} title="View Sale">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleEditSale(sale)} title="Edit Sale">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handlePrintInvoice(sale)} title="Print Invoice" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50">
+                          <FileText className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleDeleteSale(sale)} title="Delete Sale" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                
+                {/* Sales Vouchers */}
+                {salesVouchers.map((voucher) => (
+                  <tr key={`voucher-${voucher.id}`} className="border-b hover:bg-gray-50 transition-colors">
+                    <td className="py-4 px-4 text-sm font-mono">{voucher.voucherNumber}</td>
+                    <td className="py-4 px-4">
+                      <Badge variant="outline" className="bg-purple-50 text-purple-700">Voucher</Badge>
+                    </td>
+                    <td className="py-4 px-4 text-sm">{voucher.customerName || 'Walk-in Customer'}</td>
+                    <td className="py-4 px-4">
+                      <div className="font-medium text-gray-900">{voucher.items.length} items</div>
+                      <div className="text-sm text-gray-500">
+                        {voucher.discountAmount > 0 && `Discount: ৳${voucher.discountAmount.toFixed(2)}`}
+                      </div>
+                    </td>
+                    <td className="py-4 px-4 font-bold text-green-600">৳{voucher.finalAmount.toFixed(2)}</td>
+                    <td className="py-4 px-4 text-sm">{new Date(voucher.date).toLocaleDateString()}</td>
+                    <td className="py-4 px-4">
+                      <Badge className={getStatusColor(voucher.status)}>
+                        {voucher.status}
+                      </Badge>
+                    </td>
+                    <td className="py-4 px-4">
+                      <div className="flex space-x-1">
+                        <Button variant="ghost" size="sm" title="View Voucher">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" title="Print Voucher" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50">
+                          <FileText className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          
+          {sales.length === 0 && salesVouchers.length === 0 && (
+            <div className="text-center py-8 text-gray-500">
+              <p>No sales found. Record your first sale to get started.</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <CreateSaleDialog
         open={showCreateSale}

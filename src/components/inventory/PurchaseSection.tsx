@@ -1,8 +1,8 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, ShoppingCart, Package, DollarSign, Eye, Edit, Trash2, FileText, Receipt } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { usePurchases, Purchase } from '@/hooks/usePurchases';
@@ -87,7 +87,7 @@ export const PurchaseSection = () => {
   return (
     <div className="space-y-6">
       {/* Purchase Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
@@ -117,18 +117,6 @@ export const PurchaseSection = () => {
             <div className="flex items-center gap-2">
               <DollarSign className="h-5 w-5 text-green-600" />
               <div>
-                <p className="text-sm text-gray-600">Individual Cost</p>
-                <p className="text-2xl font-bold">৳{totalPurchases.toLocaleString()}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Package className="h-5 w-5 text-orange-600" />
-              <div>
                 <p className="text-sm text-gray-600">Total Cost</p>
                 <p className="text-2xl font-bold">৳{totalCombinedPurchases.toLocaleString()}</p>
               </div>
@@ -137,148 +125,128 @@ export const PurchaseSection = () => {
         </Card>
       </div>
 
-      <Tabs defaultValue="individual" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="individual">Individual Purchases</TabsTrigger>
-          <TabsTrigger value="vouchers">Purchase Vouchers</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="individual">
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle>Individual Purchases ({purchases.length} records)</CardTitle>
-                <Button 
-                  className="flex items-center gap-2"
-                  onClick={() => setShowCreatePurchase(true)}
-                >
-                  <Plus className="h-4 w-4" />
-                  Create Purchase
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Purchase ID</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Product</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Supplier</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Quantity</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Total</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Date</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Status</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {purchases.map((purchase) => (
-                      <tr key={purchase.id} className="border-b hover:bg-gray-50 transition-colors">
-                        <td className="py-4 px-4 text-sm font-mono">{purchase.id}</td>
-                        <td className="py-4 px-4">
-                          <div className="font-medium text-gray-900">{purchase.productName}</div>
-                          <div className="text-sm text-gray-500">SKU: {purchase.productId}</div>
-                        </td>
-                        <td className="py-4 px-4 text-sm">{purchase.supplier}</td>
-                        <td className="py-4 px-4">{purchase.quantity}</td>
-                        <td className="py-4 px-4 font-semibold">{purchase.totalAmount}</td>
-                        <td className="py-4 px-4 text-sm">{new Date(purchase.date).toLocaleDateString()}</td>
-                        <td className="py-4 px-4">
-                          <Badge className={getStatusColor(purchase.status)}>
-                            {purchase.status}
-                          </Badge>
-                        </td>
-                        <td className="py-4 px-4">
-                          <div className="flex space-x-1">
-                            <Button variant="ghost" size="sm" onClick={() => handleViewPurchase(purchase)} title="View Purchase">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleEditPurchase(purchase)} title="Edit Purchase">
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm" onClick={() => handlePrintInvoice(purchase)} title="Print Purchase Order" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50">
-                              <FileText className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleDeletePurchase(purchase)} title="Delete Purchase" className="text-red-600 hover:text-red-700 hover:bg-red-50">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              
-              {purchases.length === 0 && (
-                <div className="text-center py-8 text-gray-500">
-                  <p>No individual purchases found. Create your first purchase to get started.</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="vouchers">
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle>Purchase Vouchers ({purchaseVouchers.length} vouchers)</CardTitle>
-                <Button 
-                  className="flex items-center gap-2"
-                  onClick={() => setShowCreateVoucher(true)}
-                >
-                  <Plus className="h-4 w-4" />
-                  Create Voucher
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Voucher #</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Supplier</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Items</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Total Amount</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Discount</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Final Amount</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Date</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {purchaseVouchers.map((voucher) => (
-                      <tr key={voucher.id} className="border-b hover:bg-gray-50 transition-colors">
-                        <td className="py-4 px-4 text-sm font-mono">{voucher.voucherNumber}</td>
-                        <td className="py-4 px-4 text-sm">{voucher.supplierName}</td>
-                        <td className="py-4 px-4 text-sm">{voucher.items.length} items</td>
-                        <td className="py-4 px-4 font-semibold">৳{voucher.totalAmount.toFixed(2)}</td>
-                        <td className="py-4 px-4 text-sm">৳{voucher.discountAmount.toFixed(2)}</td>
-                        <td className="py-4 px-4 font-bold text-green-600">৳{voucher.finalAmount.toFixed(2)}</td>
-                        <td className="py-4 px-4 text-sm">{new Date(voucher.date).toLocaleDateString()}</td>
-                        <td className="py-4 px-4">
-                          <Badge className={getStatusColor(voucher.status)}>
-                            {voucher.status}
-                          </Badge>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              
-              {purchaseVouchers.length === 0 && (
-                <div className="text-center py-8 text-gray-500">
-                  <p>No purchase vouchers found. Create your first voucher to get started.</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      {/* Unified Purchase Table */}
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <CardTitle>All Purchases ({purchases.length + purchaseVouchers.length} transactions)</CardTitle>
+            <div className="flex gap-2">
+              <Button 
+                className="flex items-center gap-2"
+                onClick={() => setShowCreatePurchase(true)}
+              >
+                <Plus className="h-4 w-4" />
+                Create Purchase
+              </Button>
+              <Button 
+                variant="outline"
+                className="flex items-center gap-2"
+                onClick={() => setShowCreateVoucher(true)}
+              >
+                <Plus className="h-4 w-4" />
+                Create Voucher
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left py-3 px-4 font-medium text-gray-600">ID / Voucher #</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-600">Type</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-600">Supplier</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-600">Items</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-600">Total</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-600">Date</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-600">Status</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-600">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {/* Individual Purchases */}
+                {purchases.map((purchase) => (
+                  <tr key={`purchase-${purchase.id}`} className="border-b hover:bg-gray-50 transition-colors">
+                    <td className="py-4 px-4 text-sm font-mono">{purchase.id}</td>
+                    <td className="py-4 px-4">
+                      <Badge variant="outline" className="bg-blue-50 text-blue-700">Individual</Badge>
+                    </td>
+                    <td className="py-4 px-4 text-sm">{purchase.supplier}</td>
+                    <td className="py-4 px-4">
+                      <div className="font-medium text-gray-900">{purchase.productName}</div>
+                      <div className="text-sm text-gray-500">Qty: {purchase.quantity}</div>
+                    </td>
+                    <td className="py-4 px-4 font-semibold">{purchase.totalAmount}</td>
+                    <td className="py-4 px-4 text-sm">{new Date(purchase.date).toLocaleDateString()}</td>
+                    <td className="py-4 px-4">
+                      <Badge className={getStatusColor(purchase.status)}>
+                        {purchase.status}
+                      </Badge>
+                    </td>
+                    <td className="py-4 px-4">
+                      <div className="flex space-x-1">
+                        <Button variant="ghost" size="sm" onClick={() => handleViewPurchase(purchase)} title="View Purchase">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleEditPurchase(purchase)} title="Edit Purchase">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handlePrintInvoice(purchase)} title="Print Purchase Order" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50">
+                          <FileText className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleDeletePurchase(purchase)} title="Delete Purchase" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                
+                {/* Purchase Vouchers */}
+                {purchaseVouchers.map((voucher) => (
+                  <tr key={`voucher-${voucher.id}`} className="border-b hover:bg-gray-50 transition-colors">
+                    <td className="py-4 px-4 text-sm font-mono">{voucher.voucherNumber}</td>
+                    <td className="py-4 px-4">
+                      <Badge variant="outline" className="bg-purple-50 text-purple-700">Voucher</Badge>
+                    </td>
+                    <td className="py-4 px-4 text-sm">{voucher.supplierName}</td>
+                    <td className="py-4 px-4">
+                      <div className="font-medium text-gray-900">{voucher.items.length} items</div>
+                      <div className="text-sm text-gray-500">
+                        {voucher.discountAmount > 0 && `Discount: ৳${voucher.discountAmount.toFixed(2)}`}
+                      </div>
+                    </td>
+                    <td className="py-4 px-4 font-bold text-green-600">৳{voucher.finalAmount.toFixed(2)}</td>
+                    <td className="py-4 px-4 text-sm">{new Date(voucher.date).toLocaleDateString()}</td>
+                    <td className="py-4 px-4">
+                      <Badge className={getStatusColor(voucher.status)}>
+                        {voucher.status}
+                      </Badge>
+                    </td>
+                    <td className="py-4 px-4">
+                      <div className="flex space-x-1">
+                        <Button variant="ghost" size="sm" title="View Voucher">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" title="Print Voucher" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50">
+                          <FileText className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          
+          {purchases.length === 0 && purchaseVouchers.length === 0 && (
+            <div className="text-center py-8 text-gray-500">
+              <p>No purchases found. Create your first purchase to get started.</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <CreatePurchaseDialog
         open={showCreatePurchase}
