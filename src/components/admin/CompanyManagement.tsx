@@ -38,6 +38,7 @@ interface Company {
 }
 
 export const CompanyManagement = () => {
+  // Move ALL hooks to the top before any conditional logic
   const { userProfile } = useAuth();
   const { toast } = useToast();
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -51,18 +52,6 @@ export const CompanyManagement = () => {
     phone: '',
     email: ''
   });
-
-  // Only allow super admin users to access this component
-  if (userProfile?.role !== 'super_admin') {
-    return (
-      <Alert>
-        <Building2 className="h-4 w-4" />
-        <AlertDescription>
-          Access denied. Only super admin users can manage companies.
-        </AlertDescription>
-      </Alert>
-    );
-  }
 
   const fetchCompanies = async () => {
     try {
@@ -242,6 +231,18 @@ export const CompanyManagement = () => {
     setFormData({ name: '', address: '', phone: '', email: '' });
     setSelectedCompany(null);
   };
+
+  // NOW we can do conditional rendering after all hooks are declared
+  if (userProfile?.role !== 'super_admin') {
+    return (
+      <Alert>
+        <Building2 className="h-4 w-4" />
+        <AlertDescription>
+          Access denied. Only super admin users can manage companies.
+        </AlertDescription>
+      </Alert>
+    );
+  }
 
   if (isLoading) {
     return (
