@@ -153,7 +153,8 @@ export const StockDashboard = () => {
             {activeTab === 'reports' && <Reports />}
           </div>
 
-          {(!isMobile || activeTab === 'overview') && (
+          {/* Only show AlertsPanel on Overview tab */}
+          {activeTab === 'overview' && (
             <div className={`${isMobile ? '' : 'lg:col-span-1'}`}>
               <AlertsPanel />
             </div>

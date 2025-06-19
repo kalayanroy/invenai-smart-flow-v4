@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,8 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { useProducts } from '@/hooks/useProducts';
 import { useSales } from '@/hooks/useSales';
 import { useToast } from '@/hooks/use-toast';
-import { Search, Plus, Minus, ShoppingCart, Trash2, CreditCard, Receipt, X } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Search, Plus, Minus, ShoppingCart, Trash2, CreditCard, Receipt, X, Printer } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -18,6 +18,15 @@ interface CartItem {
   price: number;
   quantity: number;
   stock: number;
+}
+
+interface InvoiceData {
+  invoiceNumber: string;
+  date: string;
+  customerName: string;
+  items: CartItem[];
+  total: number;
+  paymentMethod: string;
 }
 
 export const POSSystem = () => {
@@ -112,6 +121,95 @@ export const POSSystem = () => {
     setShowPaymentDialog(false);
   };
 
+  const generateInvoiceNumber = () => {
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const time = String(date.getTime()).slice(-4);
+    return `INV-${year}${month}${day}-${time}`;
+  };
+
+  const generateInvoicePrint = (invoiceData: InvoiceData) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const invoiceHTML = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Invoice - ${invoiceData.invoiceNumber}</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .header { text-align: center; margin-bottom: 30px; }
+            .invoice-details { margin-bottom: 20px; }
+            .items-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+            .items-table th, .items-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            .items-table th { background-color: #f2f2f2; }
+            .total { text-align: right; font-size: 18px; font-weight: bold; }
+            .footer { margin-top: 30px; text-align: center; font-size: 12px; color: #666; }
+            @media print { body { margin: 0; } }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>Inventory Management System</h1>
+            <h2>INVOICE</h2>
+          </div>
+          
+          <div class="invoice-details">
+            <p><strong>Invoice Number:</strong> ${invoiceData.invoiceNumber}</p>
+            <p><strong>Date:</strong> ${invoiceData.date}</p>
+            <p><strong>Customer:</strong> ${invoiceData.customerName}</p>
+            <p><strong>Payment Method:</strong> ${invoiceData.paymentMethod}</p>
+          </div>
+
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Quantity</th>
+                <th>Unit Price</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${invoiceData.items.map(item => `
+                <tr>
+                  <td>${item.name}</td>
+                  <td>${item.quantity}</td>
+                  <td>৳${item.price.toFixed(2)}</td>
+                  <td>৳${(item.price * item.quantity).toFixed(2)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+
+          <div class="total">
+            <p>Total Amount: ৳${invoiceData.total.toFixed(2)}</p>
+          </div>
+
+          <div class="footer">
+            <p>Thank you for your business!</p>
+            <p>Generated on ${new Date().toLocaleString()}</p>
+          </div>
+
+          <script>
+            window.onload = function() {
+              window.print();
+              window.onafterprint = function() {
+                window.close();
+              };
+            };
+          </script>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(invoiceHTML);
+    printWindow.document.close();
+  };
+
   const processSale = async () => {
     if (cart.length === 0) {
       toast({
@@ -123,6 +221,9 @@ export const POSSystem = () => {
     }
 
     try {
+      const invoiceNumber = generateInvoiceNumber();
+      const saleDate = new Date().toISOString().split('T')[0];
+      
       for (const item of cart) {
         await addSale({
           productId: item.id,
@@ -130,16 +231,28 @@ export const POSSystem = () => {
           quantity: item.quantity,
           unitPrice: `৳${item.price}`,
           totalAmount: `৳${item.price * item.quantity}`,
-          date: new Date().toISOString().split('T')[0],
+          date: saleDate,
           status: 'Completed',
           customerName: customerName || 'Walk-in Customer',
-          notes: `POS Sale - Payment: ${paymentMethod}`
+          notes: `POS Sale - Payment: ${paymentMethod} - Invoice: ${invoiceNumber}`
         });
       }
 
+      // Generate invoice
+      const invoiceData: InvoiceData = {
+        invoiceNumber,
+        date: new Date().toLocaleDateString(),
+        customerName: customerName || 'Walk-in Customer',
+        items: cart,
+        total: getTotalAmount(),
+        paymentMethod: paymentMethod.toUpperCase()
+      };
+
+      generateInvoicePrint(invoiceData);
+
       toast({
         title: "Sale Completed",
-        description: `Sale of ৳${getTotalAmount().toFixed(2)} processed successfully`,
+        description: `Sale of ৳${getTotalAmount().toFixed(2)} processed successfully. Invoice: ${invoiceNumber}`,
       });
 
       clearCart();
@@ -153,7 +266,8 @@ export const POSSystem = () => {
     }
   };
 
-  const PaymentDialog = () => (
+  // Memoize the payment dialog to prevent re-renders
+  const PaymentDialog = useCallback(() => (
     <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
       <DialogContent className={`${isMobile ? 'w-[95vw] max-w-none' : 'max-w-md'}`}>
         <DialogHeader>
@@ -219,7 +333,7 @@ export const POSSystem = () => {
         </div>
       </DialogContent>
     </Dialog>
-  );
+  ), [showPaymentDialog, customerName, paymentMethod, cart, isMobile]);
 
   return (
     <div className="space-y-6">
@@ -257,6 +371,16 @@ export const POSSystem = () => {
                     className="border rounded-lg p-3 hover:bg-gray-50 cursor-pointer transition-colors"
                     onClick={() => addToCart(product)}
                   >
+                    <div className="mb-2">
+                      <img
+                        src={`https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=100&h=100&fit=crop&crop=center`}
+                        alt={product.name}
+                        className="w-full h-20 object-cover rounded"
+                        onError={(e) => {
+                          e.currentTarget.src = "https://images.unsplash.com/photo-1582562124811-c09040d0a901?w=100&h=100&fit=crop&crop=center";
+                        }}
+                      />
+                    </div>
                     <div className="font-medium text-sm">{product.name}</div>
                     <div className="text-xs text-gray-500">SKU: {product.sku}</div>
                     <div className="text-xs text-gray-500">Stock: {product.stock}</div>
