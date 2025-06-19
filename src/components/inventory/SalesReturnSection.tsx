@@ -15,7 +15,7 @@ import { EditReturnDialog } from './EditReturnDialog';
 
 export const SalesReturnSection = () => {
   const { toast } = useToast();
-  const { user, hasPermission } = useAuth();
+  const { userProfile, hasPermission } = useAuth();
   const { returns, addReturn, updateReturn, deleteReturn, processReturn } = useSalesReturns();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -120,7 +120,7 @@ export const SalesReturnSection = () => {
       return;
     }
 
-    processReturn(returnItem.id, status, user?.username || 'Unknown');
+    processReturn(returnItem.id, status, userProfile?.username || 'Unknown');
     toast({
       title: `Return ${status}`,
       description: `Return ${returnItem.id} has been ${status.toLowerCase()}.`,
@@ -172,7 +172,7 @@ export const SalesReturnSection = () => {
             <div className="flex items-center gap-2">
               <Package className="h-5 w-5 text-purple-600" />
               <div>
-                <p className="text-sim text-gray-600">Processed Returns</p>
+                <p className="text-sm text-gray-600">Processed Returns</p>
                 <p className="text-2xl font-bold">{returns.filter(r => r.status === 'Processed').length}</p>
               </div>
             </div>
