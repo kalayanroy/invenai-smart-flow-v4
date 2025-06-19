@@ -142,6 +142,116 @@ export type Database = {
           },
         ]
       }
+      purchase_voucher_items: {
+        Row: {
+          company_id: string | null
+          created_at: string | null
+          id: string
+          product_id: string
+          product_name: string
+          quantity: number
+          supplier: string
+          total_amount: number
+          unit_price: number
+          voucher_id: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string | null
+          id?: string
+          product_id: string
+          product_name: string
+          quantity: number
+          supplier: string
+          total_amount: number
+          unit_price: number
+          voucher_id: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string | null
+          id?: string
+          product_id?: string
+          product_name?: string
+          quantity?: number
+          supplier?: string
+          total_amount?: number
+          unit_price?: number
+          voucher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_voucher_items_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_voucher_items_voucher_id_fkey"
+            columns: ["voucher_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_vouchers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_vouchers: {
+        Row: {
+          company_id: string | null
+          created_at: string | null
+          date: string
+          discount_amount: number | null
+          final_amount: number
+          id: string
+          notes: string | null
+          payment_method: string | null
+          status: string
+          supplier_name: string
+          total_amount: number
+          updated_at: string | null
+          voucher_number: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string | null
+          date: string
+          discount_amount?: number | null
+          final_amount?: number
+          id: string
+          notes?: string | null
+          payment_method?: string | null
+          status?: string
+          supplier_name: string
+          total_amount?: number
+          updated_at?: string | null
+          voucher_number: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string | null
+          date?: string
+          discount_amount?: number | null
+          final_amount?: number
+          id?: string
+          notes?: string | null
+          payment_method?: string | null
+          status?: string
+          supplier_name?: string
+          total_amount?: number
+          updated_at?: string | null
+          voucher_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_vouchers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       purchases: {
         Row: {
           company_id: string | null
@@ -349,6 +459,113 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sales_voucher_items: {
+        Row: {
+          company_id: string | null
+          created_at: string | null
+          id: string
+          product_id: string
+          product_name: string
+          quantity: number
+          total_amount: number
+          unit_price: number
+          voucher_id: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string | null
+          id?: string
+          product_id: string
+          product_name: string
+          quantity: number
+          total_amount: number
+          unit_price: number
+          voucher_id: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string | null
+          id?: string
+          product_id?: string
+          product_name?: string
+          quantity?: number
+          total_amount?: number
+          unit_price?: number
+          voucher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_voucher_items_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_voucher_items_voucher_id_fkey"
+            columns: ["voucher_id"]
+            isOneToOne: false
+            referencedRelation: "sales_vouchers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sales_vouchers: {
+        Row: {
+          company_id: string | null
+          created_at: string | null
+          customer_name: string | null
+          date: string
+          discount_amount: number | null
+          final_amount: number
+          id: string
+          notes: string | null
+          payment_method: string | null
+          status: string
+          total_amount: number
+          updated_at: string | null
+          voucher_number: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string | null
+          customer_name?: string | null
+          date: string
+          discount_amount?: number | null
+          final_amount?: number
+          id: string
+          notes?: string | null
+          payment_method?: string | null
+          status?: string
+          total_amount?: number
+          updated_at?: string | null
+          voucher_number: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string | null
+          customer_name?: string | null
+          date?: string
+          discount_amount?: number | null
+          final_amount?: number
+          id?: string
+          notes?: string | null
+          payment_method?: string | null
+          status?: string
+          total_amount?: number
+          updated_at?: string | null
+          voucher_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_vouchers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
