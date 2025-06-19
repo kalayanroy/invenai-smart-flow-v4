@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -182,7 +183,7 @@ export const UserManagement = () => {
         .update({
           username: formData.username,
           role: formData.role,
-          company_id: formData.company_id || null
+          company_id: formData.company_id === 'none' ? null : formData.company_id
         })
         .eq('user_id', authData.user.id);
 
@@ -224,7 +225,7 @@ export const UserManagement = () => {
         .update({
           username: formData.username,
           role: formData.role,
-          company_id: formData.company_id || null
+          company_id: formData.company_id === 'none' ? null : formData.company_id
         })
         .eq('id', selectedUser.id);
 
@@ -294,7 +295,7 @@ export const UserManagement = () => {
       email: '',
       password: '',
       role: user.role,
-      company_id: user.company_id || ''
+      company_id: user.company_id || 'none'
     });
     setIsEditDialogOpen(true);
   };
@@ -315,7 +316,7 @@ export const UserManagement = () => {
       email: '', 
       password: '', 
       role: 'guest', 
-      company_id: userProfile?.role === 'super_admin' ? '' : userProfile?.company_id || ''
+      company_id: userProfile?.role === 'super_admin' ? 'none' : userProfile?.company_id || ''
     });
     setSelectedUser(null);
   };
@@ -403,7 +404,7 @@ export const UserManagement = () => {
                           <SelectValue placeholder="Select company" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">No Company</SelectItem>
+                          <SelectItem value="none">No Company</SelectItem>
                           {companies.map((company) => (
                             <SelectItem key={company.id} value={company.id}>
                               {company.name}
@@ -537,7 +538,7 @@ export const UserManagement = () => {
                     <SelectValue placeholder="Select company" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No Company</SelectItem>
+                    <SelectItem value="none">No Company</SelectItem>
                     {companies.map((company) => (
                       <SelectItem key={company.id} value={company.id}>
                         {company.name}
