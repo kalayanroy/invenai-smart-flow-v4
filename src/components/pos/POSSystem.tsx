@@ -317,7 +317,7 @@ export const POSSystem = () => {
                         alt={product.name}
                         className="w-full h-20 object-cover rounded"
                         onError={(e) => {
-                          e.currentTarget.src = "https://images.unsplash.com/photo-1582562124811-c09040d0a901?w=100&h=100&fit=crop&crop=center";
+                          e.currentTarget.src = "https://imgs.search.brave.com/8kwN061cgAWpvKSXBhLE47hkZGaURSvPm3EXX2_qV3U/rs:fit:500:0:0:0/g:ce/aHR0cHM6Ly90NC5m/dGNkbi5uZXQvanBn/LzAwLzg5LzU1LzE1/LzM2MF9GXzg5NTUx/NTk2X0xkSEFaUnd6/M2k0RU00SjBOSE5I/eTJoRVVZRGZYYzBq/LmpwZw";
                         }}
                       />
                     </div>
