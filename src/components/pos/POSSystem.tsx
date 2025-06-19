@@ -313,7 +313,7 @@ export const POSSystem = () => {
                   >
                     <div className="mb-2">
                       <img
-                        src={product.image || `https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=100&h=100&fit=crop&crop=center`}
+                        src={product.image || `https://imgs.search.brave.com/8kwN061cgAWpvKSXBhLE47hkZGaURSvPm3EXX2_qV3U/rs:fit:500:0:0:0/g:ce/aHR0cHM6Ly90NC5m/dGNkbi5uZXQvanBn/LzAwLzg5LzU1LzE1/LzM2MF9GXzg5NTUx/NTk2X0xkSEFaUnd6/M2k0RU00SjBOSE5I/eTJoRVVZRGZYYzBq/LmpwZw`}
                         alt={product.name}
                         className="w-full h-20 object-cover rounded"
                         onError={(e) => {
