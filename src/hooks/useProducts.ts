@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -50,14 +49,14 @@ export const useProducts = () => {
         sku: product.sku,
         barcode: product.barcode || '',
         category: product.category,
-        stock: product.stock,
+        stock: product.stock, // Use the current stock from database
         reorderPoint: product.reorder_point,
         price: product.price,
         purchasePrice: product.purchase_price,
         sellPrice: product.sell_price,
         openingStock: product.opening_stock,
         unit: product.unit,
-        status: product.status,
+        status: getStockStatus(product.stock, product.reorder_point),
         aiRecommendation: product.ai_recommendation || '',
         image: product.image,
         createdAt: product.created_at
@@ -68,6 +67,13 @@ export const useProducts = () => {
     } catch (error) {
       console.error('Error in fetchProducts:', error);
     }
+  };
+
+  // Helper function to determine stock status based on current stock
+  const getStockStatus = (currentStock: number, reorderPoint: number) => {
+    if (currentStock <= 0) return 'Out of Stock';
+    if (currentStock <= reorderPoint) return 'Low Stock';
+    return 'In Stock';
   };
 
   const addProduct = async (productData: Omit<Product, 'id' | 'status' | 'aiRecommendation' | 'createdAt'>) => {
@@ -89,14 +95,14 @@ export const useProducts = () => {
         sku: productData.sku,
         barcode: productData.barcode || null,
         category: productData.category,
-        stock: productData.openingStock || 0,
+        stock: productData.openingStock || 0, // Set initial stock to opening stock
         reorder_point: Math.max(10, Math.floor((productData.openingStock || 0) * 0.2)),
         price: productData.sellPrice,
         purchase_price: productData.purchasePrice,
         sell_price: productData.sellPrice,
         opening_stock: productData.openingStock || 0,
         unit: productData.unit,
-        status: 'In Stock',//(productData.openingStock || 0) > 50 ? 'In Stock' : (productData.openingStock || 0) > 0 ? 'Low Stock' : 'Out of Stock',
+        status: getStockStatus(productData.openingStock || 0, Math.max(10, Math.floor((productData.openingStock || 0) * 0.2))),
         ai_recommendation: (productData.openingStock || 0) > 50 ? 'Optimal stock level' : 'Consider restocking',
         image: cleanImage
       };
@@ -133,7 +139,14 @@ export const useProducts = () => {
       if (updates.sku) dbUpdates.sku = updates.sku;
       if (updates.barcode !== undefined) dbUpdates.barcode = updates.barcode;
       if (updates.category) dbUpdates.category = updates.category;
-      if (updates.stock !== undefined) dbUpdates.stock = updates.stock;
+      if (updates.stock !== undefined) {
+        dbUpdates.stock = updates.stock;
+        // Update status based on new stock level
+        const product = products.find(p => p.id === id);
+        if (product) {
+          dbUpdates.status = getStockStatus(updates.stock, product.reorderPoint);
+        }
+      }
       if (updates.reorderPoint !== undefined) dbUpdates.reorder_point = updates.reorderPoint;
       if (updates.price) dbUpdates.price = updates.price;
       if (updates.purchasePrice) dbUpdates.purchase_price = updates.purchasePrice;
@@ -158,6 +171,30 @@ export const useProducts = () => {
       await fetchProducts(); // Refresh the list
     } catch (error) {
       console.error('Error in updateProduct:', error);
+      throw error;
+    }
+  };
+
+  // Function to update stock after sales/purchases
+  const updateStock = async (productId: string, quantityChange: number, operation: 'add' | 'subtract') => {
+    try {
+      const product = products.find(p => p.id === productId);
+      if (!product) {
+        throw new Error(`Product with ID ${productId} not found`);
+      }
+
+      const newStock = operation === 'add' 
+        ? product.stock + quantityChange 
+        : product.stock - quantityChange;
+
+      if (newStock < 0) {
+        throw new Error(`Insufficient stock. Available: ${product.stock}, Required: ${quantityChange}`);
+      }
+
+      await updateProduct(productId, { stock: newStock });
+      console.log(`Stock updated for ${product.name}: ${product.stock} -> ${newStock}`);
+    } catch (error) {
+      console.error('Error updating stock:', error);
       throw error;
     }
   };
@@ -219,6 +256,7 @@ export const useProducts = () => {
     products,
     addProduct,
     updateProduct,
+    updateStock,
     deleteProduct,
     getProduct,
     clearAllProducts,

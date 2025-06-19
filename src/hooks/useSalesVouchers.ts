@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useProducts } from './useProducts';
 
 export interface SalesVoucherItem {
   id?: string;
@@ -27,6 +28,7 @@ export interface SalesVoucher {
 
 export const useSalesVouchers = () => {
   const [salesVouchers, setSalesVouchers] = useState<SalesVoucher[]>([]);
+  const { updateStock } = useProducts();
 
   useEffect(() => {
     fetchSalesVouchers();
@@ -89,6 +91,7 @@ export const useSalesVouchers = () => {
       
       const voucherId = `SV${Date.now()}`;
       
+      // Start a transaction-like approach by creating voucher first
       const { error: voucherError } = await supabase
         .from('sales_vouchers')
         .insert([{
@@ -109,6 +112,7 @@ export const useSalesVouchers = () => {
         throw voucherError;
       }
 
+      // Create voucher items
       const voucherItems = voucherData.items.map(item => ({
         voucher_id: voucherId,
         product_id: item.productId,
@@ -125,6 +129,11 @@ export const useSalesVouchers = () => {
       if (itemsError) {
         console.error('Error creating voucher items:', itemsError);
         throw itemsError;
+      }
+
+      // Update stock for each item
+      for (const item of voucherData.items) {
+        await updateStock(item.productId, item.quantity, 'subtract');
       }
 
       await fetchSalesVouchers();
