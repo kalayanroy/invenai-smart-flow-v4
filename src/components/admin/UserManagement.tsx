@@ -168,7 +168,7 @@ export const UserManagement = () => {
       }
 
       // Call the Edge Function using the correct URL format
-      const response = await fetch(`https://aqlbrgfluqrnytfsbhub.supabase.co/functions/v1/create-user`, {
+      const response = await fetch(`https://kzsgrvvpozehfdbtlczg.supabase.co/functions/v1/create-user`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
