@@ -53,7 +53,6 @@ interface Company {
 }
 
 export const UserManagement = () => {
-  // ALL hooks MUST be called at the top, before any conditional logic
   const { userProfile } = useAuth();
   const { toast } = useToast();
   const [users, setUsers] = useState<UserData[]>([]);
@@ -124,7 +123,6 @@ export const UserManagement = () => {
     }
   };
 
-  // useEffect hooks must also be called unconditionally
   useEffect(() => {
     if (userProfile?.role === 'super_admin' || userProfile?.role === 'admin') {
       fetchUsers();
@@ -134,10 +132,8 @@ export const UserManagement = () => {
     }
   }, [userProfile]);
 
-  // Check permission AFTER all hooks are called
   const canManageUsers = userProfile?.role === 'super_admin' || userProfile?.role === 'admin';
 
-  // Early return AFTER all hooks
   if (!canManageUsers) {
     return (
       <Alert>
@@ -159,8 +155,9 @@ export const UserManagement = () => {
       return;
     }
 
-    if (userProfile?.role !== 'super_admin' && !formData.company_id) {
-      formData.company_id = userProfile?.company_id || '';
+    let finalCompanyId = formData.company_id;
+    if (userProfile?.role !== 'super_admin') {
+      finalCompanyId = userProfile?.company_id || '';
     }
 
     try {
@@ -170,24 +167,37 @@ export const UserManagement = () => {
         password: formData.password,
         user_metadata: {
           username: formData.username
-        }
+        },
+        email_confirm: true
       });
 
       if (authError) {
         throw authError;
       }
 
-      // Update user profile
+      if (!authData.user) {
+        throw new Error('User creation failed - no user data returned');
+      }
+
+      // Insert user profile directly (bypassing RLS since we're admin)
       const { error: profileError } = await supabase
         .from('user_profiles')
-        .update({
+        .insert({
+          user_id: authData.user.id,
           username: formData.username,
           role: formData.role,
-          company_id: formData.company_id === 'none' ? null : formData.company_id
-        })
-        .eq('user_id', authData.user.id);
+          company_id: finalCompanyId === 'none' ? null : finalCompanyId,
+          is_active: true
+        });
 
       if (profileError) {
+        console.error('Profile creation error:', profileError);
+        // If profile creation fails, try to clean up the auth user
+        try {
+          await supabase.auth.admin.deleteUser(authData.user.id);
+        } catch (cleanupError) {
+          console.error('Failed to cleanup auth user:', cleanupError);
+        }
         throw profileError;
       }
 
@@ -196,7 +206,7 @@ export const UserManagement = () => {
         description: "User created successfully"
       });
 
-      setFormData({ username: '', email: '', password: '', role: 'guest', company_id: '' });
+      setFormData({ username: '', email: '', password: '', role: 'guest', company_id: 'none' });
       setIsCreateDialogOpen(false);
       fetchUsers();
     } catch (error: any) {
@@ -569,3 +579,4 @@ export const UserManagement = () => {
     </div>
   );
 };
+
