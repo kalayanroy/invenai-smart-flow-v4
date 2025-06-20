@@ -26,7 +26,7 @@ export const StockManagement = () => {
     const product = products.find(p => p.id === productId);
     const productSales = sales.filter(sale => sale.productId === productId);
     const productPurchases = purchases.filter(purchase => purchase.productId === productId && purchase.status === 'Received');
-    const productReturns = salesReturns.filter(returnItem => returnItem.productId === productId && returnItem.status === 'Processed');
+    const productReturns = salesReturns.filter(returnItem => returnItem.productId === productId && returnItem.status === 'Approved');
     
     // Get sales from vouchers
     const voucherSales = salesVouchers.reduce((total, voucher) => {
@@ -102,13 +102,6 @@ export const StockManagement = () => {
               ${filteredProducts.map(product => {
                 const movements = getProductMovements(product.id);
                 const calculatedStock = movements.openingStock + movements.totalPurchased + movements.totalReturned - movements.totalSold;
-                const stockStatus =
-  calculatedStock === 0
-    ? "Out of Stock"
-    : calculatedStock < 5
-    ? "Low Stock"
-    : "In Stock";
-
                 return `
                   <tr>
                     <td>${product.sku}</td>
@@ -117,7 +110,7 @@ export const StockManagement = () => {
                     <td>${movements.openingStock}</td>
                     <td>${product.stock}</td>
                     <td>${product.reorderPoint}</td>
-                    <td>${stockStatus}</td>
+                    <td>${product.status}</td>
                     <td>${movements.totalSold - movements.voucherSales}</td>
                     <td>${movements.voucherSales}</td>
                     <td>${movements.totalSold}</td>
