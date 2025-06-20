@@ -88,7 +88,7 @@ export const CreatePurchaseDialog = ({ open, onOpenChange, onPurchaseCreated }: 
           status: formData.status,
           notes: formData.notes
         };
-        console.log(item);
+        console.log(purchaseData);
         onPurchaseCreated(purchaseData);
       }
     });
