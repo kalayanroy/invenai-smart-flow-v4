@@ -50,16 +50,22 @@ export const CreatePurchaseDialog = ({ open, onOpenChange, onPurchaseCreated }: 
     const updatedItems = [...items];
     updatedItems[index] = { ...updatedItems[index], [field]: value };
     
+    // Handle product selection
     if (field === 'productId') {
       const product = products.find(p => p.id === value);
       if (product) {
         updatedItems[index].productName = product.name;
-        updatedItems[index].unitPrice = parseFloat(product.purchasePrice.replace('৳', '')) || 0;
+        // Extract numeric value from purchase price (remove ৳ symbol and convert to number)
+        const priceValue = parseFloat(product.purchasePrice.replace('৳', '').replace(',', '')) || 0;
+        updatedItems[index].unitPrice = priceValue;
+        console.log('Product selected:', product.name, 'Price:', priceValue);
       }
     }
     
-    if (field === 'quantity' || field === 'unitPrice') {
+    // Recalculate total amount when quantity or unit price changes
+    if (field === 'quantity' || field === 'unitPrice' || field === 'productId') {
       updatedItems[index].totalAmount = updatedItems[index].quantity * updatedItems[index].unitPrice;
+      console.log('Recalculated total for item', index, ':', updatedItems[index].totalAmount);
     }
     
     setItems(updatedItems);
@@ -69,35 +75,55 @@ export const CreatePurchaseDialog = ({ open, onOpenChange, onPurchaseCreated }: 
     return items.reduce((sum, item) => sum + item.totalAmount, 0);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Create separate purchase records for each item
-    items.forEach((item, index) => {
-      if (item.productId && item.quantity > 0) {
-        const purchaseData: Omit<Purchase, 'id'> = {
-          productId: item.productId,
-          productName: item.productName,
-          supplier: formData.supplier,
-          quantity: item.quantity,
-          unitPrice: `৳${item.unitPrice.toFixed(2)}`,
-          totalAmount: `৳${item.totalAmount.toFixed(2)}`,
-          date: new Date().toISOString().split('T')[0],
-          status: formData.status,
-          notes: formData.notes
-        };
+    console.log('Submitting purchase order with items:', items);
+    
+    try {
+      // Process each item sequentially to avoid timing issues
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
         
-        onPurchaseCreated(purchaseData);
+        if (item.productId && item.quantity > 0) {
+          const purchaseData: Omit<Purchase, 'id'> = {
+            productId: item.productId,
+            productName: item.productName,
+            supplier: formData.supplier,
+            quantity: item.quantity,
+            unitPrice: `৳${item.unitPrice.toFixed(2)}`,
+            totalAmount: `৳${item.totalAmount.toFixed(2)}`,
+            date: new Date().toISOString().split('T')[0],
+            status: formData.status,
+            notes: formData.notes
+          };
+          
+          console.log(`Creating purchase record ${i + 1}:`, purchaseData);
+          
+          // Wait for each purchase to be created before proceeding to the next
+          await new Promise((resolve) => {
+            onPurchaseCreated(purchaseData);
+            // Small delay to ensure processing completes
+            setTimeout(resolve, 100);
+          });
+        }
       }
-    });
 
-    onOpenChange(false);
-    setFormData({
-      supplier: '',
-      status: 'Ordered',
-      notes: ''
-    });
-    setItems([{ productId: '', productName: '', quantity: 1, unitPrice: 0, totalAmount: 0 }]);
+      console.log('All purchase records created successfully');
+      
+      // Reset form after all items are processed
+      setFormData({
+        supplier: '',
+        status: 'Ordered',
+        notes: ''
+      });
+      setItems([{ productId: '', productName: '', quantity: 1, unitPrice: 0, totalAmount: 0 }]);
+      
+      // Close dialog
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error creating purchase order:', error);
+    }
   };
 
   const isFormValid = items.some(item => item.productId && item.quantity > 0) && formData.supplier;
@@ -169,7 +195,10 @@ export const CreatePurchaseDialog = ({ open, onOpenChange, onPurchaseCreated }: 
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div className="space-y-2">
                       <Label>Product *</Label>
-                      <Select value={item.productId} onValueChange={(value) => updateItem(index, 'productId', value)}>
+                      <Select 
+                        value={item.productId} 
+                        onValueChange={(value) => updateItem(index, 'productId', value)}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select product" />
                         </SelectTrigger>
