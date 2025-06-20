@@ -24,7 +24,7 @@ export const useUnits = () => {
         console.error('Error fetching units:', error);
         return;
       }
-
+      console.log(data);
       setUnits(data || []);
     } catch (error) {
       console.error('Error in fetchUnits:', error);
