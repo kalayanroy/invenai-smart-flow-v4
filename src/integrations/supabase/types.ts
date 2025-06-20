@@ -11,21 +11,62 @@ export type Database = {
     Tables: {
       categories: {
         Row: {
+          company_id: string | null
           created_at: string
           id: string
           name: string
           updated_at: string
         }
         Insert: {
+          company_id?: string | null
           created_at?: string
           id?: string
           name: string
           updated_at?: string
         }
         Update: {
+          company_id?: string | null
           created_at?: string
           id?: string
           name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "categories_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      companies: {
+        Row: {
+          address: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -35,6 +76,7 @@ export type Database = {
           ai_recommendation: string | null
           barcode: string | null
           category: string
+          company_id: string | null
           created_at: string | null
           id: string
           image: string | null
@@ -54,6 +96,7 @@ export type Database = {
           ai_recommendation?: string | null
           barcode?: string | null
           category: string
+          company_id?: string | null
           created_at?: string | null
           id: string
           image?: string | null
@@ -73,6 +116,7 @@ export type Database = {
           ai_recommendation?: string | null
           barcode?: string | null
           category?: string
+          company_id?: string | null
           created_at?: string | null
           id?: string
           image?: string | null
@@ -88,10 +132,129 @@ export type Database = {
           unit?: string
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "products_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_voucher_items: {
+        Row: {
+          company_id: string | null
+          created_at: string | null
+          id: string
+          product_id: string
+          product_name: string
+          quantity: number
+          supplier: string
+          total_amount: number
+          unit_price: number
+          voucher_id: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string | null
+          id?: string
+          product_id: string
+          product_name: string
+          quantity: number
+          supplier: string
+          total_amount: number
+          unit_price: number
+          voucher_id: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string | null
+          id?: string
+          product_id?: string
+          product_name?: string
+          quantity?: number
+          supplier?: string
+          total_amount?: number
+          unit_price?: number
+          voucher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_voucher_items_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_voucher_items_voucher_id_fkey"
+            columns: ["voucher_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_vouchers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_vouchers: {
+        Row: {
+          company_id: string | null
+          created_at: string | null
+          date: string
+          discount_amount: number | null
+          final_amount: number
+          id: string
+          notes: string | null
+          payment_method: string | null
+          status: string
+          supplier_name: string
+          total_amount: number
+          updated_at: string | null
+          voucher_number: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string | null
+          date: string
+          discount_amount?: number | null
+          final_amount?: number
+          id: string
+          notes?: string | null
+          payment_method?: string | null
+          status?: string
+          supplier_name: string
+          total_amount?: number
+          updated_at?: string | null
+          voucher_number: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string | null
+          date?: string
+          discount_amount?: number | null
+          final_amount?: number
+          id?: string
+          notes?: string | null
+          payment_method?: string | null
+          status?: string
+          supplier_name?: string
+          total_amount?: number
+          updated_at?: string | null
+          voucher_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_vouchers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       purchases: {
         Row: {
+          company_id: string | null
           created_at: string | null
           date: string
           id: string
@@ -106,6 +269,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          company_id?: string | null
           created_at?: string | null
           date: string
           id: string
@@ -120,6 +284,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          company_id?: string | null
           created_at?: string | null
           date?: string
           id?: string
@@ -135,6 +300,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "purchases_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "purchases_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
@@ -145,6 +317,7 @@ export type Database = {
       }
       sales: {
         Row: {
+          company_id: string | null
           created_at: string | null
           customer_name: string | null
           date: string
@@ -159,6 +332,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          company_id?: string | null
           created_at?: string | null
           customer_name?: string | null
           date: string
@@ -173,6 +347,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          company_id?: string | null
           created_at?: string | null
           customer_name?: string | null
           date?: string
@@ -188,6 +363,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "sales_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "sales_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
@@ -198,6 +380,7 @@ export type Database = {
       }
       sales_returns: {
         Row: {
+          company_id: string | null
           created_at: string | null
           customer_name: string | null
           id: string
@@ -217,6 +400,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          company_id?: string | null
           created_at?: string | null
           customer_name?: string | null
           id: string
@@ -236,6 +420,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          company_id?: string | null
           created_at?: string | null
           customer_name?: string | null
           id?: string
@@ -256,6 +441,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "sales_returns_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "sales_returns_original_sale_id_fkey"
             columns: ["original_sale_id"]
             isOneToOne: false
@@ -271,36 +463,217 @@ export type Database = {
           },
         ]
       }
+      sales_voucher_items: {
+        Row: {
+          company_id: string | null
+          created_at: string | null
+          id: string
+          product_id: string
+          product_name: string
+          quantity: number
+          total_amount: number
+          unit_price: number
+          voucher_id: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string | null
+          id?: string
+          product_id: string
+          product_name: string
+          quantity: number
+          total_amount: number
+          unit_price: number
+          voucher_id: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string | null
+          id?: string
+          product_id?: string
+          product_name?: string
+          quantity?: number
+          total_amount?: number
+          unit_price?: number
+          voucher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_voucher_items_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_voucher_items_voucher_id_fkey"
+            columns: ["voucher_id"]
+            isOneToOne: false
+            referencedRelation: "sales_vouchers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sales_vouchers: {
+        Row: {
+          company_id: string | null
+          created_at: string | null
+          customer_name: string | null
+          date: string
+          discount_amount: number | null
+          final_amount: number
+          id: string
+          notes: string | null
+          payment_method: string | null
+          status: string
+          total_amount: number
+          updated_at: string | null
+          voucher_number: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string | null
+          customer_name?: string | null
+          date: string
+          discount_amount?: number | null
+          final_amount?: number
+          id: string
+          notes?: string | null
+          payment_method?: string | null
+          status?: string
+          total_amount?: number
+          updated_at?: string | null
+          voucher_number: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string | null
+          customer_name?: string | null
+          date?: string
+          discount_amount?: number | null
+          final_amount?: number
+          id?: string
+          notes?: string | null
+          payment_method?: string | null
+          status?: string
+          total_amount?: number
+          updated_at?: string | null
+          voucher_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_vouchers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       units: {
         Row: {
+          company_id: string | null
           created_at: string
           id: string
           name: string
           updated_at: string
         }
         Insert: {
+          company_id?: string | null
           created_at?: string
           id?: string
           name: string
           updated_at?: string
         }
         Update: {
+          company_id?: string | null
           created_at?: string
           id?: string
           name?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "units_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_profiles: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          id: string
+          is_active: boolean | null
+          permissions: string[] | null
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string
+          user_id: string
+          username: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          permissions?: string[] | null
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+          user_id: string
+          username: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          permissions?: string[] | null
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+          user_id?: string
+          username?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_profiles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_current_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      get_user_company_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      is_admin_or_super_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_super_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      user_has_role: {
+        Args: { required_role: Database["public"]["Enums"]["user_role"] }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      user_role: "super_admin" | "admin" | "manager" | "staff" | "guest"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -415,6 +788,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      user_role: ["super_admin", "admin", "manager", "staff", "guest"],
+    },
   },
 } as const
