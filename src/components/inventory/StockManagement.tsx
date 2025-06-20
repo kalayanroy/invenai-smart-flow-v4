@@ -26,7 +26,7 @@ export const StockManagement = () => {
     const product = products.find(p => p.id === productId);
     const productSales = sales.filter(sale => sale.productId === productId);
     const productPurchases = purchases.filter(purchase => purchase.productId === productId && purchase.status === 'Received');
-    const productReturns = salesReturns.filter(returnItem => returnItem.productId === productId && returnItem.status === 'Processed');
+    const productReturns = salesReturns.filter(returnItem => returnItem.productId === productId && returnItem.status === 'Approved');
     
     // Get sales from vouchers
     const voucherSales = salesVouchers.reduce((total, voucher) => {
@@ -109,6 +109,7 @@ export const StockManagement = () => {
     ? "Low Stock"
     : "In Stock";
 
+                
                 return `
                   <tr>
                     <td>${product.sku}</td>
