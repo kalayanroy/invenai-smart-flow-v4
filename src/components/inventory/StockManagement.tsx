@@ -174,6 +174,9 @@ export const StockManagement = () => {
     }
   };
 
+  console.log('Current products data in StockManagement:', products);
+  console.log('First product stock:', products[0]?.stock);
+
   return (
     <div className="space-y-6">
       {/* Stock Overview Cards */}
@@ -334,7 +337,7 @@ export const StockManagement = () => {
                         <span className="text-sm text-gray-500 ml-1">{product.unit}</span>
                       </td>
                       <td className="py-4 px-4">
-                        <span className="font-semibold">{product.stock}</span>
+                        <span className="font-semibold text-blue-600">{product.stock}</span>
                         <span className="text-sm text-gray-500 ml-1">{product.unit}</span>
                       </td>
                       <td className="py-4 px-4 text-sm">{product.reorderPoint}</td>

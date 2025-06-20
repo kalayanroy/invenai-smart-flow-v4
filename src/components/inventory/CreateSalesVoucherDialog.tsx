@@ -55,6 +55,8 @@ export const CreateSalesVoucherDialog = ({ open, onOpenChange }: CreateSalesVouc
         // Clean the price string and convert to number
         const cleanPrice = parseFloat(product.sellPrice.replace(/[৳$,]/g, ''));
         updatedItems[index].unitPrice = cleanPrice || 0;
+        // Recalculate total when product changes
+        updatedItems[index].totalAmount = updatedItems[index].quantity * (cleanPrice || 0);
       }
     }
 
@@ -67,10 +69,11 @@ export const CreateSalesVoucherDialog = ({ open, onOpenChange }: CreateSalesVouc
 
   const getAvailableStock = (productId: string) => {
     const product = products.find(p => p.id === productId);
+    console.log('Product found for stock check:', product);
     return product ? product.stock : 0;
   };
 
-  const totalAmount = items.reduce((sum, item) => sum + item.totalAmount, 0);
+  const totalAmount = items.reduce((sum, item) => sum + (item.totalAmount || 0), 0);
   const finalAmount = totalAmount - formData.discountAmount;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -213,7 +216,7 @@ export const CreateSalesVoucherDialog = ({ open, onOpenChange }: CreateSalesVouc
                                   <div className="flex items-center gap-1 ml-2">
                                     <Package className="h-3 w-3" />
                                     <span className="text-xs text-gray-500">
-                                      {product.stock}
+                                      Stock: {product.stock}
                                     </span>
                                   </div>
                                 </div>
@@ -226,7 +229,11 @@ export const CreateSalesVoucherDialog = ({ open, onOpenChange }: CreateSalesVouc
                       <div className="space-y-1">
                         <Label className="text-xs">Available</Label>
                         <div className="h-8 px-2 py-1 bg-gray-50 border rounded text-xs flex items-center">
-                          {item.productId ? availableStock : '-'}
+                          {item.productId ? (
+                            <span className={availableStock > 0 ? 'text-green-600' : 'text-red-600'}>
+                              {availableStock}
+                            </span>
+                          ) : '-'}
                         </div>
                       </div>
 
@@ -235,7 +242,6 @@ export const CreateSalesVoucherDialog = ({ open, onOpenChange }: CreateSalesVouc
                         <Input
                           type="number"
                           min="1"
-                          max={availableStock}
                           value={item.quantity}
                           onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 1)}
                           className={`h-8 ${isStockLow ? 'border-red-500 bg-red-50' : ''}`}
@@ -259,7 +265,7 @@ export const CreateSalesVoucherDialog = ({ open, onOpenChange }: CreateSalesVouc
                       <div className="space-y-1">
                         <Label className="text-xs">Total</Label>
                         <Input
-                          value={item.totalAmount.toFixed(2)}
+                          value={(item.totalAmount || 0).toFixed(2)}
                           readOnly
                           className="h-8 bg-gray-50"
                         />
