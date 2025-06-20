@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Upload, X } from 'lucide-react';
+import { Plus, Upload, X, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUnits } from '@/hooks/useUnits';
 import { useCategories } from '@/hooks/useCategories';
@@ -29,10 +29,12 @@ interface ProductFormData {
 
 export const CreateProductForm = ({ onProductCreated }: CreateProductFormProps) => {
   const { toast } = useToast();
-  const { units, addUnit, loading: unitsLoading } = useUnits();
-  const { categories, addCategory, loading: categoriesLoading } = useCategories();
+  const { units, addUnit, loading: unitsLoading, error: unitsError } = useUnits();
+  const { categories, addCategory, loading: categoriesLoading, error: categoriesError } = useCategories();
 
-  console.log(units);
+  console.log('Units loaded:', units, 'Loading:', unitsLoading, 'Error:', unitsError);
+  console.log('Categories loaded:', categories, 'Loading:', categoriesLoading, 'Error:', categoriesError);
+
   const [product, setProduct] = useState<ProductFormData>({
     name: '',
     sku: '',
@@ -320,6 +322,12 @@ export const CreateProductForm = ({ onProductCreated }: CreateProductFormProps) 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label>Unit *</Label>
+              {unitsError && (
+                <div className="flex items-center gap-2 text-red-600 text-sm">
+                  <AlertCircle className="h-4 w-4" />
+                  Failed to load units: {unitsError}
+                </div>
+              )}
               <div className="flex gap-2">
                 <Select 
                   value={product.unit} 
@@ -327,7 +335,12 @@ export const CreateProductForm = ({ onProductCreated }: CreateProductFormProps) 
                   disabled={unitsLoading}
                 >
                   <SelectTrigger className="flex-1">
-                    <SelectValue placeholder={unitsLoading ? "Loading units..." : "Select unit"} />
+                    <SelectValue placeholder={
+                      unitsLoading ? "Loading units..." : 
+                      unitsError ? "Error loading units" :
+                      units.length === 0 ? "No units available" :
+                      "Select unit"
+                    } />
                   </SelectTrigger>
                   <SelectContent>
                     {units.map((unit) => (
@@ -387,6 +400,12 @@ export const CreateProductForm = ({ onProductCreated }: CreateProductFormProps) 
 
             <div className="space-y-2">
               <Label>Category *</Label>
+              {categoriesError && (
+                <div className="flex items-center gap-2 text-red-600 text-sm">
+                  <AlertCircle className="h-4 w-4" />
+                  Failed to load categories: {categoriesError}
+                </div>
+              )}
               <div className="flex gap-2">
                 <Select 
                   value={product.category} 
@@ -394,7 +413,12 @@ export const CreateProductForm = ({ onProductCreated }: CreateProductFormProps) 
                   disabled={categoriesLoading}
                 >
                   <SelectTrigger className="flex-1">
-                    <SelectValue placeholder={categoriesLoading ? "Loading categories..." : "Select category"} />
+                    <SelectValue placeholder={
+                      categoriesLoading ? "Loading categories..." : 
+                      categoriesError ? "Error loading categories" :
+                      categories.length === 0 ? "No categories available" :
+                      "Select category"
+                    } />
                   </SelectTrigger>
                   <SelectContent>
                     {categories.map((category) => (

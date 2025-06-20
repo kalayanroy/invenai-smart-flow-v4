@@ -12,9 +12,14 @@ export interface Category {
 export const useCategories = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchCategories = async () => {
     try {
+      setLoading(true);
+      setError(null);
+      console.log('Fetching categories from database...');
+      
       const { data, error } = await supabase
         .from('categories')
         .select('*')
@@ -22,12 +27,15 @@ export const useCategories = () => {
 
       if (error) {
         console.error('Error fetching categories:', error);
+        setError(error.message);
         return;
       }
 
+      console.log('Categories fetched successfully:', data);
       setCategories(data || []);
     } catch (error) {
       console.error('Error in fetchCategories:', error);
+      setError('Failed to fetch categories');
     } finally {
       setLoading(false);
     }
@@ -35,6 +43,7 @@ export const useCategories = () => {
 
   const addCategory = async (name: string) => {
     try {
+      console.log('Adding new category:', name);
       const { data, error } = await supabase
         .from('categories')
         .insert([{ name }])
@@ -46,7 +55,8 @@ export const useCategories = () => {
         throw error;
       }
 
-      await fetchCategories();
+      console.log('Category added successfully:', data);
+      await fetchCategories(); // Refresh the list
       return data;
     } catch (error) {
       console.error('Error in addCategory:', error);
@@ -102,6 +112,7 @@ export const useCategories = () => {
   return {
     categories,
     loading,
+    error,
     addCategory,
     editCategory,
     deleteCategory,

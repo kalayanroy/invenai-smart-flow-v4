@@ -12,9 +12,14 @@ export interface Unit {
 export const useUnits = () => {
   const [units, setUnits] = useState<Unit[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchUnits = async () => {
     try {
+      setLoading(true);
+      setError(null);
+      console.log('Fetching units from database...');
+      
       const { data, error } = await supabase
         .from('units')
         .select('*')
@@ -22,12 +27,15 @@ export const useUnits = () => {
 
       if (error) {
         console.error('Error fetching units:', error);
+        setError(error.message);
         return;
       }
-      console.log(data);
+      
+      console.log('Units fetched successfully:', data);
       setUnits(data || []);
     } catch (error) {
       console.error('Error in fetchUnits:', error);
+      setError('Failed to fetch units');
     } finally {
       setLoading(false);
     }
@@ -35,6 +43,7 @@ export const useUnits = () => {
 
   const addUnit = async (name: string) => {
     try {
+      console.log('Adding new unit:', name);
       const { data, error } = await supabase
         .from('units')
         .insert([{ name }])
@@ -46,7 +55,8 @@ export const useUnits = () => {
         throw error;
       }
 
-      await fetchUnits();
+      console.log('Unit added successfully:', data);
+      await fetchUnits(); // Refresh the list
       return data;
     } catch (error) {
       console.error('Error in addUnit:', error);
@@ -102,6 +112,7 @@ export const useUnits = () => {
   return {
     units,
     loading,
+    error,
     addUnit,
     editUnit,
     deleteUnit,
