@@ -107,6 +107,19 @@ export const useSalesVouchers = () => {
   const fetchSalesVouchers = async () => {
     try {
       console.log('Fetching sales vouchers from Supabase...');
+      
+      // Test if tables exist by making a simple query
+      const { data: testVouchers, error: testError } = await supabase
+        .from('sales_vouchers')
+        .select('id')
+        .limit(1);
+      
+      if (testError) {
+        console.error('Error testing sales_vouchers table:', testError);
+        console.error('This suggests the sales_vouchers table may not exist in the database');
+        return;
+      }
+
       const { data: vouchers, error: vouchersError } = await supabase
         .from('sales_vouchers')
         .select('*')
@@ -161,8 +174,19 @@ export const useSalesVouchers = () => {
       
       const voucherId = `SV${Date.now()}`;
       
+      // Test if tables exist first
+      const { data: testData, error: testError } = await supabase
+        .from('sales_vouchers')
+        .select('id')
+        .limit(1);
+      
+      if (testError) {
+        console.error('Error: sales_vouchers table does not exist or is not accessible:', testError);
+        throw new Error('Sales vouchers table is not available. Please check database setup.');
+      }
+      
       // Start a transaction-like approach by creating voucher first
-      const { error: voucherError } = await supabase
+      const { data: voucherResult, error: voucherError } = await supabase
         .from('sales_vouchers')
         .insert([{
           id: voucherId,
@@ -175,12 +199,15 @@ export const useSalesVouchers = () => {
           status: voucherData.status,
           notes: voucherData.notes,
           date: voucherData.date
-        }]);
+        }])
+        .select();
 
       if (voucherError) {
         console.error('Error creating voucher:', voucherError);
         throw voucherError;
       }
+
+      console.log('Voucher created successfully:', voucherResult);
 
       // Create voucher items
       const voucherItems = voucherData.items.map(item => ({
@@ -192,14 +219,17 @@ export const useSalesVouchers = () => {
         total_amount: item.totalAmount
       }));
 
-      const { error: itemsError } = await supabase
+      const { data: itemsResult, error: itemsError } = await supabase
         .from('sales_voucher_items')
-        .insert(voucherItems);
+        .insert(voucherItems)
+        .select();
 
       if (itemsError) {
         console.error('Error creating voucher items:', itemsError);
         throw itemsError;
       }
+
+      console.log('Voucher items created successfully:', itemsResult);
 
       // Automatically recalculate stock for each item if the voucher is completed
       if (voucherData.status === 'Completed') {
