@@ -9,29 +9,37 @@ import { useProducts } from '@/hooks/useProducts';
 import { useSales } from '@/hooks/useSales';
 import { usePurchases } from '@/hooks/usePurchases';
 import { useSalesReturns } from '@/hooks/useSalesReturns';
+import { useSalesVouchers } from '@/hooks/useSalesVouchers';
 
 export const StockManagement = () => {
   const { products } = useProducts();
   const { sales } = useSales();
   const { purchases } = usePurchases();
   const { salesReturns } = useSalesReturns();
+  const { salesVouchers } = useSalesVouchers();
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
 
-  // Calculate stock movements including opening stock and returns
+  // Calculate stock movements including opening stock, purchases, sales, returns, and voucher sales
   const getProductMovements = (productId: string) => {
     const product = products.find(p => p.id === productId);
     const productSales = sales.filter(sale => sale.productId === productId);
-    const productPurchases = purchases.filter(purchase => purchase.productId === productId);
-    const productReturns = salesReturns.filter(returnItem => returnItem.productId === productId);
+    const productPurchases = purchases.filter(purchase => purchase.productId === productId && purchase.status === 'Received');
+    const productReturns = salesReturns.filter(returnItem => returnItem.productId === productId && returnItem.status === 'Processed');
+    
+    // Get sales from vouchers
+    const voucherSales = salesVouchers.reduce((total, voucher) => {
+      const voucherItems = voucher.items.filter(item => item.productId === productId);
+      return total + voucherItems.reduce((itemTotal, item) => itemTotal + item.quantity, 0);
+    }, 0);
     
     const openingStock = product?.openingStock || 0;
-    const totalSold = productSales.reduce((sum, sale) => sum + sale.quantity, 0);
+    const totalSold = productSales.reduce((sum, sale) => sum + sale.quantity, 0) + voucherSales;
     const totalPurchased = productPurchases.reduce((sum, purchase) => sum + purchase.quantity, 0);
     const totalReturned = productReturns.reduce((sum, returnItem) => sum + returnItem.returnQuantity, 0);
     
-    return { openingStock, totalSold, totalPurchased, totalReturned };
+    return { openingStock, totalSold, totalPurchased, totalReturned, voucherSales };
   };
 
   // Filter products
@@ -82,6 +90,8 @@ export const StockManagement = () => {
                 <th>Current Stock</th>
                 <th>Reorder Point</th>
                 <th>Status</th>
+                <th>Regular Sales</th>
+                <th>Voucher Sales</th>
                 <th>Total Sold</th>
                 <th>Total Purchased</th>
                 <th>Total Returned</th>
@@ -101,6 +111,8 @@ export const StockManagement = () => {
                     <td>${product.stock}</td>
                     <td>${product.reorderPoint}</td>
                     <td>${product.status}</td>
+                    <td>${movements.totalSold - movements.voucherSales}</td>
+                    <td>${movements.voucherSales}</td>
                     <td>${movements.totalSold}</td>
                     <td>${movements.totalPurchased}</td>
                     <td>${movements.totalReturned}</td>
@@ -124,7 +136,7 @@ export const StockManagement = () => {
 
   // Export to CSV
   const handleExport = () => {
-    const headers = ['SKU', 'Product Name', 'Category', 'Opening Stock', 'Current Stock', 'Reorder Point', 'Status', 'Total Sold', 'Total Purchased', 'Total Returned', 'Calculated Stock'];
+    const headers = ['SKU', 'Product Name', 'Category', 'Opening Stock', 'Current Stock', 'Reorder Point', 'Status', 'Regular Sales', 'Voucher Sales', 'Total Sold', 'Total Purchased', 'Total Returned', 'Calculated Stock'];
     const csvData = [
       headers.join(','),
       ...filteredProducts.map(product => {
@@ -138,6 +150,8 @@ export const StockManagement = () => {
           product.stock,
           product.reorderPoint,
           product.status,
+          movements.totalSold - movements.voucherSales,
+          movements.voucherSales,
           movements.totalSold,
           movements.totalPurchased,
           movements.totalReturned,
@@ -306,7 +320,8 @@ export const StockManagement = () => {
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Current Stock</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Reorder Point</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Status</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600">Total Sold</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-600">Regular Sales</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-600">Voucher Sales</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Total Purchased</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Total Returned</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Calculated Stock</th>
@@ -316,6 +331,7 @@ export const StockManagement = () => {
                 {filteredProducts.map((product) => {
                   const movements = getProductMovements(product.id);
                   const calculatedStock = movements.openingStock + movements.totalPurchased + movements.totalReturned - movements.totalSold;
+                  const regularSales = movements.totalSold - movements.voucherSales;
                   
                   return (
                     <tr key={product.id} className="border-b hover:bg-gray-50 transition-colors">
@@ -343,13 +359,19 @@ export const StockManagement = () => {
                           {product.status}
                         </Badge>
                       </td>
-                      <td className="py-4 px-4 text-sm">{movements.totalSold}</td>
+                      <td className="py-4 px-4 text-sm">{regularSales}</td>
+                      <td className="py-4 px-4 text-sm">{movements.voucherSales}</td>
                       <td className="py-4 px-4 text-sm">{movements.totalPurchased}</td>
                       <td className="py-4 px-4 text-sm">{movements.totalReturned}</td>
                       <td className="py-4 px-4">
                         <span className={`text-sm font-medium ${calculatedStock >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                           {calculatedStock}
                         </span>
+                        {Math.abs(calculatedStock - product.stock) > 0 && (
+                          <div className="text-xs text-red-500">
+                            Diff: {calculatedStock - product.stock}
+                          </div>
+                        )}
                       </td>
                     </tr>
                   );

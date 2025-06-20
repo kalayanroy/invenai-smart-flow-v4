@@ -6,7 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSales } from '@/hooks/useSales';
+import { useSalesVouchers } from '@/hooks/useSalesVouchers';
 
 interface CreateReturnDialogProps {
   open: boolean;
@@ -16,8 +18,12 @@ interface CreateReturnDialogProps {
 
 export const CreateReturnDialog = ({ open, onOpenChange, onReturnCreated }: CreateReturnDialogProps) => {
   const { sales } = useSales();
+  const { salesVouchers } = useSalesVouchers();
+  const [activeTab, setActiveTab] = useState('regular-sales');
   const [formData, setFormData] = useState({
     originalSaleId: '',
+    originalVoucherId: '',
+    originalVoucherItemId: '',
     productId: '',
     productName: '',
     returnQuantity: 1,
@@ -29,29 +35,67 @@ export const CreateReturnDialog = ({ open, onOpenChange, onReturnCreated }: Crea
     notes: ''
   });
 
-  const handleSaleSelect = (saleId: string) => {
+  const handleRegularSaleSelect = (saleId: string) => {
     const sale = sales.find(s => s.id === saleId);
     if (sale) {
-      const unitPriceNum = parseFloat(sale.unitPrice.replace('$', ''));
+      const unitPriceNum = parseFloat(sale.unitPrice.replace('৳', ''));
       setFormData(prev => ({
         ...prev,
         originalSaleId: saleId,
+        originalVoucherId: '',
+        originalVoucherItemId: '',
         productId: sale.productId,
         productName: sale.productName,
         originalQuantity: sale.quantity,
         unitPrice: sale.unitPrice,
         customerName: sale.customerName || '',
-        totalRefund: `${(unitPriceNum * prev.returnQuantity).toFixed(2)}`
+        totalRefund: `৳${(unitPriceNum * prev.returnQuantity).toFixed(2)}`
       }));
     }
   };
 
+  const handleVoucherSelect = (voucherId: string) => {
+    const voucher = salesVouchers.find(v => v.id === voucherId);
+    if (voucher) {
+      setFormData(prev => ({
+        ...prev,
+        originalSaleId: '',
+        originalVoucherId: voucherId,
+        originalVoucherItemId: '',
+        productId: '',
+        productName: '',
+        originalQuantity: 0,
+        unitPrice: '',
+        customerName: voucher.customerName || '',
+        totalRefund: ''
+      }));
+    }
+  };
+
+  const handleVoucherItemSelect = (itemId: string) => {
+    const voucher = salesVouchers.find(v => v.id === formData.originalVoucherId);
+    if (voucher) {
+      const item = voucher.items.find(i => i.id === itemId);
+      if (item) {
+        setFormData(prev => ({
+          ...prev,
+          originalVoucherItemId: itemId,
+          productId: item.productId,
+          productName: item.productName,
+          originalQuantity: item.quantity,
+          unitPrice: `৳${item.unitPrice}`,
+          totalRefund: `৳${(item.unitPrice * prev.returnQuantity).toFixed(2)}`
+        }));
+      }
+    }
+  };
+
   const handleQuantityChange = (quantity: number) => {
-    const unitPriceNum = parseFloat(formData.unitPrice.replace('$', '')) || 0;
+    const unitPriceNum = parseFloat(formData.unitPrice.replace('৳', '')) || 0;
     setFormData(prev => ({
       ...prev,
       returnQuantity: quantity,
-      totalRefund: `$${(unitPriceNum * quantity).toFixed(2)}`
+      totalRefund: `৳${(unitPriceNum * quantity).toFixed(2)}`
     }));
   };
 
@@ -61,7 +105,8 @@ export const CreateReturnDialog = ({ open, onOpenChange, onReturnCreated }: Crea
     const returnData = {
       ...formData,
       returnDate: new Date().toISOString().split('T')[0],
-      status: 'Pending' as const
+      status: 'Pending' as const,
+      sourceType: activeTab === 'regular-sales' ? 'regular_sale' : 'voucher_sale'
     };
 
     onReturnCreated(returnData);
@@ -70,6 +115,8 @@ export const CreateReturnDialog = ({ open, onOpenChange, onReturnCreated }: Crea
     // Reset form
     setFormData({
       originalSaleId: '',
+      originalVoucherId: '',
+      originalVoucherItemId: '',
       productId: '',
       productName: '',
       returnQuantity: 1,
@@ -80,44 +127,105 @@ export const CreateReturnDialog = ({ open, onOpenChange, onReturnCreated }: Crea
       customerName: '',
       notes: ''
     });
+    setActiveTab('regular-sales');
   };
+
+  const selectedVoucher = salesVouchers.find(v => v.id === formData.originalVoucherId);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create Return Request</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="originalSaleId">Original Sale</Label>
-              <Select value={formData.originalSaleId} onValueChange={handleSaleSelect}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select original sale" />
-                </SelectTrigger>
-                <SelectContent>
-                  {sales.map(sale => (
-                    <SelectItem key={sale.id} value={sale.id}>
-                      {sale.id} - {sale.productName} ({sale.customerName})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="regular-sales">Regular Sales</TabsTrigger>
+              <TabsTrigger value="voucher-sales">Voucher Sales</TabsTrigger>
+            </TabsList>
 
-            <div className="space-y-2">
-              <Label htmlFor="customerName">Customer Name</Label>
-              <Input
-                id="customerName"
-                value={formData.customerName}
-                onChange={(e) => setFormData(prev => ({ ...prev, customerName: e.target.value }))}
-                placeholder="Customer name"
-                disabled={!!formData.originalSaleId}
-              />
-            </div>
-          </div>
+            <TabsContent value="regular-sales" className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="originalSaleId">Original Sale</Label>
+                  <Select value={formData.originalSaleId} onValueChange={handleRegularSaleSelect}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select original sale" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {sales.map(sale => (
+                        <SelectItem key={sale.id} value={sale.id}>
+                          {sale.id} - {sale.productName} ({sale.customerName || 'Walk-in'})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="customerName">Customer Name</Label>
+                  <Input
+                    id="customerName"
+                    value={formData.customerName}
+                    onChange={(e) => setFormData(prev => ({ ...prev, customerName: e.target.value }))}
+                    placeholder="Customer name"
+                    disabled={!!formData.originalSaleId}
+                  />
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="voucher-sales" className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="originalVoucherId">Sales Voucher</Label>
+                  <Select value={formData.originalVoucherId} onValueChange={handleVoucherSelect}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select sales voucher" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {salesVouchers.map(voucher => (
+                        <SelectItem key={voucher.id} value={voucher.id}>
+                          {voucher.voucherNumber} - {voucher.customerName || 'Walk-in'} (৳{voucher.finalAmount})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {selectedVoucher && (
+                  <div className="space-y-2">
+                    <Label htmlFor="originalVoucherItemId">Voucher Item</Label>
+                    <Select value={formData.originalVoucherItemId} onValueChange={handleVoucherItemSelect}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select item" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {selectedVoucher.items.map((item, index) => (
+                          <SelectItem key={item.id || index} value={item.id || index.toString()}>
+                            {item.productName} (Qty: {item.quantity}, Price: ৳{item.unitPrice})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <Label htmlFor="customerName">Customer Name</Label>
+                  <Input
+                    id="customerName"
+                    value={formData.customerName}
+                    onChange={(e) => setFormData(prev => ({ ...prev, customerName: e.target.value }))}
+                    placeholder="Customer name"
+                    disabled={!!formData.originalVoucherId}
+                  />
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
 
           {formData.productName && (
             <>
@@ -202,7 +310,13 @@ export const CreateReturnDialog = ({ open, onOpenChange, onReturnCreated }: Crea
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={!formData.originalSaleId || !formData.reason}>
+            <Button 
+              type="submit" 
+              disabled={
+                !formData.reason || 
+                (!formData.originalSaleId && !formData.originalVoucherItemId)
+              }
+            >
               Create Return Request
             </Button>
           </div>

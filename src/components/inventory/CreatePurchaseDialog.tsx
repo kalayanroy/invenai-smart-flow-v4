@@ -6,8 +6,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Plus, Trash2 } from 'lucide-react';
 import { useProducts } from '@/hooks/useProducts';
 import { Purchase } from '@/hooks/usePurchases';
+
+interface PurchaseItem {
+  productId: string;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  totalAmount: number;
+}
 
 interface CreatePurchaseDialogProps {
   open: boolean;
@@ -18,71 +27,90 @@ interface CreatePurchaseDialogProps {
 export const CreatePurchaseDialog = ({ open, onOpenChange, onPurchaseCreated }: CreatePurchaseDialogProps) => {
   const { products } = useProducts();
   const [formData, setFormData] = useState({
-    productId: '',
     supplier: '',
-    quantity: 1,
-    unitPrice: '',
     status: 'Ordered' as Purchase['status'],
     notes: ''
   });
 
-  const selectedProduct = products.find(p => p.id === formData.productId);
-  const unitPrice = parseFloat(formData.unitPrice.replace('৳', '')) || 0;
-  const totalAmount = unitPrice * formData.quantity;
+  const [items, setItems] = useState<PurchaseItem[]>([
+    { productId: '', productName: '', quantity: 1, unitPrice: 0, totalAmount: 0 }
+  ]);
+
+  const addItem = () => {
+    setItems([...items, { productId: '', productName: '', quantity: 1, unitPrice: 0, totalAmount: 0 }]);
+  };
+
+  const removeItem = (index: number) => {
+    if (items.length > 1) {
+      setItems(items.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateItem = (index: number, field: keyof PurchaseItem, value: any) => {
+    const updatedItems = [...items];
+    updatedItems[index] = { ...updatedItems[index], [field]: value };
+    
+    if (field === 'productId') {
+      const product = products.find(p => p.id === value);
+      if (product) {
+        updatedItems[index].productName = product.name;
+        updatedItems[index].unitPrice = parseFloat(product.purchasePrice.replace('৳', '')) || 0;
+      }
+    }
+    
+    if (field === 'quantity' || field === 'unitPrice') {
+      updatedItems[index].totalAmount = updatedItems[index].quantity * updatedItems[index].unitPrice;
+    }
+    
+    setItems(updatedItems);
+  };
+
+  const getTotalAmount = () => {
+    return items.reduce((sum, item) => sum + item.totalAmount, 0);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedProduct) return;
+    
+    // Create separate purchase records for each item
+    items.forEach((item, index) => {
+      if (item.productId && item.quantity > 0) {
+        const purchaseData: Omit<Purchase, 'id'> = {
+          productId: item.productId,
+          productName: item.productName,
+          supplier: formData.supplier,
+          quantity: item.quantity,
+          unitPrice: `৳${item.unitPrice.toFixed(2)}`,
+          totalAmount: `৳${item.totalAmount.toFixed(2)}`,
+          date: new Date().toISOString().split('T')[0],
+          status: formData.status,
+          notes: formData.notes
+        };
+        
+        onPurchaseCreated(purchaseData);
+      }
+    });
 
-    const purchaseData: Omit<Purchase, 'id'> = {
-      productId: formData.productId,
-      productName: selectedProduct.name,
-      supplier: formData.supplier,
-      quantity: formData.quantity,
-      unitPrice: `${formData.unitPrice}`,
-      totalAmount: `${totalAmount.toFixed(2)}`,
-      date: new Date().toISOString().split('T')[0],
-      status: formData.status,
-      notes: formData.notes
-    };
-
-    onPurchaseCreated(purchaseData);
     onOpenChange(false);
     setFormData({
-      productId: '',
       supplier: '',
-      quantity: 1,
-      unitPrice: '',
       status: 'Ordered',
       notes: ''
     });
+    setItems([{ productId: '', productName: '', quantity: 1, unitPrice: 0, totalAmount: 0 }]);
   };
+
+  const isFormValid = items.some(item => item.productId && item.quantity > 0) && formData.supplier;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create Purchase Order</DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="product">Product *</Label>
-              <Select value={formData.productId} onValueChange={(value) => setFormData({...formData, productId: value})}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a product" />
-                </SelectTrigger>
-                <SelectContent>
-                  {products.map((product) => (
-                    <SelectItem key={product.id} value={product.id}>
-                      {product.name} - {product.purchasePrice}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
             <div className="space-y-2">
               <Label htmlFor="supplier">Supplier *</Label>
               <Input
@@ -95,31 +123,8 @@ export const CreatePurchaseDialog = ({ open, onOpenChange, onPurchaseCreated }: 
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="quantity">Quantity *</Label>
-              <Input
-                id="quantity"
-                type="number"
-                min="1"
-                value={formData.quantity}
-                onChange={(e) => setFormData({...formData, quantity: parseInt(e.target.value) || 1})}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="unitPrice">Unit Price *</Label>
-              <Input
-                id="unitPrice"
-                value={formData.unitPrice}
-                onChange={(e) => setFormData({...formData, unitPrice: e.target.value})}
-                placeholder="e.g., 50.00"
-                required
-              />
-            </div>
-
-            <div className="space-y-2 md:col-span-2">
               <Label htmlFor="status">Status</Label>
-              <Select defaultValue="Received" value={formData.status} onValueChange={(value: Purchase['status']) => setFormData({...formData, status: value})}>
+              <Select value={formData.status} onValueChange={(value: Purchase['status']) => setFormData({...formData, status: value})}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -133,22 +138,100 @@ export const CreatePurchaseDialog = ({ open, onOpenChange, onPurchaseCreated }: 
             </div>
           </div>
 
-          {unitPrice > 0 && (
+          {/* Items Section */}
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <Label className="text-lg font-medium">Items</Label>
+              <Button type="button" onClick={addItem} className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Add Item
+              </Button>
+            </div>
+
+            <div className="space-y-4">
+              {items.map((item, index) => (
+                <div key={index} className="border rounded-lg p-4 space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h4 className="font-medium">Item {index + 1}</h4>
+                    {items.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => removeItem(index)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="space-y-2">
+                      <Label>Product *</Label>
+                      <Select value={item.productId} onValueChange={(value) => updateItem(index, 'productId', value)}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select product" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {products.map((product) => (
+                            <SelectItem key={product.id} value={product.id}>
+                              {product.name} - {product.purchasePrice}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Quantity *</Label>
+                      <Input
+                        type="number"
+                        min="1"
+                        value={item.quantity}
+                        onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 1)}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Unit Price *</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={item.unitPrice}
+                        onChange={(e) => updateItem(index, 'unitPrice', parseFloat(e.target.value) || 0)}
+                        placeholder="0.00"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Total Amount</Label>
+                      <div className="p-2 bg-gray-50 rounded border font-medium">
+                        ৳{item.totalAmount.toFixed(2)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Purchase Summary */}
             <div className="bg-gray-50 p-4 rounded-lg">
               <h4 className="font-medium mb-2">Purchase Summary</h4>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="text-gray-600">Unit Price:</span> ৳{unitPrice.toFixed(2)}
+                  <span className="text-gray-600">Total Items:</span> {items.filter(item => item.productId).length}
                 </div>
                 <div>
-                  <span className="text-gray-600">Quantity:</span> {formData.quantity}
+                  <span className="text-gray-600">Total Quantity:</span> {items.reduce((sum, item) => sum + item.quantity, 0)}
                 </div>
                 <div className="col-span-2 text-lg font-semibold">
-                  <span className="text-gray-600">Total Amount:</span> ৳{totalAmount.toFixed(2)}
+                  <span className="text-gray-600">Grand Total:</span> ৳{getTotalAmount().toFixed(2)}
                 </div>
               </div>
             </div>
-          )}
+          </div>
 
           <div className="space-y-2">
             <Label htmlFor="notes">Notes</Label>
@@ -165,7 +248,7 @@ export const CreatePurchaseDialog = ({ open, onOpenChange, onPurchaseCreated }: 
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={!formData.productId || !formData.supplier || !formData.unitPrice}>
+            <Button type="submit" disabled={!isFormValid}>
               Create Purchase Order
             </Button>
           </div>

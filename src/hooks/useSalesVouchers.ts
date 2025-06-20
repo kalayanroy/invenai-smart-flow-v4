@@ -135,8 +135,10 @@ export const useSalesVouchers = () => {
         throw itemsError;
       }
 
-      // Update product stock
+      // Update product stock for each item
       for (const item of voucherData.items) {
+        console.log(`Updating stock for product ${item.productId}, reducing by ${item.quantity}`);
+        
         const { data: product, error: fetchError } = await supabase
           .from('products')
           .select('stock')
@@ -144,18 +146,25 @@ export const useSalesVouchers = () => {
           .single();
 
         if (fetchError) {
-          console.error('Error fetching product:', fetchError);
+          console.error('Error fetching product for stock update:', fetchError);
           continue;
         }
 
-        const newStock = product.stock - item.quantity;
+        const newStock = Math.max(0, product.stock - item.quantity);
+        console.log(`Product ${item.productId} stock: ${product.stock} -> ${newStock}`);
+        
         const { error: updateError } = await supabase
           .from('products')
-          .update({ stock: newStock })
+          .update({ 
+            stock: newStock,
+            status: newStock === 0 ? 'Out of Stock' : newStock <= 10 ? 'Low Stock' : 'In Stock'
+          })
           .eq('id', item.productId);
 
         if (updateError) {
           console.error('Error updating product stock:', updateError);
+        } else {
+          console.log(`Successfully updated stock for product ${item.productId}`);
         }
       }
 
@@ -210,6 +219,8 @@ export const useSalesVouchers = () => {
       const voucher = salesVouchers.find(v => v.id === id);
       if (voucher) {
         for (const item of voucher.items) {
+          console.log(`Restoring stock for product ${item.productId}, adding back ${item.quantity}`);
+          
           const { data: product, error: fetchError } = await supabase
             .from('products')
             .select('stock')
@@ -218,10 +229,17 @@ export const useSalesVouchers = () => {
 
           if (!fetchError && product) {
             const newStock = product.stock + item.quantity;
+            console.log(`Product ${item.productId} stock: ${product.stock} -> ${newStock}`);
+            
             await supabase
               .from('products')
-              .update({ stock: newStock })
+              .update({ 
+                stock: newStock,
+                status: newStock === 0 ? 'Out of Stock' : newStock <= 10 ? 'Low Stock' : 'In Stock'
+              })
               .eq('id', item.productId);
+              
+            console.log(`Successfully restored stock for product ${item.productId}`);
           }
         }
       }
