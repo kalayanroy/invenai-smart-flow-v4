@@ -32,7 +32,8 @@ export const CreateSalesVoucherDialog = ({ open, onOpenChange, onVoucherCreated 
     status: 'Completed',
     notes: '',
     date: new Date().toISOString().split('T')[0],
-    discountAmount: 0
+    discountAmount: 0,
+    productId: '',
   });
 // Calculate actual available stock using: Opening Stock + Total Purchase + Total Return - Total Sales
   const getCalculatedStock = (productId: string) => {
