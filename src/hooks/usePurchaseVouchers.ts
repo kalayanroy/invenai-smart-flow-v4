@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useProducts } from './useProducts';
 
 export interface PurchaseVoucherItem {
   id?: string;
@@ -28,10 +29,81 @@ export interface PurchaseVoucher {
 
 export const usePurchaseVouchers = () => {
   const [purchaseVouchers, setPurchaseVouchers] = useState<PurchaseVoucher[]>([]);
+  const { updateProduct, products } = useProducts();
 
   useEffect(() => {
     fetchPurchaseVouchers();
   }, []);
+
+  // Helper function to recalculate stock for a specific product
+  const recalculateProductStock = async (productId: string) => {
+    try {
+      console.log(`Recalculating stock for product: ${productId}`);
+      
+      // Get the product
+      const product = products.find(p => p.id === productId);
+      if (!product) {
+        console.error(`Product ${productId} not found`);
+        return;
+      }
+
+      // Fetch all transactions for this product
+      const { data: salesData } = await supabase
+        .from('sales')
+        .select('quantity')
+        .eq('product_id', productId);
+
+      const { data: purchasesData } = await supabase
+        .from('purchases')
+        .select('quantity')
+        .eq('product_id', productId);
+
+      const { data: salesReturnsData } = await supabase
+        .from('sales_returns')
+        .select('return_quantity')
+        .eq('product_id', productId);
+
+      const { data: salesVoucherItemsData } = await supabase
+        .from('sales_voucher_items')
+        .select('quantity')
+        .eq('product_id', productId);
+
+      const { data: purchaseVoucherItemsData } = await supabase
+        .from('purchase_voucher_items')
+        .select('quantity')
+        .eq('product_id', productId);
+
+      // Calculate totals
+      const totalSold = (salesData || []).reduce((sum, sale) => sum + sale.quantity, 0);
+      const totalPurchased = (purchasesData || []).reduce((sum, purchase) => sum + purchase.quantity, 0);
+      const totalReturned = (salesReturnsData || []).reduce((sum, returnItem) => sum + returnItem.return_quantity, 0);
+      const totalSoldVouchers = (salesVoucherItemsData || []).reduce((sum, item) => sum + item.quantity, 0);
+      const totalPurchasedVouchers = (purchaseVoucherItemsData || []).reduce((sum, item) => sum + item.quantity, 0);
+
+      // Calculate current stock
+      const calculatedStock = product.openingStock + totalPurchased + totalPurchasedVouchers + totalReturned - totalSold - totalSoldVouchers;
+
+      // Determine status
+      const getStockStatus = (stock: number, reorderPoint: number) => {
+        if (stock <= 0) return 'Out of Stock';
+        if (stock <= reorderPoint) return 'Low Stock';
+        return 'In Stock';
+      };
+
+      const newStatus = getStockStatus(calculatedStock, product.reorderPoint);
+
+      console.log(`Updating stock for ${product.name}: ${product.stock} -> ${calculatedStock}, Status: ${newStatus}`);
+
+      // Update the product stock and status
+      await updateProduct(productId, { 
+        stock: calculatedStock,
+        status: newStatus
+      });
+
+    } catch (error) {
+      console.error('Error recalculating product stock:', error);
+    }
+  };
 
   const fetchPurchaseVouchers = async () => {
     try {
@@ -128,6 +200,13 @@ export const usePurchaseVouchers = () => {
       if (itemsError) {
         console.error('Error creating voucher items:', itemsError);
         throw itemsError;
+      }
+
+      // Automatically recalculate stock for each item if the voucher is received
+      if (voucherData.status === 'Received') {
+        for (const item of voucherData.items) {
+          await recalculateProductStock(item.productId);
+        }
       }
 
       await fetchPurchaseVouchers();
