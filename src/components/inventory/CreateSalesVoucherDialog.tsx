@@ -18,6 +18,9 @@ interface CreateSalesVoucherDialogProps {
 
 export const CreateSalesVoucherDialog = ({ open, onOpenChange, onVoucherCreated }: CreateSalesVoucherDialogProps) => {
   const { products } = useProducts();
+  const { sales } = useSales();
+  const { purchases } = usePurchases();
+  const { salesReturns } = useSalesReturns();
   const [formData, setFormData] = useState({
     voucherNumber: `SV${Date.now()}`,
     customerName: '',
