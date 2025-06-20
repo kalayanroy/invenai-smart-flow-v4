@@ -33,7 +33,6 @@ export const CreateSalesVoucherDialog = ({ open, onOpenChange, onVoucherCreated 
     notes: '',
     date: new Date().toISOString().split('T')[0],
     discountAmount: 0,
-    productId: '',
   });
 // Calculate actual available stock using: Opening Stock + Total Purchase + Total Return - Total Sales
   const getCalculatedStock = (productId: string) => {
@@ -49,9 +48,9 @@ export const CreateSalesVoucherDialog = ({ open, onOpenChange, onVoucherCreated 
     
     return openingStock + totalPurchased + totalReturned - totalSold;
   };
-  const selectedProduct = products.find(p => p.id === formData.productId);
-   const availableStock = selectedProduct ? getCalculatedStock(selectedProduct.id) : 0;
-  console.log(availableStock);
+  //const selectedProduct = products.find(p => p.id === formData.productId);
+  //const availableStock = selectedProduct ? getCalculatedStock(selectedProduct.id) : 0;
+  //console.log(availableStock);
   const [items, setItems] = useState<SalesVoucherItem[]>([
     { productId: '', productName: '', quantity: 1, unitPrice: 0, totalAmount: 0 }
   ]);
@@ -115,8 +114,9 @@ export const CreateSalesVoucherDialog = ({ open, onOpenChange, onVoucherCreated 
     // Check stock availability
     for (const item of validItems) {
       const product = products.find(p => p.id === item.productId);
-      if (product && product.stock < item.quantity) {
-        alert(`Insufficient stock for ${item.productName}. Available: ${product.stock}, Required: ${item.quantity}`);
+      const availableStock = item.productId ? getCalculatedStock(item.productId) : 0;
+      if (product && availableStock < item.quantity) {
+        alert(`Insufficient stock for ${item.productName}. Available: ${availableStock}, Required: ${item.quantity}`);
         return;
       }
     }
@@ -225,7 +225,7 @@ export const CreateSalesVoucherDialog = ({ open, onOpenChange, onVoucherCreated 
                       <SelectContent>
                         {products.map((product) => (
                           <SelectItem key={product.id} value={product.id}>
-                            {product.name} (Stock: {availableStock})
+                            {product.name} (Stock: getCalculatedStock({product.id}))
                           </SelectItem>
                         ))}
                       </SelectContent>
