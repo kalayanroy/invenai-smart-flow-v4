@@ -72,7 +72,8 @@ export const CreatePurchaseDialog = ({ open, onOpenChange, onPurchaseCreated }: 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
+    console.log(items);
     // Create separate purchase records for each item
     items.forEach((item, index) => {
       if (item.productId && item.quantity > 0) {
@@ -87,7 +88,7 @@ export const CreatePurchaseDialog = ({ open, onOpenChange, onPurchaseCreated }: 
           status: formData.status,
           notes: formData.notes
         };
-        
+        console.log(item);
         onPurchaseCreated(purchaseData);
       }
     });
