@@ -42,6 +42,7 @@ export const CreateSalesVoucherDialog = ({ open, onOpenChange, onVoucherCreated 
     return openingStock + totalPurchased + totalReturned - totalSold;
   };
    const availableStock = selectedProduct ? getCalculatedStock(selectedProduct.id) : 0;
+  console.log(availableStock);
   const [items, setItems] = useState<SalesVoucherItem[]>([
     { productId: '', productName: '', quantity: 1, unitPrice: 0, totalAmount: 0 }
   ]);
