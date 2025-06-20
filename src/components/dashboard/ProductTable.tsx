@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Eye, Edit, Trash2, Plus } from 'lucide-react';
+import { Eye, Edit, Trash2, MoreHorizontal, Plus } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { CreateProductForm } from '../inventory/CreateProductForm';
 import { ProductViewDialog } from '../inventory/ProductViewDialog';
@@ -18,13 +17,6 @@ export const ProductTable = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
-
-  // Helper function to determine correct stock status
-  const getCorrectStockStatus = (stock: number, reorderPoint: number) => {
-    if (stock <= 0) return 'Out of Stock';
-    if (stock <= reorderPoint) return 'Low Stock';
-    return 'In Stock';
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -57,6 +49,14 @@ export const ProductTable = () => {
       });
       console.log('Delete product:', product);
     }
+  };
+
+  const handleMoreActions = (product: Product) => {
+    toast({
+      title: "More Actions",
+      description: `Additional options for ${product.name}`,
+    });
+    console.log('More actions for product:', product);
   };
 
   const handleProductCreated = (productData: any) => {
@@ -110,81 +110,72 @@ export const ProductTable = () => {
                 </tr>
               </thead>
               <tbody>
-                {products.map((product) => {
-                  // Calculate the correct status based on current stock
-                  const correctStatus = getCorrectStockStatus(product.stock, product.reorderPoint);
-                  
-                  return (
-                    <tr key={product.id} className="border-b hover:bg-gray-50 transition-colors">
-                      <td className="py-4 px-4">
-                        <div className="flex items-center gap-3">
-                          {product.image && (
-                            <img
-                              src={product.image}
-                              alt={product.name}
-                              className="w-10 h-10 object-cover rounded"
-                            />
-                          )}
-                          <div>
-                            <div className="font-medium text-gray-900">{product.name}</div>
-                            <div className="text-sm text-gray-500">{product.category} • {product.price}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-4 px-4 text-sm font-mono">{product.id}</td>
-                      <td className="py-4 px-4">
-                        <div className="text-sm">
-                          <div className="font-medium">{product.stock} {product.unit}</div>
-                          <div className="text-gray-500">Reorder at {product.reorderPoint}</div>
-                        </div>
-                      </td>
-                      <td className="py-4 px-4">
-                        <Badge className={getStatusColor(correctStatus)}>
-                          {correctStatus}
-                        </Badge>
-                        {product.status !== correctStatus && (
-                          <div className="text-xs text-orange-500 mt-1">
-                            Stored: {product.status}
-                          </div>
+                {products.map((product) => (
+                  <tr key={product.id} className="border-b hover:bg-gray-50 transition-colors">
+                    <td className="py-4 px-4">
+                      <div className="flex items-center gap-3">
+                        {product.image && (
+                          <img
+                            src={product.image}
+                            alt={product.name}
+                            className="w-10 h-10 object-cover rounded"
+                          />
                         )}
-                      </td>
-                      <td className="py-4 px-4" hidden>
-                        <div className="text-sm text-blue-600 bg-blue-50 p-2 rounded-lg max-w-xs">
-                          {product.aiRecommendation}
+                        <div>
+                          <div className="font-medium text-gray-900">{product.name}</div>
+                          <div className="text-sm text-gray-500">{product.category} • {product.price}</div>
                         </div>
-                      </td>
-                      <td className="py-4 px-4">
-                        <div className="flex space-x-2">
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleViewProduct(product)}
-                            title="View Product"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleEditProduct(product)}
-                            title="Edit Product"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleDeleteProduct(product)}
-                            title="Delete Product"
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
+                      </div>
+                    </td>
+                    <td className="py-4 px-4 text-sm font-mono">{product.id}</td>
+                    <td className="py-4 px-4">
+                      <div className="text-sm">
+                        <div className="font-medium">{product.stock} {product.unit}</div>
+                        <div className="text-gray-500">Reorder at {product.reorderPoint}</div>
+                      </div>
+                    </td>
+                    <td className="py-4 px-4">
+                      <Badge className={getStatusColor(product.status)}>
+                        {product.status}
+                      </Badge>
+                    </td>
+                    <td className="py-4 px-4" hidden>
+                      <div className="text-sm text-blue-600 bg-blue-50 p-2 rounded-lg max-w-xs">
+                        {product.aiRecommendation}
+                      </div>
+                    </td>
+                    <td className="py-4 px-4">
+                      <div className="flex space-x-2">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleViewProduct(product)}
+                          title="View Product"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleEditProduct(product)}
+                          title="Edit Product"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleDeleteProduct(product)}
+                          title="Delete Product"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                        
+                      </div>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>

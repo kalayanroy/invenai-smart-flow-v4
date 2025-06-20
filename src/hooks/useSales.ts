@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useProducts } from './useProducts';
 
 export interface Sale {
   id: string;
@@ -10,90 +9,18 @@ export interface Sale {
   quantity: number;
   unitPrice: string;
   totalAmount: string;
-  customerName?: string;
-  status: 'Completed' | 'Pending' | 'Cancelled';
   date: string;
+  status: 'Completed' | 'Pending' | 'Cancelled';
+  customerName?: string;
   notes?: string;
-  createdAt: string;
 }
 
 export const useSales = () => {
   const [sales, setSales] = useState<Sale[]>([]);
-  const { updateProduct, products } = useProducts();
 
   useEffect(() => {
     fetchSales();
   }, []);
-
-  // Helper function to recalculate stock for a specific product
-  const recalculateProductStock = async (productId: string) => {
-    try {
-      console.log(`Recalculating stock for product: ${productId}`);
-      
-      // Get the product
-      const product = products.find(p => p.id === productId);
-      if (!product) {
-        console.error(`Product ${productId} not found`);
-        return;
-      }
-
-      // Fetch all transactions for this product
-      const { data: salesData } = await supabase
-        .from('sales')
-        .select('quantity')
-        .eq('product_id', productId);
-
-      const { data: purchasesData } = await supabase
-        .from('purchases')
-        .select('quantity')
-        .eq('product_id', productId);
-
-      const { data: salesReturnsData } = await supabase
-        .from('sales_returns')
-        .select('return_quantity')
-        .eq('product_id', productId);
-
-      const { data: salesVoucherItemsData } = await supabase
-        .from('sales_voucher_items')
-        .select('quantity')
-        .eq('product_id', productId);
-
-      const { data: purchaseVoucherItemsData } = await supabase
-        .from('purchase_voucher_items')
-        .select('quantity')
-        .eq('product_id', productId);
-
-      // Calculate totals
-      const totalSold = (salesData || []).reduce((sum, sale) => sum + sale.quantity, 0);
-      const totalPurchased = (purchasesData || []).reduce((sum, purchase) => sum + purchase.quantity, 0);
-      const totalReturned = (salesReturnsData || []).reduce((sum, returnItem) => sum + returnItem.return_quantity, 0);
-      const totalSoldVouchers = (salesVoucherItemsData || []).reduce((sum, item) => sum + item.quantity, 0);
-      const totalPurchasedVouchers = (purchaseVoucherItemsData || []).reduce((sum, item) => sum + item.quantity, 0);
-
-      // Calculate current stock
-      const calculatedStock = product.openingStock + totalPurchased + totalPurchasedVouchers + totalReturned - totalSold - totalSoldVouchers;
-
-      // Determine status
-      const getStockStatus = (stock: number, reorderPoint: number) => {
-        if (stock <= 0) return 'Out of Stock';
-        if (stock <= reorderPoint) return 'Low Stock';
-        return 'In Stock';
-      };
-
-      const newStatus = getStockStatus(calculatedStock, product.reorderPoint);
-
-      console.log(`Updating stock for ${product.name}: ${product.stock} -> ${calculatedStock}, Status: ${newStatus}`);
-
-      // Update the product stock and status
-      await updateProduct(productId, { 
-        stock: calculatedStock,
-        status: newStatus
-      });
-
-    } catch (error) {
-      console.error('Error recalculating product stock:', error);
-    }
-  };
 
   const fetchSales = async () => {
     try {
@@ -108,6 +35,8 @@ export const useSales = () => {
         return;
       }
 
+      console.log('Raw sales data from Supabase:', data);
+
       const mappedSales = data.map(sale => ({
         id: sale.id,
         productId: sale.product_id,
@@ -115,53 +44,52 @@ export const useSales = () => {
         quantity: sale.quantity,
         unitPrice: sale.unit_price,
         totalAmount: sale.total_amount,
-        customerName: sale.customer_name,
-        status: sale.status as Sale['status'],
         date: sale.date,
-        notes: sale.notes,
-        createdAt: sale.created_at
+        status: sale.status as 'Completed' | 'Pending' | 'Cancelled',
+        customerName: sale.customer_name,
+        notes: sale.notes
       }));
 
+      console.log('Mapped sales:', mappedSales);
       setSales(mappedSales);
     } catch (error) {
       console.error('Error in fetchSales:', error);
     }
   };
 
-  const addSale = async (saleData: Omit<Sale, 'id' | 'createdAt'>) => {
+  const addSale = async (saleData: Omit<Sale, 'id'>) => {
     try {
       console.log('Adding sale to Supabase:', saleData);
-      
-      const saleId = `SALE${Date.now()}`;
-      
-      const { error } = await supabase
+
+      const newSale = {
+        id: `SALE${String(sales.length + 1).padStart(3, '0')}`,
+        product_id: saleData.productId,
+        product_name: saleData.productName,
+        quantity: saleData.quantity,
+        unit_price: saleData.unitPrice,
+        total_amount: saleData.totalAmount,
+        date: saleData.date,
+        status: saleData.status,
+        customer_name: saleData.customerName || null,
+        notes: saleData.notes || null
+      };
+
+      console.log('Prepared sale data for Supabase:', newSale);
+
+      const { data, error } = await supabase
         .from('sales')
-        .insert([{
-          id: saleId,
-          product_id: saleData.productId,
-          product_name: saleData.productName,
-          quantity: saleData.quantity,
-          unit_price: saleData.unitPrice,
-          total_amount: saleData.totalAmount,
-          customer_name: saleData.customerName,
-          status: saleData.status,
-          date: saleData.date,
-          notes: saleData.notes
-        }]);
+        .insert([newSale])
+        .select()
+        .single();
 
       if (error) {
         console.error('Supabase error adding sale:', error);
         throw error;
       }
 
-      console.log('Sale added successfully to Supabase');
-      
-      // Automatically recalculate stock for the sold product
-      if (saleData.status === 'Completed') {
-        await recalculateProductStock(saleData.productId);
-      }
-      
-      await fetchSales();
+      console.log('Sale successfully added to Supabase:', data);
+      await fetchSales(); // Refresh the list
+      return data;
     } catch (error) {
       console.error('Error in addSale:', error);
       throw error;
@@ -179,9 +107,9 @@ export const useSales = () => {
       if (updates.quantity !== undefined) dbUpdates.quantity = updates.quantity;
       if (updates.unitPrice) dbUpdates.unit_price = updates.unitPrice;
       if (updates.totalAmount) dbUpdates.total_amount = updates.totalAmount;
-      if (updates.customerName !== undefined) dbUpdates.customer_name = updates.customerName;
-      if (updates.status) dbUpdates.status = updates.status;
       if (updates.date) dbUpdates.date = updates.date;
+      if (updates.status) dbUpdates.status = updates.status;
+      if (updates.customerName !== undefined) dbUpdates.customer_name = updates.customerName;
       if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
 
       const { error } = await supabase
@@ -195,14 +123,7 @@ export const useSales = () => {
       }
 
       console.log('Sale updated successfully in Supabase');
-      
-      // If the sale was updated and it's completed, recalculate stock
-      const sale = sales.find(s => s.id === id);
-      if (sale && (updates.status === 'Completed' || updates.quantity !== undefined)) {
-        await recalculateProductStock(sale.productId);
-      }
-      
-      await fetchSales();
+      await fetchSales(); // Refresh the list
     } catch (error) {
       console.error('Error in updateSale:', error);
       throw error;
@@ -212,8 +133,6 @@ export const useSales = () => {
   const deleteSale = async (id: string) => {
     try {
       console.log('Deleting sale from Supabase:', id);
-      
-      const saleToDelete = sales.find(s => s.id === id);
       
       const { error } = await supabase
         .from('sales')
@@ -226,21 +145,33 @@ export const useSales = () => {
       }
 
       console.log('Sale deleted successfully from Supabase');
-      
-      // Recalculate stock for the affected product
-      if (saleToDelete) {
-        await recalculateProductStock(saleToDelete.productId);
-      }
-      
-      await fetchSales();
+      await fetchSales(); // Refresh the list
     } catch (error) {
       console.error('Error in deleteSale:', error);
       throw error;
     }
   };
 
-  const getSale = (id: string) => {
-    return sales.find(sale => sale.id === id);
+  const clearAllSales = async () => {
+    try {
+      console.log('Clearing all sales from Supabase...');
+      
+      const { error } = await supabase
+        .from('sales')
+        .delete()
+        .neq('id', ''); // Delete all records
+
+      if (error) {
+        console.error('Supabase error clearing sales:', error);
+        throw error;
+      }
+
+      console.log('All sales cleared from Supabase');
+      setSales([]);
+    } catch (error) {
+      console.error('Error in clearAllSales:', error);
+      throw error;
+    }
   };
 
   return {
@@ -248,7 +179,7 @@ export const useSales = () => {
     addSale,
     updateSale,
     deleteSale,
-    getSale,
+    clearAllSales,
     fetchSales
   };
 };

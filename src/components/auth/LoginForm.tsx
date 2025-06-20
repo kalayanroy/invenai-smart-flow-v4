@@ -5,75 +5,55 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Lock, User, Eye, EyeOff, UserPlus } from 'lucide-react';
+import { Lock, User, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 
 export const LoginForm = () => {
-  const { login, signup, isLoggingIn } = useAuth();
+  const { login, isLoggingIn } = useAuth();
   const navigate = useNavigate();
-  const [loginData, setLoginData] = useState({ email: '', password: '' });
-  const [signupData, setSignupData] = useState({ 
-    username: '', 
-    email: '', 
-    password: '', 
-    confirmPassword: '' 
-  });
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState('login');
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Prevent multiple submissions
     if (isLoggingIn) return;
     
     setError('');
 
     try {
-      const success = await login(loginData.email, loginData.password);
+      const success = await login(username, password);
       if (success) {
         navigate('/');
       } else {
-        setError('Invalid email or password');
+        setError('Invalid username or password');
       }
     } catch (err) {
       setError('Login failed. Please try again.');
     }
   };
 
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handleDemoLogin = async (userType: 'admin' | 'guest') => {
+    // Prevent multiple submissions
     if (isLoggingIn) return;
     
+    setUsername(userType);
+    setPassword('123456');
     setError('');
-
-    if (signupData.password !== signupData.confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-
-    if (signupData.password.length < 6) {
-      setError('Password must be at least 6 characters long');
-      return;
-    }
-
+    
     try {
-      const result = await signup(signupData.email, signupData.password, signupData.username);
-      if (result.success) {
-        setError('');
-        setActiveTab('login');
-        setLoginData({ email: signupData.email, password: '' });
-        setSignupData({ username: '', email: '', password: '', confirmPassword: '' });
-        // Show success message
-        setError('Account created successfully! Please check your email to verify your account, then login.');
+      const success = await login(userType, '123456');
+      if (success) {
+        navigate('/');
       } else {
-        setError(result.error || 'Signup failed. Please try again.');
+        setError('Login failed. Please try again.');
       }
     } catch (err) {
-      setError('Signup failed. Please try again.');
+      setError('Login failed. Please try again.');
     }
   };
 
@@ -86,169 +66,71 @@ export const LoginForm = () => {
               <Lock className="h-6 w-6 text-white" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">Inventory Management System</CardTitle>
-          <p className="text-gray-600">Access your account or create a new one</p>
+          <CardTitle className="text-2xl font-bold">Login to Inventory System</CardTitle>
+          <p className="text-gray-600">Enter your credentials to access the system</p>
         </CardHeader>
         <CardContent>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Login</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="login">
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="login-email">Email</Label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="login-email"
-                      type="email"
-                      placeholder="Enter email"
-                      value={loginData.email}
-                      onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
-                      className="pl-10"
-                      required
-                      disabled={isLoggingIn}
-                    />
-                  </div>
-                </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="username">Username</Label>
+              <div className="relative">
+                <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  id="username"
+                  type="text"
+                  placeholder="Enter username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="pl-10"
+                  required
+                  disabled={isLoggingIn}
+                />
+              </div>
+            </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="login-password">Password</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="login-password"
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="Enter password"
-                      value={loginData.password}
-                      onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-                      className="pl-10 pr-10"
-                      required
-                      disabled={isLoggingIn}
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-0 h-full px-3"
-                      onClick={() => setShowPassword(!showPassword)}
-                      disabled={isLoggingIn}
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                </div>
-
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Enter password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="pl-10 pr-10"
+                  required
+                  disabled={isLoggingIn}
+                />
                 <Button
-                  type="submit"
-                  className="w-full"
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3"
+                  onClick={() => setShowPassword(!showPassword)}
                   disabled={isLoggingIn}
                 >
-                  {isLoggingIn ? 'Signing in...' : 'Sign In'}
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
-              </form>
-            </TabsContent>
-            
-            <TabsContent value="signup">
-              <form onSubmit={handleSignup} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signup-username">Username</Label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="signup-username"
-                      type="text"
-                      placeholder="Enter username"
-                      value={signupData.username}
-                      onChange={(e) => setSignupData({ ...signupData, username: e.target.value })}
-                      className="pl-10"
-                      required
-                      disabled={isLoggingIn}
-                    />
-                  </div>
-                </div>
+              </div>
+            </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="signup-email"
-                      type="email"
-                      placeholder="Enter email"
-                      value={signupData.email}
-                      onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
-                      className="pl-10"
-                      required
-                      disabled={isLoggingIn}
-                    />
-                  </div>
-                </div>
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
 
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="signup-password"
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="Enter password (min 6 characters)"
-                      value={signupData.password}
-                      onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
-                      className="pl-10 pr-10"
-                      required
-                      disabled={isLoggingIn}
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-0 h-full px-3"
-                      onClick={() => setShowPassword(!showPassword)}
-                      disabled={isLoggingIn}
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                </div>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={isLoggingIn}
+            >
+              {isLoggingIn ? 'Signing in...' : 'Sign In'}
+            </Button>
+          </form>
 
-                <div className="space-y-2">
-                  <Label htmlFor="signup-confirm-password">Confirm Password</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="signup-confirm-password"
-                      type="password"
-                      placeholder="Confirm password"
-                      value={signupData.confirmPassword}
-                      onChange={(e) => setSignupData({ ...signupData, confirmPassword: e.target.value })}
-                      className="pl-10"
-                      required
-                      disabled={isLoggingIn}
-                    />
-                  </div>
-                </div>
-
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={isLoggingIn}
-                >
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  {isLoggingIn ? 'Creating account...' : 'Create Account'}
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
-
-          {error && (
-            <Alert variant={error.includes('successfully') ? 'default' : 'destructive'} className="mt-4">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
+          
         </CardContent>
       </Card>
     </div>
