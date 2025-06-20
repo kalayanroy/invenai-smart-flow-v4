@@ -8,6 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Trash2, Plus } from 'lucide-react';
 import { useProducts } from '@/hooks/useProducts';
+import { useSales } from '@/hooks/useSales';
+import { usePurchases } from '@/hooks/usePurchases';
+import { useSalesReturns } from '@/hooks/useSalesReturns';
+import { Sale } from '@/hooks/useSales';
 import { SalesVoucherItem } from '@/hooks/useSalesVouchers';
 
 interface CreateSalesVoucherDialogProps {
