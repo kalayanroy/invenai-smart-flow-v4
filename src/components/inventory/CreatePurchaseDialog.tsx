@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -43,7 +42,8 @@ export const CreatePurchaseDialog = ({ open, onOpenChange, onPurchaseCreated }: 
       totalAmount: `${totalAmount.toFixed(2)}`,
       date: new Date().toISOString().split('T')[0],
       status: formData.status,
-      notes: formData.notes
+      notes: formData.notes,
+      createdAt: new Date().toISOString()
     };
 
     onPurchaseCreated(purchaseData);

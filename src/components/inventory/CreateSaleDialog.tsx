@@ -83,7 +83,8 @@ export const CreateSaleDialog = ({ open, onOpenChange, onSaleCreated }: CreateSa
       date: new Date().toISOString().split('T')[0],
       status: formData.status,
       customerName: formData.customerName,
-      notes: formData.notes
+      notes: formData.notes,
+      createdAt: new Date().toISOString()
     };
 
     onSaleCreated(saleData);
