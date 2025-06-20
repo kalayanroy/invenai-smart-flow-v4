@@ -272,7 +272,7 @@ export type Database = {
           company_id?: string | null
           created_at?: string | null
           date: string
-          id: string
+          id?: string
           notes?: string | null
           product_id: string
           product_name: string

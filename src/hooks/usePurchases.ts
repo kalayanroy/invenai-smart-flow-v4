@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -61,8 +60,14 @@ export const usePurchases = () => {
     try {
       console.log('Adding purchase to Supabase:', purchaseData);
 
+      // Generate a unique UUID for this purchase
+      const { data: { session } } = await supabase.auth.getSession();
+      const timestamp = Date.now();
+      const random = Math.floor(Math.random() * 1000);
+      const uniqueId = `PUR${timestamp}${random}`;
+
       const newPurchase = {
-        id: `PUR${String(purchases.length + 1).padStart(3, '0')}`,
+        id: uniqueId,
         product_id: purchaseData.productId,
         product_name: purchaseData.productName,
         supplier: purchaseData.supplier,
