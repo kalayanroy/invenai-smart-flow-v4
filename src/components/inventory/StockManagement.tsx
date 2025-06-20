@@ -1,23 +1,27 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Filter, Printer, Download, Package, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Search, Filter, Printer, Download, Package, AlertTriangle, CheckCircle, RefreshCw } from 'lucide-react';
 import { useProducts } from '@/hooks/useProducts';
 import { useSales } from '@/hooks/useSales';
 import { usePurchases } from '@/hooks/usePurchases';
 import { useSalesReturns } from '@/hooks/useSalesReturns';
+import { useToast } from '@/hooks/use-toast';
 
 export const StockManagement = () => {
-  const { products } = useProducts();
+  const { products, updateProduct } = useProducts();
   const { sales } = useSales();
   const { purchases } = usePurchases();
   const { salesReturns } = useSalesReturns();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [isRecalculating, setIsRecalculating] = useState(false);
 
   // Calculate stock movements including opening stock and returns
   const getProductMovements = (productId: string) => {
@@ -32,6 +36,50 @@ export const StockManagement = () => {
     const totalReturned = productReturns.reduce((sum, returnItem) => sum + returnItem.returnQuantity, 0);
     
     return { openingStock, totalSold, totalPurchased, totalReturned };
+  };
+
+  // Get stock status based on calculated stock and reorder point
+  const getCalculatedStockStatus = (calculatedStock: number, reorderPoint: number) => {
+    if (calculatedStock <= 0) return 'Out of Stock';
+    if (calculatedStock <= reorderPoint) return 'Low Stock';
+    return 'In Stock';
+  };
+
+  // Recalculate and sync all product stocks
+  const recalculateAllStocks = async () => {
+    setIsRecalculating(true);
+    try {
+      console.log('Starting stock recalculation for all products...');
+      
+      for (const product of products) {
+        const movements = getProductMovements(product.id);
+        const calculatedStock = movements.openingStock + movements.totalPurchased + movements.totalReturned - movements.totalSold;
+        const newStatus = getCalculatedStockStatus(calculatedStock, product.reorderPoint);
+        
+        // Only update if the calculated stock differs from current stock
+        if (product.stock !== calculatedStock || product.status !== newStatus) {
+          console.log(`Updating ${product.name}: ${product.stock} -> ${calculatedStock}, Status: ${product.status} -> ${newStatus}`);
+          await updateProduct(product.id, { 
+            stock: calculatedStock,
+            status: newStatus
+          });
+        }
+      }
+      
+      toast({
+        title: "Stock Recalculated",
+        description: "All product stocks have been recalculated and synced.",
+      });
+    } catch (error) {
+      console.error('Error recalculating stocks:', error);
+      toast({
+        title: "Error",
+        description: "Failed to recalculate stocks.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsRecalculating(false);
+    }
   };
 
   // Filter products
@@ -236,6 +284,15 @@ export const StockManagement = () => {
           <div className="flex justify-between items-center">
             <CardTitle>Stock Management</CardTitle>
             <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                onClick={recalculateAllStocks} 
+                disabled={isRecalculating}
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className={`h-4 w-4 ${isRecalculating ? 'animate-spin' : ''}`} />
+                {isRecalculating ? 'Recalculating...' : 'Recalculate Stocks'}
+              </Button>
               <Button variant="outline" onClick={handlePrint} className="flex items-center gap-2">
                 <Printer className="h-4 w-4" />
                 Print Report
@@ -319,6 +376,7 @@ export const StockManagement = () => {
                 {filteredProducts.map((product) => {
                   const movements = getProductMovements(product.id);
                   const calculatedStock = movements.openingStock + movements.totalPurchased + movements.totalReturned - movements.totalSold;
+                  const isStockMismatch = product.stock !== calculatedStock;
                   
                   return (
                     <tr key={product.id} className="border-b hover:bg-gray-50 transition-colors">
@@ -337,8 +395,13 @@ export const StockManagement = () => {
                         <span className="text-sm text-gray-500 ml-1">{product.unit}</span>
                       </td>
                       <td className="py-4 px-4">
-                        <span className="font-semibold text-blue-600">{product.stock}</span>
+                        <span className={`font-semibold ${isStockMismatch ? 'text-red-600' : 'text-blue-600'}`}>
+                          {product.stock}
+                        </span>
                         <span className="text-sm text-gray-500 ml-1">{product.unit}</span>
+                        {isStockMismatch && (
+                          <div className="text-xs text-red-500">Needs sync</div>
+                        )}
                       </td>
                       <td className="py-4 px-4 text-sm">{product.reorderPoint}</td>
                       <td className="py-4 px-4">
@@ -353,6 +416,9 @@ export const StockManagement = () => {
                         <span className={`text-sm font-medium ${calculatedStock >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                           {calculatedStock}
                         </span>
+                        {isStockMismatch && (
+                          <div className="text-xs text-orange-500">Should be synced</div>
+                        )}
                       </td>
                     </tr>
                   );
