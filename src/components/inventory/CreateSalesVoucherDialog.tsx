@@ -27,7 +27,21 @@ export const CreateSalesVoucherDialog = ({ open, onOpenChange, onVoucherCreated 
     date: new Date().toISOString().split('T')[0],
     discountAmount: 0
   });
-  
+// Calculate actual available stock using: Opening Stock + Total Purchase + Total Return - Total Sales
+  const getCalculatedStock = (productId: string) => {
+    const product = products.find(p => p.id === productId);
+    const productSales = sales.filter(sale => sale.productId === productId);
+    const productPurchases = purchases.filter(purchase => purchase.productId === productId);
+    const productReturns = salesReturns.filter(returnItem => returnItem.productId === productId);
+    
+    const openingStock = product?.openingStock || 0;
+    const totalSold = productSales.reduce((sum, sale) => sum + sale.quantity, 0);
+    const totalPurchased = productPurchases.reduce((sum, purchase) => sum + purchase.quantity, 0);
+    const totalReturned = productReturns.reduce((sum, returnItem) => sum + returnItem.returnQuantity, 0);
+    
+    return openingStock + totalPurchased + totalReturned - totalSold;
+  };
+   const availableStock = selectedProduct ? getCalculatedStock(selectedProduct.id) : 0;
   const [items, setItems] = useState<SalesVoucherItem[]>([
     { productId: '', productName: '', quantity: 1, unitPrice: 0, totalAmount: 0 }
   ]);
@@ -201,7 +215,7 @@ export const CreateSalesVoucherDialog = ({ open, onOpenChange, onVoucherCreated 
                       <SelectContent>
                         {products.map((product) => (
                           <SelectItem key={product.id} value={product.id}>
-                            {product.name} (Stock: {product.stock})
+                            {product.name} (Stock: {availableStock})
                           </SelectItem>
                         ))}
                       </SelectContent>
