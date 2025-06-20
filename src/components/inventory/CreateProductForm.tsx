@@ -31,7 +31,8 @@ export const CreateProductForm = ({ onProductCreated }: CreateProductFormProps) 
   const { toast } = useToast();
   const { units, addUnit, loading: unitsLoading } = useUnits();
   const { categories, addCategory, loading: categoriesLoading } = useCategories();
-  
+
+  console.log(units);
   const [product, setProduct] = useState<ProductFormData>({
     name: '',
     sku: '',
