@@ -96,9 +96,9 @@ export const useSalesVouchers = () => {
         id: `SV${String(salesVouchers.length + 1).padStart(4, '0')}`,
         voucher_number: voucherData.voucherNumber,
         customer_name: voucherData.customerName || null,
-        total_amount: voucherData.totalAmount,
-        discount_amount: voucherData.discountAmount,
-        final_amount: voucherData.finalAmount,
+        total_amount: voucherData.totalAmount.toString(),
+        discount_amount: voucherData.discountAmount.toString(),
+        final_amount: voucherData.finalAmount.toString(),
         payment_method: voucherData.paymentMethod,
         status: voucherData.status,
         notes: voucherData.notes || null,
@@ -122,8 +122,8 @@ export const useSalesVouchers = () => {
         product_id: item.productId,
         product_name: item.productName,
         quantity: item.quantity,
-        unit_price: item.unitPrice,
-        total_amount: item.totalAmount
+        unit_price: item.unitPrice.toString(),
+        total_amount: item.totalAmount.toString()
       }));
 
       const { error: itemsError } = await supabase
@@ -152,9 +152,9 @@ export const useSalesVouchers = () => {
       
       if (updates.voucherNumber) dbUpdates.voucher_number = updates.voucherNumber;
       if (updates.customerName !== undefined) dbUpdates.customer_name = updates.customerName;
-      if (updates.totalAmount !== undefined) dbUpdates.total_amount = updates.totalAmount;
-      if (updates.discountAmount !== undefined) dbUpdates.discount_amount = updates.discountAmount;
-      if (updates.finalAmount !== undefined) dbUpdates.final_amount = updates.finalAmount;
+      if (updates.totalAmount !== undefined) dbUpdates.total_amount = updates.totalAmount.toString();
+      if (updates.discountAmount !== undefined) dbUpdates.discount_amount = updates.discountAmount.toString();
+      if (updates.finalAmount !== undefined) dbUpdates.final_amount = updates.finalAmount.toString();
       if (updates.paymentMethod) dbUpdates.payment_method = updates.paymentMethod;
       if (updates.status) dbUpdates.status = updates.status;
       if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
