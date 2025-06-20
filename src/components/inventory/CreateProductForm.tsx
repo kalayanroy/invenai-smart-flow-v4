@@ -29,8 +29,8 @@ interface ProductFormData {
 
 export const CreateProductForm = ({ onProductCreated }: CreateProductFormProps) => {
   const { toast } = useToast();
-  const { units, addUnit } = useUnits();
-  const { categories, addCategory } = useCategories();
+  const { units, addUnit, loading: unitsLoading } = useUnits();
+  const { categories, addCategory, loading: categoriesLoading } = useCategories();
   
   const [product, setProduct] = useState<ProductFormData>({
     name: '',
@@ -49,6 +49,8 @@ export const CreateProductForm = ({ onProductCreated }: CreateProductFormProps) 
   const [showUnitDialog, setShowUnitDialog] = useState(false);
   const [showCategoryDialog, setShowCategoryDialog] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isAddingUnit, setIsAddingUnit] = useState(false);
+  const [isAddingCategory, setIsAddingCategory] = useState(false);
 
   const handleInputChange = (field: keyof ProductFormData, value: string) => {
     setProduct(prev => ({ ...prev, [field]: value }));
@@ -74,44 +76,74 @@ export const CreateProductForm = ({ onProductCreated }: CreateProductFormProps) 
   };
 
   const addNewUnit = async () => {
-    if (newUnit.trim()) {
-      try {
-        await addUnit(newUnit.trim());
-        setProduct(prev => ({ ...prev, unit: newUnit.trim() }));
-        setNewUnit('');
-        setShowUnitDialog(false);
-        toast({
-          title: "Unit Added",
-          description: `"${newUnit.trim()}" has been added to the units list.`,
-        });
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: "Failed to add unit. It may already exist.",
-          variant: "destructive",
-        });
-      }
+    if (!newUnit.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter a unit name.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsAddingUnit(true);
+    try {
+      console.log('Adding new unit:', newUnit.trim());
+      const result = await addUnit(newUnit.trim());
+      console.log('Unit added successfully:', result);
+      
+      setProduct(prev => ({ ...prev, unit: newUnit.trim() }));
+      setNewUnit('');
+      setShowUnitDialog(false);
+      
+      toast({
+        title: "Unit Added",
+        description: `"${newUnit.trim()}" has been added to the units list.`,
+      });
+    } catch (error) {
+      console.error('Error adding unit:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add unit. It may already exist.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAddingUnit(false);
     }
   };
 
   const addNewCategory = async () => {
-    if (newCategory.trim()) {
-      try {
-        await addCategory(newCategory.trim());
-        setProduct(prev => ({ ...prev, category: newCategory.trim() }));
-        setNewCategory('');
-        setShowCategoryDialog(false);
-        toast({
-          title: "Category Added",
-          description: `"${newCategory.trim()}" has been added to the categories list.`,
-        });
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: "Failed to add category. It may already exist.",
-          variant: "destructive",
-        });
-      }
+    if (!newCategory.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter a category name.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsAddingCategory(true);
+    try {
+      console.log('Adding new category:', newCategory.trim());
+      const result = await addCategory(newCategory.trim());
+      console.log('Category added successfully:', result);
+      
+      setProduct(prev => ({ ...prev, category: newCategory.trim() }));
+      setNewCategory('');
+      setShowCategoryDialog(false);
+      
+      toast({
+        title: "Category Added",
+        description: `"${newCategory.trim()}" has been added to the categories list.`,
+      });
+    } catch (error) {
+      console.error('Error adding category:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add category. It may already exist.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAddingCategory(false);
     }
   };
 
@@ -288,9 +320,13 @@ export const CreateProductForm = ({ onProductCreated }: CreateProductFormProps) 
             <div className="space-y-2">
               <Label>Unit *</Label>
               <div className="flex gap-2">
-                <Select value={product.unit} onValueChange={(value) => handleInputChange('unit', value)}>
+                <Select 
+                  value={product.unit} 
+                  onValueChange={(value) => handleInputChange('unit', value)}
+                  disabled={unitsLoading}
+                >
                   <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Select unit" />
+                    <SelectValue placeholder={unitsLoading ? "Loading units..." : "Select unit"} />
                   </SelectTrigger>
                   <SelectContent>
                     {units.map((unit) => (
@@ -302,7 +338,7 @@ export const CreateProductForm = ({ onProductCreated }: CreateProductFormProps) 
                 </Select>
                 <Dialog open={showUnitDialog} onOpenChange={setShowUnitDialog}>
                   <DialogTrigger asChild>
-                    <Button type="button" variant="outline" size="icon">
+                    <Button type="button" variant="outline" size="icon" disabled={unitsLoading}>
                       <Plus className="h-4 w-4" />
                     </Button>
                   </DialogTrigger>
@@ -311,20 +347,33 @@ export const CreateProductForm = ({ onProductCreated }: CreateProductFormProps) 
                       <DialogTitle>Add New Unit</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4">
-                      <Input
-                        value={newUnit}
-                        onChange={(e) => setNewUnit(e.target.value)}
-                        placeholder="Enter new unit"
-                        onKeyPress={(e) => e.key === 'Enter' && addNewUnit()}
-                      />
+                      <div className="space-y-2">
+                        <Label htmlFor="newUnitName">Unit Name</Label>
+                        <Input
+                          id="newUnitName"
+                          value={newUnit}
+                          onChange={(e) => setNewUnit(e.target.value)}
+                          placeholder="Enter new unit name"
+                          onKeyPress={(e) => e.key === 'Enter' && !isAddingUnit && addNewUnit()}
+                          disabled={isAddingUnit}
+                        />
+                      </div>
                       <div className="flex gap-2">
-                        <Button onClick={addNewUnit} className="flex-1">
-                          Add Unit
+                        <Button 
+                          onClick={addNewUnit} 
+                          className="flex-1" 
+                          disabled={isAddingUnit || !newUnit.trim()}
+                        >
+                          {isAddingUnit ? 'Adding...' : 'Add Unit'}
                         </Button>
                         <Button
                           variant="outline"
-                          onClick={() => setShowUnitDialog(false)}
+                          onClick={() => {
+                            setShowUnitDialog(false);
+                            setNewUnit('');
+                          }}
                           className="flex-1"
+                          disabled={isAddingUnit}
                         >
                           Cancel
                         </Button>
@@ -338,9 +387,13 @@ export const CreateProductForm = ({ onProductCreated }: CreateProductFormProps) 
             <div className="space-y-2">
               <Label>Category *</Label>
               <div className="flex gap-2">
-                <Select value={product.category} onValueChange={(value) => handleInputChange('category', value)}>
+                <Select 
+                  value={product.category} 
+                  onValueChange={(value) => handleInputChange('category', value)}
+                  disabled={categoriesLoading}
+                >
                   <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Select category" />
+                    <SelectValue placeholder={categoriesLoading ? "Loading categories..." : "Select category"} />
                   </SelectTrigger>
                   <SelectContent>
                     {categories.map((category) => (
@@ -352,7 +405,7 @@ export const CreateProductForm = ({ onProductCreated }: CreateProductFormProps) 
                 </Select>
                 <Dialog open={showCategoryDialog} onOpenChange={setShowCategoryDialog}>
                   <DialogTrigger asChild>
-                    <Button type="button" variant="outline" size="icon">
+                    <Button type="button" variant="outline" size="icon" disabled={categoriesLoading}>
                       <Plus className="h-4 w-4" />
                     </Button>
                   </DialogTrigger>
@@ -361,20 +414,33 @@ export const CreateProductForm = ({ onProductCreated }: CreateProductFormProps) 
                       <DialogTitle>Add New Category</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4">
-                      <Input
-                        value={newCategory}
-                        onChange={(e) => setNewCategory(e.target.value)}
-                        placeholder="Enter new category"
-                        onKeyPress={(e) => e.key === 'Enter' && addNewCategory()}
-                      />
+                      <div className="space-y-2">
+                        <Label htmlFor="newCategoryName">Category Name</Label>
+                        <Input
+                          id="newCategoryName"
+                          value={newCategory}
+                          onChange={(e) => setNewCategory(e.target.value)}
+                          placeholder="Enter new category name"
+                          onKeyPress={(e) => e.key === 'Enter' && !isAddingCategory && addNewCategory()}
+                          disabled={isAddingCategory}
+                        />
+                      </div>
                       <div className="flex gap-2">
-                        <Button onClick={addNewCategory} className="flex-1">
-                          Add Category
+                        <Button 
+                          onClick={addNewCategory} 
+                          className="flex-1" 
+                          disabled={isAddingCategory || !newCategory.trim()}
+                        >
+                          {isAddingCategory ? 'Adding...' : 'Add Category'}
                         </Button>
                         <Button
                           variant="outline"
-                          onClick={() => setShowCategoryDialog(false)}
+                          onClick={() => {
+                            setShowCategoryDialog(false);
+                            setNewCategory('');
+                          }}
                           className="flex-1"
+                          disabled={isAddingCategory}
                         >
                           Cancel
                         </Button>
