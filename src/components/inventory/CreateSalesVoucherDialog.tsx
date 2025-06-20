@@ -225,7 +225,7 @@ export const CreateSalesVoucherDialog = ({ open, onOpenChange, onVoucherCreated 
                       <SelectContent>
                         {products.map((product) => (
                           <SelectItem key={product.id} value={product.id}>
-                            {product.name} (Stock: getCalculatedStock({product.id}))
+                            {product.name} (Stock: {getCalculatedStock(product.id)})
                           </SelectItem>
                         ))}
                       </SelectContent>
