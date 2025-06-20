@@ -1,10 +1,12 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface SalesReturn {
   id: string;
-  originalSaleId: string;
+  originalSaleId?: string; // Now optional since voucher returns won't have this
+  originalVoucherId?: string; // New field for voucher returns
+  originalVoucherItemId?: string; // New field for voucher item returns
+  sourceType?: string; // 'regular_sale' or 'voucher_sale'
   productId: string;
   productName: string;
   returnQuantity: number;
@@ -44,7 +46,10 @@ export const useSalesReturns = () => {
 
       const mappedSalesReturns = data.map(salesReturn => ({
         id: salesReturn.id,
-        originalSaleId: salesReturn.original_sale_id,
+        originalSaleId: salesReturn.original_sale_id || undefined,
+        originalVoucherId: salesReturn.original_voucher_id || undefined,
+        originalVoucherItemId: salesReturn.original_voucher_item_id || undefined,
+        sourceType: salesReturn.source_type || 'regular_sale',
         productId: salesReturn.product_id,
         productName: salesReturn.product_name,
         returnQuantity: salesReturn.return_quantity,
@@ -73,7 +78,10 @@ export const useSalesReturns = () => {
 
       const newSalesReturn = {
         id: `RET${String(salesReturns.length + 1).padStart(3, '0')}`,
-        original_sale_id: salesReturnData.originalSaleId,
+        original_sale_id: salesReturnData.originalSaleId || null,
+        original_voucher_id: salesReturnData.originalVoucherId || null,
+        original_voucher_item_id: salesReturnData.originalVoucherItemId || null,
+        source_type: salesReturnData.sourceType || 'regular_sale',
         product_id: salesReturnData.productId,
         product_name: salesReturnData.productName,
         return_quantity: salesReturnData.returnQuantity,
@@ -117,7 +125,10 @@ export const useSalesReturns = () => {
       
       const dbUpdates: any = {};
       
-      if (updates.originalSaleId) dbUpdates.original_sale_id = updates.originalSaleId;
+      if (updates.originalSaleId !== undefined) dbUpdates.original_sale_id = updates.originalSaleId;
+      if (updates.originalVoucherId !== undefined) dbUpdates.original_voucher_id = updates.originalVoucherId;
+      if (updates.originalVoucherItemId !== undefined) dbUpdates.original_voucher_item_id = updates.originalVoucherItemId;
+      if (updates.sourceType !== undefined) dbUpdates.source_type = updates.sourceType;
       if (updates.productId) dbUpdates.product_id = updates.productId;
       if (updates.productName) dbUpdates.product_name = updates.productName;
       if (updates.returnQuantity !== undefined) dbUpdates.return_quantity = updates.returnQuantity;

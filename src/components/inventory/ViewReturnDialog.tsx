@@ -3,7 +3,7 @@ import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { CalendarIcon, User, Package, RotateCcw, DollarSign } from 'lucide-react';
+import { CalendarIcon, User, Package, RotateCcw, DollarSign, Receipt } from 'lucide-react';
 import { SalesReturn } from '@/hooks/useSalesReturns';
 
 interface ViewReturnDialogProps {
@@ -51,8 +51,8 @@ export const ViewReturnDialog = ({ open, onOpenChange, returnItem }: ViewReturnD
                   <div className="font-mono font-medium">{returnItem.id}</div>
                 </div>
                 <div>
-                  <span className="text-gray-600">Original Sale ID:</span>
-                  <div className="font-mono font-medium">{returnItem.originalSaleId}</div>
+                  <span className="text-gray-600">Source Type:</span>
+                  <div className="font-medium capitalize">{returnItem.sourceType?.replace('_', ' ')}</div>
                 </div>
                 <div>
                   <span className="text-gray-600">Return Date:</span>
@@ -67,6 +67,37 @@ export const ViewReturnDialog = ({ open, onOpenChange, returnItem }: ViewReturnD
                     {returnItem.status}
                   </Badge>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Source Information */}
+          <Card>
+            <CardContent className="p-4">
+              <h3 className="font-semibold mb-3 flex items-center gap-2">
+                <Receipt className="h-4 w-4" />
+                Source Information
+              </h3>
+              <div className="space-y-2">
+                {returnItem.sourceType === 'voucher_sale' ? (
+                  <>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Original Voucher ID:</span>
+                      <span className="font-mono font-medium">{returnItem.originalVoucherId}</span>
+                    </div>
+                    {returnItem.originalVoucherItemId && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Voucher Item ID:</span>
+                        <span className="font-mono">{returnItem.originalVoucherItemId}</span>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Original Sale ID:</span>
+                    <span className="font-mono font-medium">{returnItem.originalSaleId}</span>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

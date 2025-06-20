@@ -28,7 +28,8 @@ export const SalesReturnSection = () => {
   const filteredReturns = returns.filter(returnItem => {
     const matchesSearch = returnItem.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          returnItem.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         returnItem.originalSaleId.toLowerCase().includes(searchTerm.toLowerCase());
+                         (returnItem.originalSaleId && returnItem.originalSaleId.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                         (returnItem.originalVoucherId && returnItem.originalVoucherId.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesStatus = statusFilter === 'all' || returnItem.status === statusFilter;
     
     return matchesSearch && matchesStatus;
@@ -172,7 +173,7 @@ export const SalesReturnSection = () => {
             <div className="flex items-center gap-2">
               <Package className="h-5 w-5 text-purple-600" />
               <div>
-                <p className="text-sim text-gray-600">Processed Returns</p>
+                <p className="text-sm text-gray-600">Processed Returns</p>
                 <p className="text-2xl font-bold">{returns.filter(r => r.status === 'Processed').length}</p>
               </div>
             </div>
@@ -241,7 +242,7 @@ export const SalesReturnSection = () => {
               <thead>
                 <tr className="border-b">
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Return ID</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600">Original Sale</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-600">Source</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Product</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Customer</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Quantity</th>
@@ -256,7 +257,19 @@ export const SalesReturnSection = () => {
                 {filteredReturns.map((returnItem) => (
                   <tr key={returnItem.id} className="border-b hover:bg-gray-50 transition-colors">
                     <td className="py-4 px-4 text-sm font-mono">{returnItem.id}</td>
-                    <td className="py-4 px-4 text-sm font-mono">{returnItem.originalSaleId}</td>
+                    <td className="py-4 px-4 text-sm font-mono">
+                      {returnItem.sourceType === 'voucher_sale' ? (
+                        <div>
+                          <div className="font-medium">Voucher</div>
+                          <div className="text-xs text-gray-500">{returnItem.originalVoucherId}</div>
+                        </div>
+                      ) : (
+                        <div>
+                          <div className="font-medium">Sale</div>
+                          <div className="text-xs text-gray-500">{returnItem.originalSaleId}</div>
+                        </div>
+                      )}
+                    </td>
                     <td className="py-4 px-4">
                       <div className="font-medium text-gray-900">{returnItem.productName}</div>
                       <div className="text-sm text-gray-500">SKU: {returnItem.productId}</div>

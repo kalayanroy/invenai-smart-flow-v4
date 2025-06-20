@@ -386,7 +386,9 @@ export type Database = {
           id: string
           notes: string | null
           original_quantity: number
-          original_sale_id: string
+          original_sale_id: string | null
+          original_voucher_id: string | null
+          original_voucher_item_id: string | null
           processed_by: string | null
           processed_date: string | null
           product_id: string
@@ -394,6 +396,7 @@ export type Database = {
           reason: string
           return_date: string
           return_quantity: number
+          source_type: string | null
           status: string
           total_refund: string
           unit_price: string
@@ -406,7 +409,9 @@ export type Database = {
           id: string
           notes?: string | null
           original_quantity: number
-          original_sale_id: string
+          original_sale_id?: string | null
+          original_voucher_id?: string | null
+          original_voucher_item_id?: string | null
           processed_by?: string | null
           processed_date?: string | null
           product_id: string
@@ -414,6 +419,7 @@ export type Database = {
           reason: string
           return_date: string
           return_quantity: number
+          source_type?: string | null
           status?: string
           total_refund: string
           unit_price: string
@@ -426,7 +432,9 @@ export type Database = {
           id?: string
           notes?: string | null
           original_quantity?: number
-          original_sale_id?: string
+          original_sale_id?: string | null
+          original_voucher_id?: string | null
+          original_voucher_item_id?: string | null
           processed_by?: string | null
           processed_date?: string | null
           product_id?: string
@@ -434,6 +442,7 @@ export type Database = {
           reason?: string
           return_date?: string
           return_quantity?: number
+          source_type?: string | null
           status?: string
           total_refund?: string
           unit_price?: string
