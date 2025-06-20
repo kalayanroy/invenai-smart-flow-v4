@@ -6,22 +6,28 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, TrendingUp, DollarSign, ShoppingBag, Eye, Edit, Trash2, FileText, Receipt } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSales, Sale } from '@/hooks/useSales';
-import { useSalesVouchers } from '@/hooks/useSalesVouchers';
+import { useSalesVouchers, SalesVoucher } from '@/hooks/useSalesVouchers';
 import { CreateSaleDialog } from './CreateSaleDialog';
 import { CreateSalesVoucherDialog } from './CreateSalesVoucherDialog';
 import { ViewSaleDialog } from './ViewSaleDialog';
 import { EditSaleDialog } from './EditSaleDialog';
+import { ViewSalesVoucherDialog } from './ViewSalesVoucherDialog';
+import { EditSalesVoucherDialog } from './EditSalesVoucherDialog';
 import { generateSalesInvoicePDF } from '@/utils/pdfGenerator';
+import { generateSalesVoucherPDF } from '@/utils/salesVoucherPdfGenerator';
 
 export const SalesSection = () => {
   const { toast } = useToast();
   const { sales, addSale, updateSale, deleteSale } = useSales();
-  const { salesVouchers, createSalesVoucher, deleteSalesVoucher } = useSalesVouchers();
+  const { salesVouchers, createSalesVoucher, updateSalesVoucher, deleteSalesVoucher } = useSalesVouchers();
   const [showCreateSale, setShowCreateSale] = useState(false);
   const [showCreateVoucher, setShowCreateVoucher] = useState(false);
   const [showViewSale, setShowViewSale] = useState(false);
   const [showEditSale, setShowEditSale] = useState(false);
+  const [showViewVoucher, setShowViewVoucher] = useState(false);
+  const [showEditVoucher, setShowEditVoucher] = useState(false);
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
+  const [selectedVoucher, setSelectedVoucher] = useState<SalesVoucher | null>(null);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -88,6 +94,32 @@ export const SalesSection = () => {
     toast({
       title: "Sales Voucher Created",
       description: "The sales voucher has been created successfully.",
+    });
+  };
+
+  const handleViewVoucher = (voucher: SalesVoucher) => {
+    setSelectedVoucher(voucher);
+    setShowViewVoucher(true);
+  };
+
+  const handleEditVoucher = (voucher: SalesVoucher) => {
+    setSelectedVoucher(voucher);
+    setShowEditVoucher(true);
+  };
+
+  const handleVoucherUpdated = (id: string, updates: Partial<SalesVoucher>) => {
+    updateSalesVoucher(id, updates);
+    toast({
+      title: "Voucher Updated",
+      description: `Voucher ${id} has been updated successfully.`,
+    });
+  };
+
+  const handlePrintVoucher = (voucher: SalesVoucher) => {
+    generateSalesVoucherPDF(voucher);
+    toast({
+      title: "Voucher PDF Generated",
+      description: `Sales voucher PDF for ${voucher.voucherNumber} has been generated.`,
     });
   };
 
@@ -217,6 +249,31 @@ export const SalesSection = () => {
                         </td>
                         <td className="py-4 px-4">
                           <div className="flex space-x-1">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleViewVoucher(voucher)}
+                              title="View Voucher"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleEditVoucher(voucher)}
+                              title="Edit Voucher"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handlePrintVoucher(voucher)}
+                              title="Print Voucher"
+                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            >
+                              <FileText className="h-4 w-4" />
+                            </Button>
                             <Button 
                               variant="ghost" 
                               size="sm"
@@ -368,6 +425,19 @@ export const SalesSection = () => {
         onOpenChange={setShowEditSale}
         sale={selectedSale}
         onSaleUpdated={handleSaleUpdated}
+      />
+
+      <ViewSalesVoucherDialog
+        open={showViewVoucher}
+        onOpenChange={setShowViewVoucher}
+        voucher={selectedVoucher}
+      />
+
+      <EditSalesVoucherDialog
+        open={showEditVoucher}
+        onOpenChange={setShowEditVoucher}
+        voucher={selectedVoucher}
+        onVoucherUpdated={handleVoucherUpdated}
       />
     </div>
   );

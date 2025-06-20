@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,6 +32,15 @@ export const CreateSalesVoucherDialog = ({ open, onOpenChange, onVoucherCreated 
     { productId: '', productName: '', quantity: 1, unitPrice: 0, totalAmount: 0 }
   ]);
 
+  // Recalculate totals whenever items or discount changes
+  useEffect(() => {
+    const newItems = items.map(item => ({
+      ...item,
+      totalAmount: item.quantity * item.unitPrice
+    }));
+    setItems(newItems);
+  }, []);
+
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
@@ -48,9 +57,8 @@ export const CreateSalesVoucherDialog = ({ open, onOpenChange, onVoucherCreated 
       }
     }
     
-    if (field === 'quantity' || field === 'unitPrice') {
-      newItems[index].totalAmount = newItems[index].quantity * newItems[index].unitPrice;
-    }
+    // Always recalculate total amount when quantity or unit price changes
+    newItems[index].totalAmount = newItems[index].quantity * newItems[index].unitPrice;
     
     setItems(newItems);
   };
@@ -78,6 +86,15 @@ export const CreateSalesVoucherDialog = ({ open, onOpenChange, onVoucherCreated 
     if (validItems.length === 0) {
       alert('Please add at least one valid item');
       return;
+    }
+
+    // Check stock availability
+    for (const item of validItems) {
+      const product = products.find(p => p.id === item.productId);
+      if (product && product.stock < item.quantity) {
+        alert(`Insufficient stock for ${item.productName}. Available: ${product.stock}, Required: ${item.quantity}`);
+        return;
+      }
     }
 
     const { totalAmount, finalAmount } = calculateTotals();
@@ -215,7 +232,7 @@ export const CreateSalesVoucherDialog = ({ open, onOpenChange, onVoucherCreated 
                     <Label>Total Amount</Label>
                     <Input
                       type="number"
-                      value={item.totalAmount}
+                      value={item.totalAmount.toFixed(2)}
                       readOnly
                       className="bg-gray-100"
                     />
@@ -255,7 +272,7 @@ export const CreateSalesVoucherDialog = ({ open, onOpenChange, onVoucherCreated 
               <Label>Total Amount</Label>
               <Input
                 type="number"
-                value={totalAmount}
+                value={totalAmount.toFixed(2)}
                 readOnly
                 className="bg-gray-100 font-semibold"
               />
@@ -265,7 +282,7 @@ export const CreateSalesVoucherDialog = ({ open, onOpenChange, onVoucherCreated 
               <Label>Final Amount</Label>
               <Input
                 type="number"
-                value={finalAmount}
+                value={finalAmount.toFixed(2)}
                 readOnly
                 className="bg-gray-100 font-bold text-green-600"
               />

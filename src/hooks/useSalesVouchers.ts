@@ -135,6 +135,30 @@ export const useSalesVouchers = () => {
         throw itemsError;
       }
 
+      // Update product stock
+      for (const item of voucherData.items) {
+        const { data: product, error: fetchError } = await supabase
+          .from('products')
+          .select('stock')
+          .eq('id', item.productId)
+          .single();
+
+        if (fetchError) {
+          console.error('Error fetching product:', fetchError);
+          continue;
+        }
+
+        const newStock = product.stock - item.quantity;
+        const { error: updateError } = await supabase
+          .from('products')
+          .update({ stock: newStock })
+          .eq('id', item.productId);
+
+        if (updateError) {
+          console.error('Error updating product stock:', updateError);
+        }
+      }
+
       console.log('Sales voucher created successfully');
       await fetchSalesVouchers();
       return voucherResult;
@@ -181,6 +205,26 @@ export const useSalesVouchers = () => {
   const deleteSalesVoucher = async (id: string) => {
     try {
       console.log('Deleting sales voucher:', id);
+      
+      // First, restore stock for all items in this voucher
+      const voucher = salesVouchers.find(v => v.id === id);
+      if (voucher) {
+        for (const item of voucher.items) {
+          const { data: product, error: fetchError } = await supabase
+            .from('products')
+            .select('stock')
+            .eq('id', item.productId)
+            .single();
+
+          if (!fetchError && product) {
+            const newStock = product.stock + item.quantity;
+            await supabase
+              .from('products')
+              .update({ stock: newStock })
+              .eq('id', item.productId);
+          }
+        }
+      }
       
       const { error } = await supabase
         .from('sales_vouchers')
