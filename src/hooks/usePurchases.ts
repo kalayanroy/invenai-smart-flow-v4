@@ -143,6 +143,18 @@ export const usePurchases = () => {
           .select()
           .single();
 
+        const { productInfo } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', item.productId)
+        .order('created_at', { ascending: false });
+
+        productInfo.stock+=item.quantity;
+        await supabase
+        .from('products')
+        .update(productInfo)
+        .eq('id', item.productId);        
+
         if (error) {
           console.error('Supabase error adding purchase:', error);
           throw error;
@@ -198,6 +210,19 @@ export const usePurchases = () => {
         throw error;
       }
 
+      const { productInfo } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', purchaseData.productId)
+        .order('created_at', { ascending: false });
+
+        productInfo.stock+=purchaseData.quantity;
+        await supabase
+        .from('products')
+        .update(productInfo)
+        .eq('id', purchaseData.productId);
+      
+
       console.log('Purchase successfully added to Supabase:', data);
       await fetchPurchases(); // Refresh the list
       return data;
@@ -233,6 +258,18 @@ export const usePurchases = () => {
         console.error('Supabase error updating purchase:', error);
         throw error;
       }
+
+      const { productInfo } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', updates.productId)
+        .order('created_at', { ascending: false });
+
+        productInfo.stock+=updates.quantity;
+        await supabase
+        .from('products')
+        .update(productInfo)
+        .eq('id', updates.productId);
 
       console.log('Purchase updated successfully in Supabase');
       await fetchPurchases(); // Refresh the list
@@ -297,6 +334,18 @@ export const usePurchases = () => {
             .from('purchases')
             .insert([{ ...dbUpdates, id: newItemId }]);
 
+           const { productInfo } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', item.productId)
+        .order('created_at', { ascending: false });
+
+        productInfo.stock+=item.quantity;
+        await supabase
+        .from('products')
+        .update(productInfo)
+        .eq('id', item.productId);
+          
           if (insertError) {
             console.error('Error inserting new purchase item:', insertError);
             throw insertError;
@@ -326,7 +375,9 @@ export const usePurchases = () => {
   const deletePurchase = async (id: string) => {
     try {
       console.log('Deleting purchase from Supabase:', id);
-      
+
+      const{purchaseInfo}=await getPurchases(id);
+      console.log(purchaseInfo);
       const { error } = await supabase
         .from('purchases')
         .delete()
@@ -336,7 +387,18 @@ export const usePurchases = () => {
         console.error('Supabase error deleting purchase:', error);
         throw error;
       }
+ const { productInfo } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', item.productId)
+        .order('created_at', { ascending: false });
 
+        productInfo.stock-=purchaseInfo.quantity;
+        await supabase
+        .from('products')
+        .update(productInfo)
+        .eq('id', item.productId);
+      
       console.log('Purchase deleted successfully from Supabase');
       await fetchPurchases(); // Refresh the list
     } catch (error) {
@@ -344,6 +406,16 @@ export const usePurchases = () => {
       throw error;
     }
   };
+
+    const getPurchases =async (id: string) => {
+      return await supabase
+        .from('purchases')
+        .select('*')
+        .eq('id', id);
+        .order('created_at', { ascending: false });
+    //return products.find(product => product.id === id);
+  };
+
 
   const clearAllPurchases = async () => {
     try {
