@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Trash2, Plus } from 'lucide-react';
 import { useProducts } from '@/hooks/useProducts';
-import { useSales } from '@/hooks/useSalesVouchers';
+import { useSalesVouchers } from '@/hooks/useSalesVouchers';
 import { usePurchases } from '@/hooks/usePurchases';
 import { useSalesReturns } from '@/hooks/useSalesReturns';
 import { Sale } from '@/hooks/useSales';
@@ -37,7 +37,7 @@ export const CreateSalesVoucherDialog = ({ open, onOpenChange, onVoucherCreated 
 // Calculate actual available stock using: Opening Stock + Total Purchase + Total Return - Total Sales
   const getCalculatedStock = (productId: string) => {
     const product = products.find(p => p.id === productId);
-    const productSales = sales.filter(sale => sale.productId === productId);
+    const productSales = useSalesVouchers.filter(sale => sale.productId === productId);
     const productPurchases = purchases.filter(purchase => purchase.productId === productId);
     const productReturns = salesReturns.filter(returnItem => returnItem.productId === productId);
     
@@ -45,7 +45,7 @@ export const CreateSalesVoucherDialog = ({ open, onOpenChange, onVoucherCreated 
     const totalSold = productSales.reduce((sum, sale) => sum + sale.quantity, 0);
     const totalPurchased = productPurchases.reduce((sum, purchase) => sum + purchase.quantity, 0);
     const totalReturned = productReturns.reduce((sum, returnItem) => sum + returnItem.returnQuantity, 0);
-    console.log("Sales List:"+sales);
+    console.log("Sales List:"+useSalesVouchers);
     console.log("Product Id:"+productId);
     console.log("Sales:"+productSales);
     console.log("Purchases:"+productPurchases);
