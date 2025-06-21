@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -41,8 +40,8 @@ export const PurchaseSection = () => {
     });
   };
 
-  const handleViewPurchase = (purchase: Purchase) => {
-    setSelectedPurchase(purchase);
+  const handleViewPurchase = (purchaseOrder: PurchaseOrder) => {
+    setSelectedPurchaseOrder(purchaseOrder);
     setShowViewPurchase(true);
   };
 
@@ -200,7 +199,7 @@ export const PurchaseSection = () => {
                         <Button 
                           variant="ghost" 
                           size="sm"
-                          onClick={() => handleViewPurchase(order.items[0])}
+                          onClick={() => handleViewPurchase(order)}
                           title="View Purchase Order"
                         >
                           <Eye className="h-4 w-4" />
@@ -256,7 +255,7 @@ export const PurchaseSection = () => {
       <ViewPurchaseDialog
         open={showViewPurchase}
         onOpenChange={setShowViewPurchase}
-        purchase={selectedPurchase}
+        purchaseOrder={selectedPurchaseOrder}
       />
 
       <EditPurchaseDialog

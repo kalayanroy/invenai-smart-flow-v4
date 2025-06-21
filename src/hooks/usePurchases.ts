@@ -246,25 +246,72 @@ export const usePurchases = () => {
     try {
       console.log('Updating purchase order:', orderId, updates);
       
-      // Update all items in the purchase order
+      // First, get all existing items for this purchase order
+      const { data: existingItems, error: fetchError } = await supabase
+        .from('purchases')
+        .select('id')
+        .eq('purchase_order_id', orderId);
+
+      if (fetchError) {
+        console.error('Error fetching existing items:', fetchError);
+        throw fetchError;
+      }
+
+      const existingItemIds = existingItems?.map(item => item.id) || [];
+      const updatedItemIds = updates.items.map(item => item.id);
+
+      // Delete items that are no longer in the updated list
+      const itemsToDelete = existingItemIds.filter(id => !updatedItemIds.includes(id));
+      
+      for (const itemId of itemsToDelete) {
+        const { error: deleteError } = await supabase
+          .from('purchases')
+          .delete()
+          .eq('id', itemId);
+
+        if (deleteError) {
+          console.error('Error deleting purchase item:', deleteError);
+          throw deleteError;
+        }
+      }
+
+      // Update or insert items
       for (const item of updates.items) {
         const dbUpdates: any = {
           supplier: updates.supplier,
           status: updates.status,
           notes: updates.notes || null,
+          product_id: item.productId,
+          product_name: item.productName,
           quantity: item.quantity,
           unit_price: item.unitPrice,
-          total_amount: item.totalAmount
+          total_amount: item.totalAmount,
+          purchase_order_id: orderId,
+          date: new Date().toISOString().split('T')[0]
         };
 
-        const { error } = await supabase
-          .from('purchases')
-          .update(dbUpdates)
-          .eq('id', item.id);
+        if (item.id.startsWith('new-')) {
+          // This is a new item, insert it
+          const newItemId = `${orderId}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+          const { error: insertError } = await supabase
+            .from('purchases')
+            .insert([{ ...dbUpdates, id: newItemId }]);
 
-        if (error) {
-          console.error('Supabase error updating purchase item:', error);
-          throw error;
+          if (insertError) {
+            console.error('Error inserting new purchase item:', insertError);
+            throw insertError;
+          }
+        } else {
+          // This is an existing item, update it
+          const { error: updateError } = await supabase
+            .from('purchases')
+            .update(dbUpdates)
+            .eq('id', item.id);
+
+          if (updateError) {
+            console.error('Error updating purchase item:', updateError);
+            throw updateError;
+          }
         }
       }
 
