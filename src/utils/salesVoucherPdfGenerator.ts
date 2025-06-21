@@ -22,14 +22,14 @@ export const generateSalesVoucherPDF = (voucher: SalesVoucher) => {
   doc.text('Phone: 01712014171', 20, 70);
   
   // Invoice details
-  doc.text(`Invoice ID: ${sale.id}`, 120, 40);
-  doc.text(`Date: ${new Date(sale.date).toLocaleDateString()}`, 120, 50);
-  doc.text(`Status: ${sale.status}`, 120, 60);
+  doc.text(`Invoice ID: ${voucher.id}`, 120, 40);
+  doc.text(`Date: ${new Date(voucher.date).toLocaleDateString()}`, 120, 50);
+  doc.text(`Status: ${voucher.status}`, 120, 60);
   
   // Customer info
-  if (sale.customerName) {
+  if (voucher.customerName) {
     doc.text('Bill To:', 20, 90);
-    doc.text(sale.customerName, 20, 100);
+    doc.text(voucher.customerName, 20, 100);
   }
   
   // Table headers
@@ -84,13 +84,13 @@ export const generateSalesVoucherPDF = (voucher: SalesVoucher) => {
   // Total section
   doc.line(20, 145, 190, 145);
   doc.setFontSize(12);
-  doc.text(`Total Amount: ${sale.totalAmount}`, 120, 160);
+  doc.text(`Total Amount: ${voucher.totalAmount}`, 120, 160);
   
   // Notes
   if (sale.notes) {
     doc.setFontSize(10);
     doc.text('Notes:', 20, 180);
-    doc.text(sale.notes, 20, 190);
+    doc.text(voucher.notes, 20, 190);
   }
   
   // Footer
@@ -98,7 +98,7 @@ export const generateSalesVoucherPDF = (voucher: SalesVoucher) => {
   doc.text('Thank you for your business!', 105, 270, { align: 'center' });
   
   // Save the PDF
-  doc.save(`sales-invoice-${sale.id}.pdf`);
+  doc.save(`sales-invoice-${voucher.id}.pdf`);
   
   
 };
