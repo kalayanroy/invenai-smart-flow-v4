@@ -83,8 +83,8 @@ export const EditPurchaseDialog = ({ open, onOpenChange, purchaseOrder, onPurcha
         productId: products[0].id,
         productName: products[0].name,
         quantity: 1,
-        unitPrice: parseFloat(products[0].purchase_price.replace('৳', '').replace(',', '')),
-        totalAmount: parseFloat(products[0].purchase_price.replace('৳', '').replace(',', ''))
+        unitPrice: parseFloat(products[0].purchasePrice.replace('৳', '').replace(',', '')),
+        totalAmount: parseFloat(products[0].purchasePrice.replace('৳', '').replace(',', ''))
       };
       setItems([...items, newItem]);
     }
@@ -96,7 +96,7 @@ export const EditPurchaseDialog = ({ open, onOpenChange, purchaseOrder, onPurcha
       const newItems = [...items];
       newItems[index].productId = productId;
       newItems[index].productName = product.name;
-      newItems[index].unitPrice = parseFloat(product.purchase_price.replace('৳', '').replace(',', ''));
+      newItems[index].unitPrice = parseFloat(product.purchasePrice.replace('৳', '').replace(',', ''));
       newItems[index].totalAmount = newItems[index].quantity * newItems[index].unitPrice;
       setItems(newItems);
     }
@@ -183,7 +183,7 @@ export const EditPurchaseDialog = ({ open, onOpenChange, purchaseOrder, onPurcha
                       <SelectContent>
                         {products.map((product) => (
                           <SelectItem key={product.id} value={product.id}>
-                            {product.name} (৳{product.purchase_price})
+                            {product.name} (৳{product.purchasePrice})
                           </SelectItem>
                         ))}
                       </SelectContent>
