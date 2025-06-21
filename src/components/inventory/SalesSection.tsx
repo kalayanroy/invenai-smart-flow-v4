@@ -81,6 +81,8 @@ export const SalesSection = () => {
         title: "Sale Deleted",
         description: `Sale ${sale.id} has been deleted.`,
       });
+      // Automatically refresh products to update stock calculations
+await fetchProducts();
     }
   };
 
