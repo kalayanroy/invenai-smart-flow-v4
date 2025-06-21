@@ -203,7 +203,7 @@ export const usePurchases = () => {
         notes: updates.notes,
         purchase_order_id: updates.purchaseOrderId
       };
-console.log(purchaseOrderId);
+console.log(dbUpdates);
       await supabase.from('purchases').update(dbUpdates).eq('id', id);
       await updateProductStock(updates.productId!, updates.quantity || 0);
       await fetchPurchases();
