@@ -71,60 +71,67 @@ export const generatePurchaseInvoicePDF = (purchase: Purchase) => {
   const doc = new jsPDF();
 
   // Add logo
-  doc.addImage(logoBase64, 'PNG', 10, 10, 25, 25); // x, y, width, height
-  
+  doc.addImage(logoBase64, 'PNG', 10, 10, 25, 25);
+
   // Header
   doc.setFontSize(20);
   doc.text('PURCHASE ORDER', 105, 20, { align: 'center' });
-  
+
   // Company info
   doc.setFontSize(12);
   doc.text('Nahar Enterprise', 20, 40);
   doc.text('Abdul Kadar market, member bari road,', 20, 50);
   doc.text('National University, gazipur city corporation.', 20, 60);
   doc.text('Phone: 01712014171', 20, 70);
-  
+
   // Purchase order details
   doc.text(`Purchase Order ID: ${purchase.id}`, 120, 40);
   doc.text(`Date: ${new Date(purchase.date).toLocaleDateString()}`, 120, 50);
   doc.text(`Status: ${purchase.status}`, 120, 60);
-  
+
   // Supplier info
   doc.text('Supplier:', 20, 90);
   doc.text(purchase.supplier, 20, 100);
-  
+
   // Table headers
   doc.setFontSize(10);
   doc.text('Product', 20, 120);
   doc.text('Quantity', 80, 120);
   doc.text('Unit Price', 120, 120);
   doc.text('Total', 160, 120);
-  
+
   // Draw line under headers
   doc.line(20, 125, 190, 125);
-  
+
   // Product details
-  doc.text(purchase.productName, 20, 135);
-  doc.text(purchase.quantity.toString(), 80, 135);
-  doc.text(purchase.unitPrice, 120, 135);
-  doc.text(purchase.totalAmount, 160, 135);
-  
+  let yPosition = 135; // Start position for product rows
+  purchase.items.forEach((item: any) => {
+    doc.text(item.productName, 20, yPosition);
+    doc.text(item.quantity.toString(), 80, yPosition);
+    doc.text(`৳${item.unitPrice}`, 120, yPosition);
+    doc.text(`৳${item.totalAmount}`, 160, yPosition);
+    yPosition += 10; // Move down for next item
+  });
+
   // Total section
-  doc.line(20, 145, 190, 145);
+  doc.line(20, yPosition, 190, yPosition);
+  yPosition += 10;
   doc.setFontSize(12);
-  doc.text(`Total Amount: ${purchase.totalAmount}`, 120, 160);
-  
+  doc.text(`Total Amount: ${purchase.totalAmount}`, 120, yPosition);
+
   // Notes
   if (purchase.notes) {
+    yPosition += 20;
     doc.setFontSize(10);
-    doc.text('Notes:', 20, 180);
-    doc.text(purchase.notes, 20, 190);
+    doc.text('Notes:', 20, yPosition);
+    doc.text(purchase.notes, 20, yPosition + 10);
   }
-  
+
   // Footer
   doc.setFontSize(8);
   doc.text('Purchase Order', 105, 270, { align: 'center' });
-  
+
   // Save the PDF
   doc.save(`purchase-order-${purchase.id}.pdf`);
 };
+
