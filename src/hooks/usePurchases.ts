@@ -143,7 +143,7 @@ export const usePurchases = () => {
           .select()
           .single();
 
-        const { productInfo } = await supabase
+        const productInfo  = await supabase
         .from('products')
         .select('*')
         .eq('id', item.productId)
