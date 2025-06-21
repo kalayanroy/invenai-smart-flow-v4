@@ -89,7 +89,7 @@ export const PurchaseSection = () => {
         totalAmount: parseFloat(item.totalAmount.replace('৳', '').replace(',', ''))
       }))
     };
-    
+    console.log(purchaseForPDF);
     generatePurchaseInvoicePDF(purchaseForPDF);
     toast({
       title: "Purchase Order Generated",
