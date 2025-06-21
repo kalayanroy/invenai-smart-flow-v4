@@ -41,9 +41,7 @@ export const generateSalesVoucherPDF = (voucher: SalesVoucher) => {
   
   // Draw line under headers
   doc.line(20, 125, 190, 125);
-  
-  // Product details
- ;
+
   // Product details
   let yPosition = 135; // Start position for product rows
   if (voucher.items && voucher.items.length > 0){
@@ -55,8 +53,6 @@ export const generateSalesVoucherPDF = (voucher: SalesVoucher) => {
     yPosition += 10; // Move down for next item
   });
   }
- 
-  
 
   // Total section
   doc.line(20, yPosition, 190, yPosition);
@@ -72,19 +68,6 @@ export const generateSalesVoucherPDF = (voucher: SalesVoucher) => {
     doc.text(voucher.notes, 20, yPosition + 10);
   }
 
-  
-  // Total section
-  doc.line(20, 145, 190, 145);
-  doc.setFontSize(12);
-  doc.text(`Total Amount: ${voucher.totalAmount}`, 120, 160);
-  
-  // Notes
-  if (voucher.notes) {
-    doc.setFontSize(10);
-    doc.text('Notes:', 20, 180);
-    doc.text(voucher.notes, 20, 190);
-  }
-  
   // Footer
   doc.setFontSize(8);
   doc.text('Thank you for your business!', 105, 270, { align: 'center' });
