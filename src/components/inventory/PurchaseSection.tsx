@@ -10,6 +10,7 @@ import { CreatePurchaseDialog } from './CreatePurchaseDialog';
 import { ViewPurchaseDialog } from './ViewPurchaseDialog';
 import { EditPurchaseDialog } from './EditPurchaseDialog';
 import { generatePurchaseInvoicePDF } from '@/utils/pdfGenerator';
+import { generatePInvoicePDF } from '@/utils/pdfGenerator';
 
 export const PurchaseSection = () => {
   const { toast } = useToast();
