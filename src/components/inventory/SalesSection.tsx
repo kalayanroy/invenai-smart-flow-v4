@@ -10,7 +10,6 @@ import { useSalesVouchers, SalesVoucher } from '@/hooks/useSalesVouchers';
 import { useProducts } from '@/hooks/useProducts';
 import { usePurchases } from '@/hooks/usePurchases';
 import { useSalesReturns } from '@/hooks/useSalesReturns';
-import { useSalesVouchers, SalesVoucherItem } from '@/hooks/useSalesVouchers'
 import { CreateSaleDialog } from './CreateSaleDialog';
 import { CreateSalesVoucherDialog } from './CreateSalesVoucherDialog';
 import { ViewSaleDialog } from './ViewSaleDialog';
