@@ -90,7 +90,8 @@ export const PurchaseSection = () => {
       }))
     };
     console.log(purchaseForPDF);
-    generatePurchaseInvoicePDF(purchaseForPDF);
+    //generatePurchaseInvoicePDF(purchaseForPDF);
+    generatePInvoicePDF(purchaseForPDF);
     toast({
       title: "Purchase Order Generated",
       description: `Purchase order for ${order.id} has been generated.`,
