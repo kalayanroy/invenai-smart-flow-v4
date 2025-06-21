@@ -12,10 +12,22 @@ export interface Purchase {
   date: string;
   status: 'Ordered' | 'Received' | 'Pending' | 'Cancelled';
   notes?: string;
+  purchaseOrderId?: string; // New field to group items from same order
+}
+
+export interface PurchaseOrder {
+  id: string;
+  supplier: string;
+  date: string;
+  status: 'Ordered' | 'Received' | 'Pending' | 'Cancelled';
+  notes?: string;
+  items: Purchase[];
+  totalAmount: number;
 }
 
 export const usePurchases = () => {
   const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
 
   useEffect(() => {
     fetchPurchases();
@@ -46,13 +58,106 @@ export const usePurchases = () => {
         totalAmount: purchase.total_amount,
         date: purchase.date,
         status: purchase.status as 'Received' | 'Pending' | 'Cancelled',
-        notes: purchase.notes
+        notes: purchase.notes,
+        purchaseOrderId: purchase.purchase_order_id || purchase.id // Use purchase_order_id if available, fallback to id
       }));
 
       console.log('Mapped purchases:', mappedPurchases);
       setPurchases(mappedPurchases);
+
+      // Group purchases into purchase orders
+      const ordersMap = new Map<string, PurchaseOrder>();
+      
+      mappedPurchases.forEach(purchase => {
+        const orderId = purchase.purchaseOrderId || purchase.id;
+        
+        if (!ordersMap.has(orderId)) {
+          ordersMap.set(orderId, {
+            id: orderId,
+            supplier: purchase.supplier,
+            date: purchase.date,
+            status: purchase.status,
+            notes: purchase.notes,
+            items: [],
+            totalAmount: 0
+          });
+        }
+        
+        const order = ordersMap.get(orderId)!;
+        order.items.push(purchase);
+        order.totalAmount += parseFloat(purchase.totalAmount.replace('৳', '').replace(',', ''));
+      });
+
+      const orders = Array.from(ordersMap.values()).sort((a, b) => 
+        new Date(b.date).getTime() - new Date(a.date).getTime()
+      );
+      
+      setPurchaseOrders(orders);
     } catch (error) {
       console.error('Error in fetchPurchases:', error);
+    }
+  };
+
+  const addPurchaseOrder = async (orderData: { 
+    supplier: string; 
+    status: Purchase['status']; 
+    notes?: string; 
+    items: Array<{
+      productId: string;
+      productName: string;
+      quantity: number;
+      unitPrice: number;
+    }>;
+  }) => {
+    try {
+      console.log('Adding purchase order to Supabase:', orderData);
+
+      // Generate a unique purchase order ID
+      const timestamp = Date.now();
+      const random = Math.floor(Math.random() * 1000);
+      const purchaseOrderId = `PO${timestamp}${random}`;
+
+      const purchasePromises = orderData.items.map(async (item, index) => {
+        const purchaseId = `${purchaseOrderId}-${index + 1}`;
+        const totalAmount = item.quantity * item.unitPrice;
+
+        const newPurchase = {
+          id: purchaseId,
+          purchase_order_id: purchaseOrderId,
+          product_id: item.productId,
+          product_name: item.productName,
+          supplier: orderData.supplier,
+          quantity: item.quantity,
+          unit_price: `৳${item.unitPrice.toFixed(2)}`,
+          total_amount: `৳${totalAmount.toFixed(2)}`,
+          date: new Date().toISOString().split('T')[0],
+          status: orderData.status,
+          notes: orderData.notes || null
+        };
+
+        console.log('Prepared purchase data for Supabase:', newPurchase);
+
+        const { data, error } = await supabase
+          .from('purchases')
+          .insert([newPurchase])
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Supabase error adding purchase:', error);
+          throw error;
+        }
+
+        return data;
+      });
+
+      await Promise.all(purchasePromises);
+      console.log('Purchase order successfully added to Supabase');
+      await fetchPurchases(); // Refresh the list
+      return purchaseOrderId;
+    } catch (error) {
+      console.error('Error in addPurchaseOrder:', error);
+      throw error;
     }
   };
 
@@ -76,7 +181,8 @@ export const usePurchases = () => {
         total_amount: purchaseData.totalAmount,
         date: purchaseData.date,
         status: purchaseData.status,
-        notes: purchaseData.notes || null
+        notes: purchaseData.notes || null,
+        purchase_order_id: purchaseData.purchaseOrderId || null
       };
 
       console.log('Prepared purchase data for Supabase:', newPurchase);
@@ -116,6 +222,7 @@ export const usePurchases = () => {
       if (updates.date) dbUpdates.date = updates.date;
       if (updates.status) dbUpdates.status = updates.status;
       if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
+      if (updates.purchaseOrderId) dbUpdates.purchase_order_id = updates.purchaseOrderId;
 
       const { error } = await supabase
         .from('purchases')
@@ -173,6 +280,7 @@ export const usePurchases = () => {
 
       console.log('All purchases cleared from Supabase');
       setPurchases([]);
+      setPurchaseOrders([]);
     } catch (error) {
       console.error('Error in clearAllPurchases:', error);
       throw error;
@@ -181,7 +289,9 @@ export const usePurchases = () => {
 
   return {
     purchases,
+    purchaseOrders,
     addPurchase,
+    addPurchaseOrder,
     updatePurchase,
     deletePurchase,
     clearAllPurchases,

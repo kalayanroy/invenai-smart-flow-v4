@@ -13,7 +13,7 @@ import { generatePurchaseInvoicePDF } from '@/utils/pdfGenerator';
 
 export const PurchaseSection = () => {
   const { toast } = useToast();
-  const { purchases, addPurchase, updatePurchase, deletePurchase } = usePurchases();
+  const { purchases, purchaseOrders, addPurchaseOrder, updatePurchase, deletePurchase } = usePurchases();
   const [showCreatePurchase, setShowCreatePurchase] = useState(false);
   const [showViewPurchase, setShowViewPurchase] = useState(false);
   const [showEditPurchase, setShowEditPurchase] = useState(false);
@@ -29,12 +29,10 @@ export const PurchaseSection = () => {
     }
   };
 
-  const totalPurchases = purchases.reduce((sum, purchase) => 
-    sum + parseFloat(purchase.totalAmount.replace('৳', '').replace(',', '')), 0
-  );
+  const totalPurchases = purchaseOrders.reduce((sum, order) => sum + order.totalAmount, 0);
 
-  const handlePurchaseCreated = (purchaseData: any) => {
-    addPurchase(purchaseData);
+  const handlePurchaseCreated = (orderData: any) => {
+    addPurchaseOrder(orderData);
     toast({
       title: "Purchase Order Created",
       description: "The purchase order has been created successfully.",
@@ -69,11 +67,18 @@ export const PurchaseSection = () => {
     }
   };
 
-  const handlePrintInvoice = (purchase: Purchase) => {
-    generatePurchaseInvoicePDF(purchase);
+  const handlePrintInvoice = (order: any) => {
+    // Create a purchase object for the PDF generator (using first item as base)
+    const firstItem = order.items[0];
+    const purchaseForPDF = {
+      ...firstItem,
+      totalAmount: `৳${order.totalAmount.toFixed(2)}`,
+      items: order.items // Add all items for multi-item invoice
+    };
+    generatePurchaseInvoicePDF(purchaseForPDF);
     toast({
       title: "Purchase Order Generated",
-      description: `Purchase order for ${purchase.id} has been generated.`,
+      description: `Purchase order for ${order.id} has been generated.`,
     });
   };
 
@@ -86,8 +91,8 @@ export const PurchaseSection = () => {
             <div className="flex items-center gap-2">
               <ShoppingCart className="h-5 w-5 text-blue-600" />
               <div>
-                <p className="text-sm text-gray-600">Total Purchases</p>
-                <p className="text-2xl font-bold">{purchases.length}</p>
+                <p className="text-sm text-gray-600">Purchase Orders</p>
+                <p className="text-2xl font-bold">{purchaseOrders.length}</p>
               </div>
             </div>
           </CardContent>
@@ -112,7 +117,7 @@ export const PurchaseSection = () => {
               <div>
                 <p className="text-sm text-gray-600">Items Purchased</p>
                 <p className="text-2xl font-bold">
-                  {purchases.reduce((sum, purchase) => sum + purchase.quantity, 0)}
+                  {purchaseOrders.reduce((sum, order) => sum + order.items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0)}
                 </p>
               </div>
             </div>
@@ -120,11 +125,11 @@ export const PurchaseSection = () => {
         </Card>
       </div>
 
-      {/* Purchase Table */}
+      {/* Purchase Orders Table */}
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
-            <CardTitle>Purchase Orders ({purchases.length} records)</CardTitle>
+            <CardTitle>Purchase Orders ({purchaseOrders.length} orders)</CardTitle>
             <Button 
               className="flex items-center gap-2"
               onClick={() => setShowCreatePurchase(true)}
@@ -139,33 +144,36 @@ export const PurchaseSection = () => {
             <table className="w-full">
               <thead>
                 <tr className="border-b">
-                  <th className="text-left py-3 px-4 font-medium text-gray-600">Purchase ID</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600">Product</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-600">Order ID</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Supplier</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600">Quantity</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600">Unit Price</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600">Total</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-600">Items</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-600">Total Qty</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-600">Total Amount</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Date</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Status</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {purchases.map((purchase) => (
-                  <tr key={purchase.id} className="border-b hover:bg-gray-50 transition-colors">
-                    <td className="py-4 px-4 text-sm font-mono">{purchase.id}</td>
+                {purchaseOrders.map((order) => (
+                  <tr key={order.id} className="border-b hover:bg-gray-50 transition-colors">
+                    <td className="py-4 px-4 text-sm font-mono">{order.id}</td>
+                    <td className="py-4 px-4 text-sm">{order.supplier}</td>
                     <td className="py-4 px-4">
-                      <div className="font-medium text-gray-900">{purchase.productName}</div>
-                      <div className="text-sm text-gray-500">SKU: {purchase.productId}</div>
+                      <div className="text-sm">
+                        {order.items.length} item(s)
+                        <div className="text-xs text-gray-500">
+                          {order.items.slice(0, 2).map(item => item.productName).join(', ')}
+                          {order.items.length > 2 && '...'}
+                        </div>
+                      </div>
                     </td>
-                    <td className="py-4 px-4 text-sm">{purchase.supplier}</td>
-                    <td className="py-4 px-4">{purchase.quantity}</td>
-                    <td className="py-4 px-4">{purchase.unitPrice}</td>
-                    <td className="py-4 px-4 font-semibold">{purchase.totalAmount}</td>
-                    <td className="py-4 px-4 text-sm">{new Date(purchase.date).toLocaleDateString()}</td>
+                    <td className="py-4 px-4">{order.items.reduce((sum, item) => sum + item.quantity, 0)}</td>
+                    <td className="py-4 px-4 font-semibold">৳{order.totalAmount.toLocaleString()}</td>
+                    <td className="py-4 px-4 text-sm">{new Date(order.date).toLocaleDateString()}</td>
                     <td className="py-4 px-4">
-                      <Badge className={getStatusColor(purchase.status)}>
-                        {purchase.status}
+                      <Badge className={getStatusColor(order.status)}>
+                        {order.status}
                       </Badge>
                     </td>
                     <td className="py-4 px-4">
@@ -173,23 +181,23 @@ export const PurchaseSection = () => {
                         <Button 
                           variant="ghost" 
                           size="sm"
-                          onClick={() => handleViewPurchase(purchase)}
-                          title="View Purchase"
+                          onClick={() => handleViewPurchase(order.items[0])}
+                          title="View Purchase Order"
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
                         <Button 
                           variant="ghost" 
                           size="sm"
-                          onClick={() => handleEditPurchase(purchase)}
-                          title="Edit Purchase"
+                          onClick={() => handleEditPurchase(order.items[0])}
+                          title="Edit Purchase Order"
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
                         <Button 
                           variant="ghost" 
                           size="sm"
-                          onClick={() => handlePrintInvoice(purchase)}
+                          onClick={() => handlePrintInvoice(order)}
                           title="Print Purchase Order"
                           className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                         >
@@ -198,8 +206,8 @@ export const PurchaseSection = () => {
                         <Button 
                           variant="ghost" 
                           size="sm"
-                          onClick={() => handleDeletePurchase(purchase)}
-                          title="Delete Purchase"
+                          onClick={() => handleDeletePurchase(order.items[0])}
+                          title="Delete Purchase Order"
                           className="text-red-600 hover:text-red-700 hover:bg-red-50"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -212,9 +220,9 @@ export const PurchaseSection = () => {
             </table>
           </div>
           
-          {purchases.length === 0 && (
+          {purchaseOrders.length === 0 && (
             <div className="text-center py-8 text-gray-500">
-              <p>No purchase records found. Create your first purchase order to get started.</p>
+              <p>No purchase orders found. Create your first purchase order to get started.</p>
             </div>
           )}
         </CardContent>

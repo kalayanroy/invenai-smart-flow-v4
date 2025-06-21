@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -21,7 +20,17 @@ interface PurchaseItem {
 interface CreatePurchaseDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onPurchaseCreated: (purchase: Omit<Purchase, 'id'>) => void;
+  onPurchaseCreated: (orderData: { 
+    supplier: string; 
+    status: Purchase['status']; 
+    notes?: string; 
+    items: Array<{
+      productId: string;
+      productName: string;
+      quantity: number;
+      unitPrice: number;
+    }>;
+  }) => void;
 }
 
 export const CreatePurchaseDialog = ({ open, onOpenChange, onPurchaseCreated }: CreatePurchaseDialogProps) => {
@@ -73,25 +82,30 @@ export const CreatePurchaseDialog = ({ open, onOpenChange, onPurchaseCreated }: 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    console.log(items);
-    // Create separate purchase records for each item
-    items.forEach((item, index) => {
-      if (item.productId && item.quantity > 0) {
-        const purchaseData: Omit<Purchase, 'id'> = {
-          productId: item.productId,
-          productName: item.productName,
-          supplier: formData.supplier,
-          quantity: item.quantity,
-          unitPrice: `৳${item.unitPrice.toFixed(2)}`,
-          totalAmount: `৳${item.totalAmount.toFixed(2)}`,
-          date: new Date().toISOString().split('T')[0],
-          status: formData.status,
-          notes: formData.notes
-        };
-        console.log(purchaseData);
-        onPurchaseCreated(purchaseData);
-      }
-    });
+    // Filter out items that don't have a product selected
+    const validItems = items.filter(item => item.productId && item.quantity > 0);
+    
+    if (validItems.length === 0) {
+      return;
+    }
+
+    console.log('Submitting purchase order with items:', validItems);
+    
+    // Create purchase order data
+    const orderData = {
+      supplier: formData.supplier,
+      status: formData.status,
+      notes: formData.notes,
+      items: validItems.map(item => ({
+        productId: item.productId,
+        productName: item.productName,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice
+      }))
+    };
+
+    console.log('Purchase order data:', orderData);
+    onPurchaseCreated(orderData);
 
     onOpenChange(false);
     setFormData({
