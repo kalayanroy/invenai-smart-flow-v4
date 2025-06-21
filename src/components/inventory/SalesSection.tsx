@@ -5,12 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, TrendingUp, DollarSign, ShoppingBag, Eye, Edit, Trash2, FileText, Receipt } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useSales, Sale } from '@/hooks/useSales';
+import { useSalesVouchers, SalesVoucher } from '@/hooks/useSalesVouchers';
 import { useProducts } from '@/hooks/useProducts';
-import { useSales } from '@/hooks/useSales';
 import { usePurchases } from '@/hooks/usePurchases';
 import { useSalesReturns } from '@/hooks/useSalesReturns';
-import { useSalesVouchers, SalesVoucherItem } from '@/hooks/useSalesVouchers';
-
+import { useSalesVouchers, SalesVoucherItem } from '@/hooks/useSalesVouchers'
 import { CreateSaleDialog } from './CreateSaleDialog';
 import { CreateSalesVoucherDialog } from './CreateSalesVoucherDialog';
 import { ViewSaleDialog } from './ViewSaleDialog';
