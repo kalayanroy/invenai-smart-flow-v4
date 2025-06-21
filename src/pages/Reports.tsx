@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,12 +10,14 @@ import { useProducts } from '@/hooks/useProducts';
 import { useSales } from '@/hooks/useSales';
 import { usePurchases } from '@/hooks/usePurchases';
 import { useSalesReturns } from '@/hooks/useSalesReturns';
+import { useSalesVouchers } from '@/hooks/useSalesVouchers';
 
 export const Reports = () => {
   const { products } = useProducts();
   const { sales } = useSales();
-  const { purchases } = usePurchases();
-  const { returns } = useSalesReturns();
+  const { purchases, purchaseOrders } = usePurchases();
+  const { salesReturns } = useSalesReturns();
+  const { salesVouchers } = useSalesVouchers();
   
   const [activeReport, setActiveReport] = useState('inventory');
   const [dateFilter, setDateFilter] = useState('all');
@@ -66,28 +69,50 @@ export const Reports = () => {
   };
 
   const calculateProfitLoss = () => {
-    const filteredSales = filterDataByDate(sales.filter(s => s.status === 'Completed'), 'date');
+    // Use sales vouchers for more accurate profit calculation
+    const filteredSalesVouchers = filterDataByDate(salesVouchers.filter(v => v.status === 'Completed'), 'date');
     const filteredPurchases = filterDataByDate(purchases.filter(p => p.status === 'Received'), 'date');
-    const filteredReturns = filterDataByDate(returns.filter(r => r.status === 'Processed'), 'returnDate');
+    const filteredReturns = filterDataByDate(salesReturns.filter(r => r.status === 'Processed'), 'returnDate');
 
-    const totalRevenue = filteredSales.reduce((sum, sale) => {
-      const amount = parseFloat(sale.totalAmount.replace('৳', '').replace(',', '')) || 0;
-      return sum + amount;
+    // Calculate revenue from sales vouchers
+    const totalRevenue = filteredSalesVouchers.reduce((sum, voucher) => {
+      return sum + voucher.totalAmount;
     }, 0);
 
+    // Calculate costs from purchases
     const totalCosts = filteredPurchases.reduce((sum, purchase) => {
       const amount = parseFloat(purchase.totalAmount.replace('৳', '').replace(',', '')) || 0;
       return sum + amount;
     }, 0);
 
+    // Calculate refunds from returns
     const totalRefunds = filteredReturns.reduce((sum, returnItem) => {
       const amount = parseFloat(returnItem.totalRefund.replace('৳', '').replace(',', '')) || 0;
       return sum + amount;
     }, 0);
 
     const netRevenue = totalRevenue - totalRefunds;
-    const grossProfit = netRevenue - totalCosts;
-    const profitMargin = netRevenue > 0 ? (grossProfit / netRevenue) * 100 : 0;
+    
+    // Calculate profit based on individual voucher items
+    let totalPurchaseCost = 0;
+    let totalSalesRevenue = 0;
+
+    filteredSalesVouchers.forEach(voucher => {
+      voucher.items.forEach(item => {
+        // Find the product to get purchase price
+        const product = products.find(p => p.id === item.productId);
+        if (product) {
+          const purchasePrice = parseFloat(product.purchasePrice.replace('৳', '').replace(',', '')) || 0;
+          const salePrice = item.unitPrice;
+          
+          totalPurchaseCost += purchasePrice * item.quantity;
+          totalSalesRevenue += salePrice * item.quantity;
+        }
+      });
+    });
+
+    const grossProfit = totalSalesRevenue - totalPurchaseCost - totalRefunds;
+    const profitMargin = totalSalesRevenue > 0 ? (grossProfit / totalSalesRevenue) * 100 : 0;
 
     return {
       totalRevenue,
@@ -96,9 +121,29 @@ export const Reports = () => {
       netRevenue,
       grossProfit,
       profitMargin,
-      salesCount: filteredSales.length,
+      salesCount: filteredSalesVouchers.length,
       purchaseCount: filteredPurchases.length,
-      returnCount: filteredReturns.length
+      returnCount: filteredReturns.length,
+      itemWiseProfit: filteredSalesVouchers.map(voucher => ({
+        voucherId: voucher.id,
+        voucherNumber: voucher.voucherNumber,
+        customerName: voucher.customerName,
+        date: voucher.date,
+        items: voucher.items.map(item => {
+          const product = products.find(p => p.id === item.productId);
+          const purchasePrice = product ? parseFloat(product.purchasePrice.replace('৳', '').replace(',', '')) || 0 : 0;
+          const salePrice = item.unitPrice;
+          const itemProfit = (salePrice - purchasePrice) * item.quantity;
+          
+          return {
+            productName: item.productName,
+            quantity: item.quantity,
+            purchasePrice,
+            salePrice,
+            profit: itemProfit
+          };
+        })
+      }))
     };
   };
 
@@ -111,17 +156,18 @@ export const Reports = () => {
           return matchesCategory && matchesStatus;
         });
       case 'sales':
-        return filterDataByDate(sales, 'date').filter(sale => {
-          const matchesStatus = statusFilter === 'all' || sale.status === statusFilter;
+        // Use sales vouchers instead of individual sales for better reporting
+        return filterDataByDate(salesVouchers, 'date').filter(voucher => {
+          const matchesStatus = statusFilter === 'all' || voucher.status === statusFilter;
           return matchesStatus;
         });
       case 'purchases':
-        return filterDataByDate(purchases, 'date').filter(purchase => {
-          const matchesStatus = statusFilter === 'all' || purchase.status === statusFilter;
+        return filterDataByDate(purchaseOrders, 'date').filter(order => {
+          const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
           return matchesStatus;
         });
       case 'returns':
-        return filterDataByDate(returns, 'returnDate').filter(returnItem => {
+        return filterDataByDate(salesReturns, 'returnDate').filter(returnItem => {
           const matchesStatus = statusFilter === 'all' || returnItem.status === statusFilter;
           return matchesStatus;
         });
@@ -307,38 +353,113 @@ export const Reports = () => {
         </table>
       `;
     } else if (activeReport === 'sales' && Array.isArray(data)) {
-      const totalAmount = data.reduce((sum: number, sale: any) => sum + parseFloat(sale.totalAmount.replace('৳', '').replace(',', '')), 0);
+      const totalAmount = data.reduce((sum: number, voucher: any) => sum + voucher.finalAmount, 0);
       content += `
         <div class="summary">
-          <strong>Summary:</strong> Total Sales: ${data.length} | 
+          <strong>Summary:</strong> Total Sales Vouchers: ${data.length} | 
           Total Amount: ৳${totalAmount.toLocaleString()} | 
-          Completed: ${data.filter((s: any) => s.status === 'Completed').length} | 
-          Pending: ${data.filter((s: any) => s.status === 'Pending').length}
+          Completed: ${data.filter((v: any) => v.status === 'Completed').length} | 
+          Pending: ${data.filter((v: any) => v.status === 'Pending').length}
         </div>
         <table>
           <thead>
             <tr>
-              <th>Sale ID</th>
-              <th>Product Name</th>
+              <th>Voucher Number</th>
               <th>Customer</th>
-              <th>Quantity</th>
-              <th>Unit Price</th>
+              <th>Items</th>
+              <th>Total Amount</th>
+              <th>Discount</th>
+              <th>Final Amount</th>
+              <th>Date</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.map((voucher: any) => `
+              <tr>
+                <td>${voucher.voucherNumber}</td>
+                <td>${voucher.customerName || 'N/A'}</td>
+                <td>${voucher.items.length} items</td>
+                <td>৳${voucher.totalAmount.toLocaleString()}</td>
+                <td>৳${voucher.discountAmount.toLocaleString()}</td>
+                <td>৳${voucher.finalAmount.toLocaleString()}</td>
+                <td>${voucher.date}</td>
+                <td>${voucher.status}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    } else if (activeReport === 'purchases' && Array.isArray(data)) {
+      const totalAmount = data.reduce((sum: number, order: any) => sum + order.totalAmount, 0);
+      content += `
+        <div class="summary">
+          <strong>Summary:</strong> Total Purchase Orders: ${data.length} | 
+          Total Amount: ৳${totalAmount.toLocaleString()} | 
+          Received: ${data.filter((o: any) => o.status === 'Received').length} | 
+          Pending: ${data.filter((o: any) => o.status === 'Pending').length}
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>Supplier</th>
+              <th>Items</th>
               <th>Total Amount</th>
               <th>Date</th>
               <th>Status</th>
             </tr>
           </thead>
           <tbody>
-            ${data.map((sale: any) => `
+            ${data.map((order: any) => `
               <tr>
-                <td>${sale.id}</td>
-                <td>${sale.productName}</td>
-                <td>${sale.customerName || 'N/A'}</td>
-                <td>${sale.quantity}</td>
-                <td>${sale.unitPrice}</td>
-                <td>${sale.totalAmount}</td>
-                <td>${sale.date}</td>
-                <td>${sale.status}</td>
+                <td>${order.id}</td>
+                <td>${order.supplier}</td>
+                <td>${order.items.length} items</td>
+                <td>৳${order.totalAmount.toLocaleString()}</td>
+                <td>${order.date}</td>
+                <td>${order.status}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    } else if (activeReport === 'returns' && Array.isArray(data)) {
+      const totalRefunds = data.reduce((sum: number, returnItem: any) => {
+        const amount = parseFloat(returnItem.totalRefund.replace('৳', '').replace(',', '')) || 0;
+        return sum + amount;
+      }, 0);
+      content += `
+        <div class="summary">
+          <strong>Summary:</strong> Total Returns: ${data.length} | 
+          Total Refunds: ৳${totalRefunds.toLocaleString()} | 
+          Processed: ${data.filter((r: any) => r.status === 'Processed').length} | 
+          Pending: ${data.filter((r: any) => r.status === 'Pending').length}
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Return ID</th>
+              <th>Product</th>
+              <th>Customer</th>
+              <th>Return Qty</th>
+              <th>Total Refund</th>
+              <th>Return Date</th>
+              <th>Status</th>
+              <th>Reason</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.map((returnItem: any) => `
+              <tr>
+                <td>${returnItem.id}</td>
+                <td>${returnItem.productName}</td>
+                <td>${returnItem.customerName || 'N/A'}</td>
+                <td>${returnItem.returnQuantity}</td>
+                <td>${returnItem.totalRefund}</td>
+                <td>${returnItem.returnDate}</td>
+                <td>${returnItem.status}</td>
+                <td>${returnItem.reason}</td>
               </tr>
             `).join('')}
           </tbody>
@@ -396,16 +517,38 @@ export const Reports = () => {
         product.sellPrice
       ]);
     } else if (activeReport === 'sales' && Array.isArray(data)) {
-      headers = ['Sale ID', 'Product Name', 'Customer', 'Quantity', 'Unit Price', 'Total Amount', 'Date', 'Status'];
-      rows = data.map((sale: any) => [
-        sale.id,
-        sale.productName,
-        sale.customerName || '',
-        sale.quantity.toString(),
-        sale.unitPrice,
-        sale.totalAmount,
-        sale.date,
-        sale.status
+      headers = ['Voucher Number', 'Customer', 'Items Count', 'Total Amount', 'Discount', 'Final Amount', 'Date', 'Status'];
+      rows = data.map((voucher: any) => [
+        voucher.voucherNumber,
+        voucher.customerName || '',
+        voucher.items.length.toString(),
+        voucher.totalAmount.toString(),
+        voucher.discountAmount.toString(),
+        voucher.finalAmount.toString(),
+        voucher.date,
+        voucher.status
+      ]);
+    } else if (activeReport === 'purchases' && Array.isArray(data)) {
+      headers = ['Order ID', 'Supplier', 'Items Count', 'Total Amount', 'Date', 'Status'];
+      rows = data.map((order: any) => [
+        order.id,
+        order.supplier,
+        order.items.length.toString(),
+        order.totalAmount.toString(),
+        order.date,
+        order.status
+      ]);
+    } else if (activeReport === 'returns' && Array.isArray(data)) {
+      headers = ['Return ID', 'Product', 'Customer', 'Return Qty', 'Total Refund', 'Return Date', 'Status', 'Reason'];
+      rows = data.map((returnItem: any) => [
+        returnItem.id,
+        returnItem.productName,
+        returnItem.customerName || '',
+        returnItem.returnQuantity.toString(),
+        returnItem.totalRefund,
+        returnItem.returnDate,
+        returnItem.status,
+        returnItem.reason
       ]);
     }
 
@@ -517,11 +660,19 @@ export const Reports = () => {
                       <SelectItem value="Out of Stock">Out of Stock</SelectItem>
                     </>
                   )}
-                  {activeReport === 'sales' && (
+                  {(activeReport === 'sales' || activeReport === 'purchases') && (
                     <>
                       <SelectItem value="Completed">Completed</SelectItem>
                       <SelectItem value="Pending">Pending</SelectItem>
                       <SelectItem value="Cancelled">Cancelled</SelectItem>
+                    </>
+                  )}
+                  {activeReport === 'returns' && (
+                    <>
+                      <SelectItem value="Pending">Pending</SelectItem>
+                      <SelectItem value="Approved">Approved</SelectItem>
+                      <SelectItem value="Processed">Processed</SelectItem>
+                      <SelectItem value="Rejected">Rejected</SelectItem>
                     </>
                   )}
                 </SelectContent>
@@ -593,7 +744,7 @@ export const Reports = () => {
                     Profit Margin
                   </h3>
                   <p className={`text-2xl font-bold ${(data as any).profitMargin >= 0 ? 'text-green-900' : 'text-red-900'}`}>
-                    ${(data as any).profitMargin.toFixed(2)}%
+                    {(data as any).profitMargin.toFixed(2)}%
                   </p>
                 </div>
               </div>
@@ -610,6 +761,50 @@ export const Reports = () => {
                 <div className="text-center">
                   <p className="text-sm text-gray-600">Return Transactions</p>
                   <p className="text-lg font-semibold">{(data as any).returnCount}</p>
+                </div>
+              </div>
+
+              {/* Item-wise Profit Breakdown */}
+              <div className="mt-6">
+                <h3 className="text-lg font-semibold mb-4">Voucher-wise Profit Breakdown</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left py-3 px-4 font-medium text-gray-600">Voucher No.</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-600">Customer</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-600">Date</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-600">Items</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-600">Total Profit</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(data as any).itemWiseProfit.map((voucher: any, index: number) => (
+                        <tr key={index} className="border-b hover:bg-gray-50">
+                          <td className="py-3 px-4 text-sm">{voucher.voucherNumber}</td>
+                          <td className="py-3 px-4 text-sm">{voucher.customerName || 'N/A'}</td>
+                          <td className="py-3 px-4 text-sm">{voucher.date}</td>
+                          <td className="py-3 px-4">
+                            <div className="text-sm space-y-1">
+                              {voucher.items.map((item: any, itemIndex: number) => (
+                                <div key={itemIndex} className="flex justify-between">
+                                  <span>{item.productName} (x{item.quantity})</span>
+                                  <span className={item.profit >= 0 ? 'text-green-600' : 'text-red-600'}>
+                                    ৳{item.profit.toFixed(2)}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className={`font-semibold ${voucher.items.reduce((sum: number, item: any) => sum + item.profit, 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              ৳{voucher.items.reduce((sum: number, item: any) => sum + item.profit, 0).toFixed(2)}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
@@ -630,11 +825,33 @@ export const Reports = () => {
                     )}
                     {activeReport === 'sales' && (
                       <>
-                        <th className="text-left py-3 px-4 font-medium text-gray-600">Sale ID</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-600">Voucher No.</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-600">Customer</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-600">Items</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-600">Total</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-600">Discount</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-600">Final</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-600">Date</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-600">Status</th>
+                      </>
+                    )}
+                    {activeReport === 'purchases' && (
+                      <>
+                        <th className="text-left py-3 px-4 font-medium text-gray-600">Order ID</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-600">Supplier</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-600">Items</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-600">Total</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-600">Date</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-600">Status</th>
+                      </>
+                    )}
+                    {activeReport === 'returns' && (
+                      <>
+                        <th className="text-left py-3 px-4 font-medium text-gray-600">Return ID</th>
                         <th className="text-left py-3 px-4 font-medium text-gray-600">Product</th>
                         <th className="text-left py-3 px-4 font-medium text-gray-600">Customer</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-600">Quantity</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-600">Total</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-600">Qty</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-600">Refund</th>
                         <th className="text-left py-3 px-4 font-medium text-gray-600">Date</th>
                         <th className="text-left py-3 px-4 font-medium text-gray-600">Status</th>
                       </>
@@ -664,15 +881,54 @@ export const Reports = () => {
                       )}
                       {activeReport === 'sales' && (
                         <>
-                          <td className="py-3 px-4 text-sm">{item.id}</td>
-                          <td className="py-3 px-4">{item.productName}</td>
-                          <td className="py-3 px-4 text-sm">{item.customerName || 'N/A'}</td>
-                          <td className="py-3 px-4 text-sm">{item.quantity}</td>
-                          <td className="py-3 px-4 text-sm font-medium">{item.totalAmount}</td>
+                          <td className="py-3 px-4 text-sm">{item.voucherNumber}</td>
+                          <td className="py-3 px-4">{item.customerName || 'N/A'}</td>
+                          <td className="py-3 px-4 text-sm">{item.items.length} items</td>
+                          <td className="py-3 px-4 text-sm font-medium">৳{item.totalAmount.toLocaleString()}</td>
+                          <td className="py-3 px-4 text-sm">৳{item.discountAmount.toLocaleString()}</td>
+                          <td className="py-3 px-4 text-sm font-medium">৳{item.finalAmount.toLocaleString()}</td>
                           <td className="py-3 px-4 text-sm">{item.date}</td>
                           <td className="py-3 px-4">
                             <Badge className={
                               item.status === 'Completed' ? 'bg-green-100 text-green-800' :
+                              item.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-red-100 text-red-800'
+                            }>
+                              {item.status}
+                            </Badge>
+                          </td>
+                        </>
+                      )}
+                      {activeReport === 'purchases' && (
+                        <>
+                          <td className="py-3 px-4 text-sm">{item.id}</td>
+                          <td className="py-3 px-4">{item.supplier}</td>
+                          <td className="py-3 px-4 text-sm">{item.items.length} items</td>
+                          <td className="py-3 px-4 text-sm font-medium">৳{item.totalAmount.toLocaleString()}</td>
+                          <td className="py-3 px-4 text-sm">{item.date}</td>
+                          <td className="py-3 px-4">
+                            <Badge className={
+                              item.status === 'Received' ? 'bg-green-100 text-green-800' :
+                              item.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-red-100 text-red-800'
+                            }>
+                              {item.status}
+                            </Badge>
+                          </td>
+                        </>
+                      )}
+                      {activeReport === 'returns' && (
+                        <>
+                          <td className="py-3 px-4 text-sm">{item.id}</td>
+                          <td className="py-3 px-4">{item.productName}</td>
+                          <td className="py-3 px-4 text-sm">{item.customerName || 'N/A'}</td>
+                          <td className="py-3 px-4 text-sm">{item.returnQuantity}</td>
+                          <td className="py-3 px-4 text-sm font-medium">{item.totalRefund}</td>
+                          <td className="py-3 px-4 text-sm">{item.returnDate}</td>
+                          <td className="py-3 px-4">
+                            <Badge className={
+                              item.status === 'Processed' ? 'bg-green-100 text-green-800' :
+                              item.status === 'Approved' ? 'bg-blue-100 text-blue-800' :
                               item.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
                               'bg-red-100 text-red-800'
                             }>
