@@ -87,7 +87,7 @@ export const generateSalesInvoicePDF = (sale: Sale) => {
   // Save the PDF
   doc.save(`sales-invoice-${sale.id}.pdf`);
 };
-export const generatePInvoicePDF = (purchase: Purchase) => {
+export const generatePInvoicePDF = (purchase: PurchaseForPDF) => {
   const doc = new jsPDF();
 
   // Add logo
