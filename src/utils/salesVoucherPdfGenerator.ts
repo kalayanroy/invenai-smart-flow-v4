@@ -55,15 +55,7 @@ export const generateSalesVoucherPDF = (voucher: SalesVoucher) => {
     yPosition += 10; // Move down for next item
   });
   }
-  else{
-     // Handle single item (fallback)
-    doc.text(voucher.productName, 20, yPosition);
-    doc.text(voucher.quantity.toString(), 80, yPosition);
-    doc.text(voucher.unitPrice, 120, yPosition);
-    doc.text(voucher.totalAmount, 160, yPosition);
-    
-    yPosition += 20;
-  }
+ 
   
 
   // Total section
