@@ -203,7 +203,7 @@ export const usePurchases = () => {
         notes: updates.notes,
         purchase_order_id: updates.purchaseOrderId
       };
-      console.log(dbUpdates);
+    console.log(dbUpdates);
       await supabase.from('purchases').update(dbUpdates).eq('id', id);
       await updateProductStock(updates.productId!, updates.quantity || 0);
       await fetchPurchases();
@@ -230,6 +230,7 @@ const updatePurchaseOrder = async (purchaseOrderId: string, updates: Partial<Pur
   try {
     // Update all purchases in the order with new values (like status, notes, supplier)
     console.log(purchaseOrderId);
+    console.log(updates);
     const { error } = await supabase
       .from('purchases')
       .update({
