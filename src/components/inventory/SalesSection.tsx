@@ -113,7 +113,14 @@ const {  fetchSalesVouchers } = useSalesVouchers();
     try {
       await createSalesVoucher(voucherData);
       // Automatically refresh products to update stock calculations
-      await fetchProducts();
+      //await fetchProducts();
+      await Promise.all([
+  fetchProducts(),
+  fetchSales(),
+  fetchSalesReturns(),
+  fetchPurchases(),
+]);
+
       toast({
         title: "Sales Voucher Created",
         description: "The sales voucher has been created successfully.",
