@@ -229,6 +229,7 @@ export const usePurchases = () => {
 const updatePurchaseOrder = async (purchaseOrderId: string, updates: Partial<PurchaseOrder>) => {
   try {
     // Update all purchases in the order with new values (like status, notes, supplier)
+    console.log(purchaseOrderId);
     const { error } = await supabase
       .from('purchases')
       .update({
