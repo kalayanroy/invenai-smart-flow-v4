@@ -411,7 +411,7 @@ export const usePurchases = () => {
       return await supabase
         .from('purchases')
         .select('*')
-        .eq('id', id);
+        .eq('id', id)
         .order('created_at', { ascending: false });
     //return products.find(product => product.id === id);
   };
