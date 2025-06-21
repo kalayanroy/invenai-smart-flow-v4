@@ -46,9 +46,9 @@ export const CreateSalesVoucherDialog = ({ open, onOpenChange, onVoucherCreated 
     const totalPurchased = productPurchases.reduce((sum, purchase) => sum + purchase.quantity, 0);
     const totalReturned = productReturns.reduce((sum, returnItem) => sum + returnItem.returnQuantity, 0);
 
-    console.log(productSales);
-    console.log(productPurchases);
-    console.log(productReturns);
+    console.log("Sales:"+productSales);
+    console.log("Purchases:"+productPurchases);
+    console.log("Returns:"+productReturns);
     return openingStock + totalPurchased + totalReturned - totalSold;
   };
   //const selectedProduct = products.find(p => p.id === formData.productId);
