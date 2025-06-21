@@ -104,6 +104,7 @@ export const generatePurchaseInvoicePDF = (purchase: Purchase) => {
   doc.line(20, 125, 190, 125);
 
   // Product details
+  console.log(purchase);
   let yPosition = 135; // Start position for product rows
   purchase.items.forEach((item: any) => {
     doc.text(item.productName, 20, yPosition);
