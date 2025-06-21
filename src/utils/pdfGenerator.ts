@@ -166,7 +166,7 @@ export const generatePInvoicePDF = (purchase: PurchaseForPDF) => {
   // Save the PDF
   doc.save(`purchase-order-${purchase.id}.pdf`);
 };
-export const generatePurchaseInvoicePDF = (purchase: Purchase) => {
+export const generatePurchaseInvoicePDF = (purchase: PurchaseForPDF) => {
   const doc = new jsPDF();
 
   // Add logo
