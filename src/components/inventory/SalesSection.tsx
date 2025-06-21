@@ -7,6 +7,7 @@ import { Plus, TrendingUp, DollarSign, ShoppingBag, Eye, Edit, Trash2, FileText,
 import { useToast } from '@/hooks/use-toast';
 import { useSales, Sale } from '@/hooks/useSales';
 import { useSalesVouchers, SalesVoucher } from '@/hooks/useSalesVouchers';
+import { useProducts } from '@/hooks/useProducts';
 import { CreateSaleDialog } from './CreateSaleDialog';
 import { CreateSalesVoucherDialog } from './CreateSalesVoucherDialog';
 import { ViewSaleDialog } from './ViewSaleDialog';
@@ -20,6 +21,8 @@ export const SalesSection = () => {
   const { toast } = useToast();
   const { sales, addSale, updateSale, deleteSale } = useSales();
   const { salesVouchers, createSalesVoucher, updateSalesVoucher, deleteSalesVoucher } = useSalesVouchers();
+  const { fetchProducts } = useProducts();
+  
   const [showCreateSale, setShowCreateSale] = useState(false);
   const [showCreateVoucher, setShowCreateVoucher] = useState(false);
   const [showViewSale, setShowViewSale] = useState(false);
@@ -89,12 +92,23 @@ export const SalesSection = () => {
     });
   };
 
-  const handleVoucherCreated = (voucherData: any) => {
-    createSalesVoucher(voucherData);
-    toast({
-      title: "Sales Voucher Created",
-      description: "The sales voucher has been created successfully.",
-    });
+  const handleVoucherCreated = async (voucherData: any) => {
+    try {
+      await createSalesVoucher(voucherData);
+      // Automatically refresh products to update stock calculations
+      await fetchProducts();
+      toast({
+        title: "Sales Voucher Created",
+        description: "The sales voucher has been created successfully.",
+      });
+    } catch (error) {
+      console.error('Error creating voucher:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create sales voucher. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleViewVoucher = (voucher: SalesVoucher) => {
@@ -107,12 +121,23 @@ export const SalesSection = () => {
     setShowEditVoucher(true);
   };
 
-  const handleVoucherUpdated = (id: string, updates: Partial<SalesVoucher>) => {
-    updateSalesVoucher(id, updates);
-    toast({
-      title: "Voucher Updated",
-      description: `Voucher ${id} has been updated successfully.`,
-    });
+  const handleVoucherUpdated = async (id: string, updates: Partial<SalesVoucher>) => {
+    try {
+      await updateSalesVoucher(id, updates);
+      // Automatically refresh products to update stock calculations
+      await fetchProducts();
+      toast({
+        title: "Voucher Updated",
+        description: `Voucher ${id} has been updated successfully.`,
+      });
+    } catch (error) {
+      console.error('Error updating voucher:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update voucher. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handlePrintVoucher = (voucher: SalesVoucher) => {
@@ -123,13 +148,24 @@ export const SalesSection = () => {
     });
   };
 
-  const handleDeleteVoucher = (voucherId: string) => {
+  const handleDeleteVoucher = async (voucherId: string) => {
     if (window.confirm(`Are you sure you want to delete voucher ${voucherId}?`)) {
-      deleteSalesVoucher(voucherId);
-      toast({
-        title: "Voucher Deleted",
-        description: `Voucher ${voucherId} has been deleted.`,
-      });
+      try {
+        await deleteSalesVoucher(voucherId);
+        // Automatically refresh products to update stock calculations
+        await fetchProducts();
+        toast({
+          title: "Voucher Deleted",
+          description: `Voucher ${voucherId} has been deleted.`,
+        });
+      } catch (error) {
+        console.error('Error deleting voucher:', error);
+        toast({
+          title: "Error",
+          description: "Failed to delete voucher. Please try again.",
+          variant: "destructive",
+        });
+      }
     }
   };
 

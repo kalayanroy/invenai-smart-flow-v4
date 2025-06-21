@@ -19,7 +19,7 @@ interface CreateSalesVoucherDialogProps {
 }
 
 export const CreateSalesVoucherDialog = ({ open, onOpenChange, onVoucherCreated }: CreateSalesVoucherDialogProps) => {
-  const { products } = useProducts();
+  const { products, fetchProducts } = useProducts();
   const { sales } = useSales();
   const { purchases } = usePurchases();
   const { salesReturns } = useSalesReturns();
@@ -52,7 +52,6 @@ export const CreateSalesVoucherDialog = ({ open, onOpenChange, onVoucherCreated 
     const totalPurchased = productPurchases.reduce((sum, purchase) => sum + purchase.quantity, 0);
     const totalReturned = productReturns.reduce((sum, returnItem) => sum + returnItem.returnQuantity, 0);
     const totalVoucherSold = voucherSales.reduce((sum, item) => sum + item.quantity, 0);
-    
     
     return openingStock + totalPurchased + totalReturned - totalSold - totalVoucherSold;
   };
@@ -108,7 +107,7 @@ export const CreateSalesVoucherDialog = ({ open, onOpenChange, onVoucherCreated 
     return { totalAmount, finalAmount };
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     const validItems = items.filter(item => item.productId && item.quantity > 0);
@@ -136,21 +135,28 @@ export const CreateSalesVoucherDialog = ({ open, onOpenChange, onVoucherCreated 
       finalAmount
     };
 
-    onVoucherCreated(voucherData);
-    
-    // Reset form
-    setFormData({
-      voucherNumber: `SV${Date.now()}`,
-      customerName: '',
-      paymentMethod: 'Cash',
-      status: 'Completed',
-      notes: '',
-      date: new Date().toISOString().split('T')[0],
-      discountAmount: 0
-    });
-    setItems([{ productId: '', productName: '', quantity: 1, unitPrice: 0, totalAmount: 0 }]);
-    onOpenChange(false);
-
+    try {
+      await onVoucherCreated(voucherData);
+      
+      // Automatically refresh products to update stock calculations
+      await fetchProducts();
+      
+      // Reset form
+      setFormData({
+        voucherNumber: `SV${Date.now()}`,
+        customerName: '',
+        paymentMethod: 'Cash',
+        status: 'Completed',
+        notes: '',
+        date: new Date().toISOString().split('T')[0],
+        discountAmount: 0
+      });
+      setItems([{ productId: '', productName: '', quantity: 1, unitPrice: 0, totalAmount: 0 }]);
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error creating voucher:', error);
+      alert('Error creating voucher. Please try again.');
+    }
   };
 
   const { totalAmount, finalAmount } = calculateTotals();
