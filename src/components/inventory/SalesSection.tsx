@@ -22,7 +22,11 @@ export const SalesSection = () => {
   const { sales, addSale, updateSale, deleteSale } = useSales();
   const { salesVouchers, createSalesVoucher, updateSalesVoucher, deleteSalesVoucher } = useSalesVouchers();
   const { fetchProducts } = useProducts();
-  
+  const { fetchSales } = useSales();
+const {  fetchPurchases } = usePurchases();
+const {  fetchSalesReturns } = useSalesReturns();
+const {  fetchSalesVouchers } = useSalesVouchers();
+  const [refreshKey, setRefreshKey] = useState(0);
   const [showCreateSale, setShowCreateSale] = useState(false);
   const [showCreateVoucher, setShowCreateVoucher] = useState(false);
   const [showViewSale, setShowViewSale] = useState(false);
@@ -78,7 +82,15 @@ export const SalesSection = () => {
     if (window.confirm(`Are you sure you want to delete sale ${sale.id}?`)) {
       deleteSale(sale.id);
       // Automatically refresh products to update stock calculations
-      await fetchProducts();
+      // ✅ Add missing fetches here
+  await Promise.all([
+    fetchProducts(),
+    fetchSales?.(),
+    fetchPurchases?.(),
+    fetchSalesReturns?.(),
+    fetchSalesVouchers?.(),
+  ]);
+      setRefreshKey(prev => prev + 1); // triggers rerender
       toast({
         title: "Sale Deleted",
         description: `Sale ${sale.id} has been deleted.`,
