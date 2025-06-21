@@ -140,7 +140,15 @@ export const CreateSalesVoucherDialog = ({ open, onOpenChange, onVoucherCreated 
       await onVoucherCreated(voucherData);
       
       // Automatically refresh products to update stock calculations
-      await fetchProducts();
+     //await fetchProducts();
+      // ✅ Add missing fetches here
+  await Promise.all([
+    fetchProducts(),
+    fetchSales?.(),
+    fetchPurchases?.(),
+    fetchSalesReturns?.(),
+    fetchSalesVouchers?.(),
+  ]);
       setRefreshKey(prev => prev + 1); // triggers rerender
       // Reset form
       setFormData({
@@ -239,7 +247,7 @@ export const CreateSalesVoucherDialog = ({ open, onOpenChange, onVoucherCreated 
                       <SelectContent>
                         {products.map((product) => (
                           <SelectItem key={product.id} value={product.id}>
-                            {product.name} (Stock: {getCalculatedStock(product.id)})
+                            {product.name} (Stock: {refreshKey && getCalculatedStock(product.id)})
                           </SelectItem>
                         ))}
                       </SelectContent>
