@@ -35,18 +35,15 @@ export const usePurchases = () => {
 
   const fetchPurchases = async () => {
     try {
-      console.log('Fetching purchases from Supabase...');
       const { data, error } = await supabase
         .from('purchases')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) {
+      if (error || !data) {
         console.error('Error fetching purchases:', error);
         return;
       }
-
-      console.log('Raw purchases data from Supabase:', data);
 
       const mappedPurchases = data.map(purchase => ({
         id: purchase.id,
@@ -57,20 +54,16 @@ export const usePurchases = () => {
         unitPrice: purchase.unit_price,
         totalAmount: purchase.total_amount,
         date: purchase.date,
-        status: purchase.status as 'Received' | 'Pending' | 'Cancelled',
+        status: purchase.status as Purchase['status'],
         notes: purchase.notes,
-        purchaseOrderId: purchase.purchase_order_id || purchase.id
+        purchaseOrderId: purchase.purchase_order_id || purchase.id,
       }));
 
-      console.log('Mapped purchases:', mappedPurchases);
       setPurchases(mappedPurchases);
 
-      // Group purchases into purchase orders
       const ordersMap = new Map<string, PurchaseOrder>();
-      
       mappedPurchases.forEach(purchase => {
-        const orderId = purchase.purchaseOrderId || purchase.id;
-        
+        const orderId = purchase.purchaseOrderId!;
         if (!ordersMap.has(orderId)) {
           ordersMap.set(orderId, {
             id: orderId,
@@ -82,26 +75,49 @@ export const usePurchases = () => {
             totalAmount: 0
           });
         }
-        
         const order = ordersMap.get(orderId)!;
         order.items.push(purchase);
         order.totalAmount += parseFloat(purchase.totalAmount.replace('৳', '').replace(',', ''));
       });
 
-      const orders = Array.from(ordersMap.values()).sort((a, b) => 
-        new Date(b.date).getTime() - new Date(a.date).getTime()
+      const orders = Array.from(ordersMap.values()).sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
       );
-      
+
       setPurchaseOrders(orders);
     } catch (error) {
       console.error('Error in fetchPurchases:', error);
     }
   };
 
-  const addPurchaseOrder = async (orderData: { 
-    supplier: string; 
-    status: Purchase['status']; 
-    notes?: string; 
+  const updateProductStock = async (productId: string, quantityChange: number) => {
+    const { data, error } = await supabase
+      .from('products')
+      .select('stock')
+      .eq('id', productId)
+      .single();
+
+    if (error || !data) {
+      console.error('Error fetching product for stock update:', error);
+      return;
+    }
+
+    const updatedStock = (data.stock || 0) + quantityChange;
+
+    const { error: updateError } = await supabase
+      .from('products')
+      .update({ stock: updatedStock })
+      .eq('id', productId);
+
+    if (updateError) {
+      console.error('Error updating stock:', updateError);
+    }
+  };
+
+  const addPurchaseOrder = async (orderData: {
+    supplier: string;
+    status: Purchase['status'];
+    notes?: string;
     items: Array<{
       productId: string;
       productName: string;
@@ -110,9 +126,6 @@ export const usePurchases = () => {
     }>;
   }) => {
     try {
-      console.log('Adding purchase order to Supabase:', orderData);
-
-      // Generate a unique purchase order ID
       const timestamp = Date.now();
       const random = Math.floor(Math.random() * 1000);
       const purchaseOrderId = `PO${timestamp}${random}`;
@@ -135,37 +148,12 @@ export const usePurchases = () => {
           notes: orderData.notes || null
         };
 
-        console.log('Prepared purchase data for Supabase:', newPurchase);
-
-        const { data, error } = await supabase
-          .from('purchases')
-          .insert([newPurchase])
-          .select()
-          .single();
-
-        const productInfo  = await supabase
-        .from('products')
-        .select('*')
-        .eq('id', item.productId)
-        .order('created_at', { ascending: false });
-
-        productInfo.stock+=item.quantity;
-        await supabase
-        .from('products')
-        .update(productInfo)
-        .eq('id', item.productId);        
-
-        if (error) {
-          console.error('Supabase error adding purchase:', error);
-          throw error;
-        }
-
-        return data;
+        await supabase.from('purchases').insert([newPurchase]);
+        await updateProductStock(item.productId, item.quantity);
       });
 
       await Promise.all(purchasePromises);
-      console.log('Purchase order successfully added to Supabase');
-      await fetchPurchases(); // Refresh the list
+      await fetchPurchases();
       return purchaseOrderId;
     } catch (error) {
       console.error('Error in addPurchaseOrder:', error);
@@ -175,13 +163,7 @@ export const usePurchases = () => {
 
   const addPurchase = async (purchaseData: Omit<Purchase, 'id'>) => {
     try {
-      console.log('Adding purchase to Supabase:', purchaseData);
-
-      // Generate a unique UUID for this purchase
-      const { data: { session } } = await supabase.auth.getSession();
-      const timestamp = Date.now();
-      const random = Math.floor(Math.random() * 1000);
-      const uniqueId = `PUR${timestamp}${random}`;
+      const uniqueId = `PUR${Date.now()}${Math.floor(Math.random() * 1000)}`;
 
       const newPurchase = {
         id: uniqueId,
@@ -197,35 +179,10 @@ export const usePurchases = () => {
         purchase_order_id: purchaseData.purchaseOrderId || null
       };
 
-      console.log('Prepared purchase data for Supabase:', newPurchase);
-
-      const { data, error } = await supabase
-        .from('purchases')
-        .insert([newPurchase])
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Supabase error adding purchase:', error);
-        throw error;
-      }
-
-      const { productInfo } = await supabase
-        .from('products')
-        .select('*')
-        .eq('id', purchaseData.productId)
-        .order('created_at', { ascending: false });
-
-        productInfo.stock+=purchaseData.quantity;
-        await supabase
-        .from('products')
-        .update(productInfo)
-        .eq('id', purchaseData.productId);
-      
-
-      console.log('Purchase successfully added to Supabase:', data);
-      await fetchPurchases(); // Refresh the list
-      return data;
+      await supabase.from('purchases').insert([newPurchase]);
+      await updateProductStock(purchaseData.productId, purchaseData.quantity);
+      await fetchPurchases();
+      return newPurchase;
     } catch (error) {
       console.error('Error in addPurchase:', error);
       throw error;
@@ -234,204 +191,46 @@ export const usePurchases = () => {
 
   const updatePurchase = async (id: string, updates: Partial<Purchase>) => {
     try {
-      console.log('Updating purchase in Supabase:', id, updates);
-      
-      const dbUpdates: any = {};
-      
-      if (updates.productId) dbUpdates.product_id = updates.productId;
-      if (updates.productName) dbUpdates.product_name = updates.productName;
-      if (updates.supplier) dbUpdates.supplier = updates.supplier;
-      if (updates.quantity !== undefined) dbUpdates.quantity = updates.quantity;
-      if (updates.unitPrice) dbUpdates.unit_price = updates.unitPrice;
-      if (updates.totalAmount) dbUpdates.total_amount = updates.totalAmount;
-      if (updates.date) dbUpdates.date = updates.date;
-      if (updates.status) dbUpdates.status = updates.status;
-      if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
-      if (updates.purchaseOrderId) dbUpdates.purchase_order_id = updates.purchaseOrderId;
+      const dbUpdates: any = {
+        product_id: updates.productId,
+        product_name: updates.productName,
+        supplier: updates.supplier,
+        quantity: updates.quantity,
+        unit_price: updates.unitPrice,
+        total_amount: updates.totalAmount,
+        date: updates.date,
+        status: updates.status,
+        notes: updates.notes,
+        purchase_order_id: updates.purchaseOrderId
+      };
 
-      const { error } = await supabase
-        .from('purchases')
-        .update(dbUpdates)
-        .eq('id', id);
-
-      if (error) {
-        console.error('Supabase error updating purchase:', error);
-        throw error;
-      }
-
-      const { productInfo } = await supabase
-        .from('products')
-        .select('*')
-        .eq('id', updates.productId)
-        .order('created_at', { ascending: false });
-
-        productInfo.stock+=updates.quantity;
-        await supabase
-        .from('products')
-        .update(productInfo)
-        .eq('id', updates.productId);
-
-      console.log('Purchase updated successfully in Supabase');
-      await fetchPurchases(); // Refresh the list
+      await supabase.from('purchases').update(dbUpdates).eq('id', id);
+      await updateProductStock(updates.productId!, updates.quantity || 0);
+      await fetchPurchases();
     } catch (error) {
       console.error('Error in updatePurchase:', error);
       throw error;
     }
   };
 
-  const updatePurchaseOrder = async (orderId: string, updates: any) => {
-    try {
-      console.log('Updating purchase order:', orderId, updates);
-      
-      // First, get all existing items for this purchase order
-      const { data: existingItems, error: fetchError } = await supabase
-        .from('purchases')
-        .select('id')
-        .eq('purchase_order_id', orderId);
-
-      if (fetchError) {
-        console.error('Error fetching existing items:', fetchError);
-        throw fetchError;
-      }
-
-      const existingItemIds = existingItems?.map(item => item.id) || [];
-      const updatedItemIds = updates.items.map(item => item.id);
-
-      // Delete items that are no longer in the updated list
-      const itemsToDelete = existingItemIds.filter(id => !updatedItemIds.includes(id));
-      
-      for (const itemId of itemsToDelete) {
-        const { error: deleteError } = await supabase
-          .from('purchases')
-          .delete()
-          .eq('id', itemId);
-
-        if (deleteError) {
-          console.error('Error deleting purchase item:', deleteError);
-          throw deleteError;
-        }
-      }
-
-      // Update or insert items
-      for (const item of updates.items) {
-        const dbUpdates: any = {
-          supplier: updates.supplier,
-          status: updates.status,
-          notes: updates.notes || null,
-          product_id: item.productId,
-          product_name: item.productName,
-          quantity: item.quantity,
-          unit_price: item.unitPrice,
-          total_amount: item.totalAmount,
-          purchase_order_id: orderId,
-          date: new Date().toISOString().split('T')[0]
-        };
-
-        if (item.id.startsWith('new-')) {
-          // This is a new item, insert it
-          const newItemId = `${orderId}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-          const { error: insertError } = await supabase
-            .from('purchases')
-            .insert([{ ...dbUpdates, id: newItemId }]);
-
-           const { productInfo } = await supabase
-        .from('products')
-        .select('*')
-        .eq('id', item.productId)
-        .order('created_at', { ascending: false });
-
-        productInfo.stock+=item.quantity;
-        await supabase
-        .from('products')
-        .update(productInfo)
-        .eq('id', item.productId);
-          
-          if (insertError) {
-            console.error('Error inserting new purchase item:', insertError);
-            throw insertError;
-          }
-        } else {
-          // This is an existing item, update it
-          const { error: updateError } = await supabase
-            .from('purchases')
-            .update(dbUpdates)
-            .eq('id', item.id);
-
-          if (updateError) {
-            console.error('Error updating purchase item:', updateError);
-            throw updateError;
-          }
-        }
-      }
-
-      console.log('Purchase order updated successfully in Supabase');
-      await fetchPurchases(); // Refresh the list
-    } catch (error) {
-      console.error('Error in updatePurchaseOrder:', error);
-      throw error;
-    }
-  };
-
   const deletePurchase = async (id: string) => {
     try {
-      console.log('Deleting purchase from Supabase:', id);
+      const { data, error } = await supabase.from('purchases').select('*').eq('id', id).single();
+      if (error || !data) throw error;
 
-      const{purchaseInfo}=await getPurchases(id);
-      console.log(purchaseInfo);
-      const { error } = await supabase
-        .from('purchases')
-        .delete()
-        .eq('id', id);
-
-      if (error) {
-        console.error('Supabase error deleting purchase:', error);
-        throw error;
-      }
- const { productInfo } = await supabase
-        .from('products')
-        .select('*')
-        .eq('id', item.productId)
-        .order('created_at', { ascending: false });
-
-        productInfo.stock-=purchaseInfo.quantity;
-        await supabase
-        .from('products')
-        .update(productInfo)
-        .eq('id', item.productId);
-      
-      console.log('Purchase deleted successfully from Supabase');
-      await fetchPurchases(); // Refresh the list
+      await supabase.from('purchases').delete().eq('id', id);
+      await updateProductStock(data.product_id, -data.quantity);
+      await fetchPurchases();
     } catch (error) {
       console.error('Error in deletePurchase:', error);
       throw error;
     }
   };
 
-    const getPurchases =async (id: string) => {
-      return await supabase
-        .from('purchases')
-        .select('*')
-        .eq('id', id)
-        .order('created_at', { ascending: false });
-    //return products.find(product => product.id === id);
-  };
-
-
   const clearAllPurchases = async () => {
     try {
-      console.log('Clearing all purchases from Supabase...');
-      
-      const { error } = await supabase
-        .from('purchases')
-        .delete()
-        .neq('id', ''); // Delete all records
-
-      if (error) {
-        console.error('Supabase error clearing purchases:', error);
-        throw error;
-      }
-
-      console.log('All purchases cleared from Supabase');
+      const { error } = await supabase.from('purchases').delete().neq('id', '');
+      if (error) throw error;
       setPurchases([]);
       setPurchaseOrders([]);
     } catch (error) {
@@ -446,7 +245,6 @@ export const usePurchases = () => {
     addPurchase,
     addPurchaseOrder,
     updatePurchase,
-    updatePurchaseOrder,
     deletePurchase,
     clearAllPurchases,
     fetchPurchases
