@@ -65,11 +65,11 @@ export const generateSalesVoucherPDF = (voucher: SalesVoucher) => {
   doc.text(`Total Amount: ${voucher.totalAmount}`, 120, yPosition);
 
   // Notes
-  if (purchase.notes) {
+  if (voucher.notes) {
     yPosition += 20;
     doc.setFontSize(10);
     doc.text('Notes:', 20, yPosition);
-    doc.text(purchase.notes, 20, yPosition + 10);
+    doc.text(voucher.notes, 20, yPosition + 10);
   }
 
   
@@ -79,7 +79,7 @@ export const generateSalesVoucherPDF = (voucher: SalesVoucher) => {
   doc.text(`Total Amount: ${voucher.totalAmount}`, 120, 160);
   
   // Notes
-  if (sale.notes) {
+  if (voucher.notes) {
     doc.setFontSize(10);
     doc.text('Notes:', 20, 180);
     doc.text(voucher.notes, 20, 190);
