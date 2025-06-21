@@ -226,7 +226,29 @@ export const usePurchases = () => {
       throw error;
     }
   };
+const updatePurchaseOrder = async (purchaseOrderId: string, updates: Partial<PurchaseOrder>) => {
+  try {
+    // Update all purchases in the order with new values (like status, notes, supplier)
+    const { error } = await supabase
+      .from('purchases')
+      .update({
+        ...(updates.supplier && { supplier: updates.supplier }),
+        ...(updates.date && { date: updates.date }),
+        ...(updates.status && { status: updates.status }),
+        ...(updates.notes !== undefined && { notes: updates.notes })
+      })
+      .eq('purchase_order_id', purchaseOrderId);
 
+    if (error) throw error;
+
+    await fetchPurchases();
+  } catch (error) {
+    console.error('Error updating purchase order:', error);
+    throw error;
+  }
+};
+
+  
   const clearAllPurchases = async () => {
     try {
       const { error } = await supabase.from('purchases').delete().neq('id', '');
@@ -245,6 +267,7 @@ export const usePurchases = () => {
     addPurchase,
     addPurchaseOrder,
     updatePurchase,
+     updatePurchaseOrder, // ← Add this line
     deletePurchase,
     clearAllPurchases,
     fetchPurchases
