@@ -53,13 +53,6 @@ export const CreateSalesVoucherDialog = ({ open, onOpenChange, onVoucherCreated 
     const totalReturned = productReturns.reduce((sum, returnItem) => sum + returnItem.returnQuantity, 0);
     const totalVoucherSold = voucherSales.reduce((sum, item) => sum + item.quantity, 0);
     
-    console.log("Sales List:", sales);
-    console.log("Voucher Sales:", voucherSales);
-    console.log("Product Id:", productId);
-    console.log("Sales:", productSales);
-    console.log("Purchases:", productPurchases);
-    console.log("Returns:", productReturns);
-    console.log("Total Voucher Sold:", totalVoucherSold);
     
     return openingStock + totalPurchased + totalReturned - totalSold - totalVoucherSold;
   };
@@ -157,6 +150,9 @@ export const CreateSalesVoucherDialog = ({ open, onOpenChange, onVoucherCreated 
     });
     setItems([{ productId: '', productName: '', quantity: 1, unitPrice: 0, totalAmount: 0 }]);
     onOpenChange(false);
+
+     // ✅ Reload the current page after success
+  window.location.reload();
   };
 
   const { totalAmount, finalAmount } = calculateTotals();
