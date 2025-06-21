@@ -77,12 +77,13 @@ export const SalesSection = () => {
   const handleDeleteSale = (sale: Sale) => {
     if (window.confirm(`Are you sure you want to delete sale ${sale.id}?`)) {
       deleteSale(sale.id);
+      // Automatically refresh products to update stock calculations
+      await fetchProducts();
       toast({
         title: "Sale Deleted",
         description: `Sale ${sale.id} has been deleted.`,
       });
-      // Automatically refresh products to update stock calculations
-await fetchProducts();
+
     }
   };
 
