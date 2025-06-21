@@ -261,6 +261,7 @@ export type Database = {
           notes: string | null
           product_id: string
           product_name: string
+          purchase_order_id: string | null
           quantity: number
           status: string
           supplier: string
@@ -276,6 +277,7 @@ export type Database = {
           notes?: string | null
           product_id: string
           product_name: string
+          purchase_order_id?: string | null
           quantity: number
           status?: string
           supplier: string
@@ -291,6 +293,7 @@ export type Database = {
           notes?: string | null
           product_id?: string
           product_name?: string
+          purchase_order_id?: string | null
           quantity?: number
           status?: string
           supplier?: string

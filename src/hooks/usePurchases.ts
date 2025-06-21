@@ -12,7 +12,7 @@ export interface Purchase {
   date: string;
   status: 'Ordered' | 'Received' | 'Pending' | 'Cancelled';
   notes?: string;
-  purchaseOrderId?: string; // New field to group items from same order
+  purchaseOrderId?: string;
 }
 
 export interface PurchaseOrder {
@@ -59,7 +59,7 @@ export const usePurchases = () => {
         date: purchase.date,
         status: purchase.status as 'Received' | 'Pending' | 'Cancelled',
         notes: purchase.notes,
-        purchaseOrderId: purchase.purchase_order_id || purchase.id // Use purchase_order_id if available, fallback to id
+        purchaseOrderId: purchase.purchase_order_id || purchase.id
       }));
 
       console.log('Mapped purchases:', mappedPurchases);
