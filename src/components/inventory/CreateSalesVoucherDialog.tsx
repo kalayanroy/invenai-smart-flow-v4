@@ -24,6 +24,7 @@ export const CreateSalesVoucherDialog = ({ open, onOpenChange, onVoucherCreated 
   const { purchases } = usePurchases();
   const { salesReturns } = useSalesReturns();
   const { salesVouchers } = useSalesVouchers();
+  const [refreshKey, setRefreshKey] = useState(0);
   
   const [formData, setFormData] = useState({
     voucherNumber: `SV${Date.now()}`,
@@ -140,7 +141,7 @@ export const CreateSalesVoucherDialog = ({ open, onOpenChange, onVoucherCreated 
       
       // Automatically refresh products to update stock calculations
       await fetchProducts();
-      
+      setRefreshKey(prev => prev + 1); // triggers rerender
       // Reset form
       setFormData({
         voucherNumber: `SV${Date.now()}`,
@@ -231,7 +232,7 @@ export const CreateSalesVoucherDialog = ({ open, onOpenChange, onVoucherCreated 
                 <div key={index} className="grid grid-cols-1 md:grid-cols-6 gap-4 p-4 border rounded-lg">
                   <div>
                     <Label>Product</Label>
-                    <Select value={item.productId} onValueChange={(value) => handleItemChange(index, 'productId', value)}>
+                    <Select  key={refreshKey} value={item.productId} onValueChange={(value) => handleItemChange(index, 'productId', value)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select product" />
                       </SelectTrigger>
