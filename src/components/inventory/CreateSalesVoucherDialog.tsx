@@ -151,8 +151,6 @@ export const CreateSalesVoucherDialog = ({ open, onOpenChange, onVoucherCreated 
     setItems([{ productId: '', productName: '', quantity: 1, unitPrice: 0, totalAmount: 0 }]);
     onOpenChange(false);
 
-     // ✅ Reload the current page after success
-  window.location.reload();
   };
 
   const { totalAmount, finalAmount } = calculateTotals();
