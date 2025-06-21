@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Plus, ShoppingCart, Package, DollarSign, Eye, Edit, Trash2, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { usePurchases, Purchase } from '@/hooks/usePurchases';
+import { usePurchases, Purchase, PurchaseOrder } from '@/hooks/usePurchases';
 import { CreatePurchaseDialog } from './CreatePurchaseDialog';
 import { ViewPurchaseDialog } from './ViewPurchaseDialog';
 import { EditPurchaseDialog } from './EditPurchaseDialog';
@@ -14,11 +14,12 @@ import {generatePInvoicePDF} from '@/utils/pdfGenerator';
 
 export const PurchaseSection = () => {
   const { toast } = useToast();
-  const { purchases, purchaseOrders, addPurchaseOrder, updatePurchase, deletePurchase } = usePurchases();
+  const { purchases, purchaseOrders, addPurchaseOrder, updatePurchase, deletePurchase, updatePurchaseOrder } = usePurchases();
   const [showCreatePurchase, setShowCreatePurchase] = useState(false);
   const [showViewPurchase, setShowViewPurchase] = useState(false);
   const [showEditPurchase, setShowEditPurchase] = useState(false);
   const [selectedPurchase, setSelectedPurchase] = useState<Purchase | null>(null);
+  const [selectedPurchaseOrder, setSelectedPurchaseOrder] = useState<PurchaseOrder | null>(null);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -45,25 +46,28 @@ export const PurchaseSection = () => {
     setShowViewPurchase(true);
   };
 
-  const handleEditPurchase = (purchase: Purchase) => {
-    setSelectedPurchase(purchase);
+  const handleEditPurchase = (purchaseOrder: PurchaseOrder) => {
+    setSelectedPurchaseOrder(purchaseOrder);
     setShowEditPurchase(true);
   };
 
-  const handlePurchaseUpdated = (id: string, updates: Partial<Purchase>) => {
-    updatePurchase(id, updates);
+  const handlePurchaseUpdated = (orderId: string, updates: any) => {
+    updatePurchaseOrder(orderId, updates);
     toast({
-      title: "Purchase Updated",
-      description: `Purchase ${id} has been updated successfully.`,
+      title: "Purchase Order Updated",
+      description: `Purchase order ${orderId} has been updated successfully.`,
     });
   };
 
-  const handleDeletePurchase = (purchase: Purchase) => {
-    if (window.confirm(`Are you sure you want to delete purchase ${purchase.id}?`)) {
-      deletePurchase(purchase.id);
+  const handleDeletePurchase = (purchaseOrder: PurchaseOrder) => {
+    if (window.confirm(`Are you sure you want to delete purchase order ${purchaseOrder.id}?`)) {
+      // Delete all items in the purchase order
+      purchaseOrder.items.forEach(item => {
+        deletePurchase(item.id);
+      });
       toast({
-        title: "Purchase Deleted",
-        description: `Purchase ${purchase.id} has been deleted.`,
+        title: "Purchase Order Deleted",
+        description: `Purchase order ${purchaseOrder.id} has been deleted.`,
       });
     }
   };
@@ -82,7 +86,6 @@ export const PurchaseSection = () => {
       status: order.status,
       notes: order.notes,
       purchaseOrderId: order.id,
-      // Add all items for the multi-item invoice
       items: order.items.map(item => ({
         productName: item.productName,
         quantity: item.quantity,
@@ -91,7 +94,6 @@ export const PurchaseSection = () => {
       }))
     };
     console.log(purchaseForPDF);
-    //generatePurchaseInvoicePDF(purchaseForPDF);
     generatePInvoicePDF(purchaseForPDF);
     toast({
       title: "Purchase Order Generated",
@@ -206,7 +208,7 @@ export const PurchaseSection = () => {
                         <Button 
                           variant="ghost" 
                           size="sm"
-                          onClick={() => handleEditPurchase(order.items[0])}
+                          onClick={() => handleEditPurchase(order)}
                           title="Edit Purchase Order"
                         >
                           <Edit className="h-4 w-4" />
@@ -223,7 +225,7 @@ export const PurchaseSection = () => {
                         <Button 
                           variant="ghost" 
                           size="sm"
-                          onClick={() => handleDeletePurchase(order.items[0])}
+                          onClick={() => handleDeletePurchase(order)}
                           title="Delete Purchase Order"
                           className="text-red-600 hover:text-red-700 hover:bg-red-50"
                         >
@@ -260,7 +262,7 @@ export const PurchaseSection = () => {
       <EditPurchaseDialog
         open={showEditPurchase}
         onOpenChange={setShowEditPurchase}
-        purchase={selectedPurchase}
+        purchaseOrder={selectedPurchaseOrder}
         onPurchaseUpdated={handlePurchaseUpdated}
       />
     </div>

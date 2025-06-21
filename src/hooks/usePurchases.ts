@@ -242,6 +242,40 @@ export const usePurchases = () => {
     }
   };
 
+  const updatePurchaseOrder = async (orderId: string, updates: any) => {
+    try {
+      console.log('Updating purchase order:', orderId, updates);
+      
+      // Update all items in the purchase order
+      for (const item of updates.items) {
+        const dbUpdates: any = {
+          supplier: updates.supplier,
+          status: updates.status,
+          notes: updates.notes || null,
+          quantity: item.quantity,
+          unit_price: item.unitPrice,
+          total_amount: item.totalAmount
+        };
+
+        const { error } = await supabase
+          .from('purchases')
+          .update(dbUpdates)
+          .eq('id', item.id);
+
+        if (error) {
+          console.error('Supabase error updating purchase item:', error);
+          throw error;
+        }
+      }
+
+      console.log('Purchase order updated successfully in Supabase');
+      await fetchPurchases(); // Refresh the list
+    } catch (error) {
+      console.error('Error in updatePurchaseOrder:', error);
+      throw error;
+    }
+  };
+
   const deletePurchase = async (id: string) => {
     try {
       console.log('Deleting purchase from Supabase:', id);
@@ -293,6 +327,7 @@ export const usePurchases = () => {
     addPurchase,
     addPurchaseOrder,
     updatePurchase,
+    updatePurchaseOrder,
     deletePurchase,
     clearAllPurchases,
     fetchPurchases
