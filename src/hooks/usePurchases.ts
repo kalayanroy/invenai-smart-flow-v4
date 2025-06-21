@@ -237,7 +237,8 @@ const updatePurchaseOrder = async (purchaseOrderId: string, updates: Partial<Pur
         ...(updates.supplier && { supplier: updates.supplier }),
         ...(updates.date && { date: updates.date }),
         ...(updates.status && { status: updates.status }),
-        ...(updates.notes !== undefined && { notes: updates.notes })
+        ...(updates.notes !== undefined && { notes: updates.notes }),
+        ...(updates.quantity && { quantity: updates.quantity }),
       })
       .eq('purchase_order_id', purchaseOrderId);
 
