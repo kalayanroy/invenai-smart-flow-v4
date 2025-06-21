@@ -13,7 +13,6 @@ export interface Purchase {
   status: 'Ordered' | 'Received' | 'Pending' | 'Cancelled';
   notes?: string;
   purchaseOrderId?: string;
-  
 }
 
 export interface PurchaseOrder {
