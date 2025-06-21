@@ -140,7 +140,15 @@ const { salesVouchers, fetchSalesVouchers } = useSalesVouchers();
       await onVoucherCreated(voucherData);
       
       // Automatically refresh products to update stock calculations
-      await fetchProducts();
+      //await fetchProducts();
+       // ✅ Add missing fetches here
+  await Promise.all([
+    fetchProducts(),
+    fetchSales?.(),
+    fetchPurchases?.(),
+    fetchSalesReturns?.(),
+    fetchSalesVouchers?.(),
+  ]);
       setRefreshKey(prev => prev + 1); // triggers rerender
       // Reset form
       setFormData({
