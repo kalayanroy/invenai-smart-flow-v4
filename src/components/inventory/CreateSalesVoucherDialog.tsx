@@ -20,10 +20,10 @@ interface CreateSalesVoucherDialogProps {
 
 export const CreateSalesVoucherDialog = ({ open, onOpenChange, onVoucherCreated }: CreateSalesVoucherDialogProps) => {
   const { products, fetchProducts } = useProducts();
-  const { sales } = useSales();
-  const { purchases } = usePurchases();
-  const { salesReturns } = useSalesReturns();
-  const { salesVouchers } = useSalesVouchers();
+const { sales, fetchSales } = useSales();
+const { purchases, fetchPurchases } = usePurchases();
+const { salesReturns, fetchSalesReturns } = useSalesReturns();
+const { salesVouchers, fetchSalesVouchers } = useSalesVouchers();
   const [refreshKey, setRefreshKey] = useState(0);
   
   const [formData, setFormData] = useState({
@@ -140,15 +140,7 @@ export const CreateSalesVoucherDialog = ({ open, onOpenChange, onVoucherCreated 
       await onVoucherCreated(voucherData);
       
       // Automatically refresh products to update stock calculations
-     //await fetchProducts();
-      // ✅ Add missing fetches here
-  await Promise.all([
-    fetchProducts(),
-    fetchSales?.(),
-    fetchPurchases?.(),
-    fetchSalesReturns?.(),
-    fetchSalesVouchers?.(),
-  ]);
+      await fetchProducts();
       setRefreshKey(prev => prev + 1); // triggers rerender
       // Reset form
       setFormData({
@@ -247,7 +239,7 @@ export const CreateSalesVoucherDialog = ({ open, onOpenChange, onVoucherCreated 
                       <SelectContent>
                         {products.map((product) => (
                           <SelectItem key={product.id} value={product.id}>
-                            {product.name} (Stock: {refreshKey && getCalculatedStock(product.id)})
+                            {product.name} (Stock: {getCalculatedStock(product.id)})
                           </SelectItem>
                         ))}
                       </SelectContent>
