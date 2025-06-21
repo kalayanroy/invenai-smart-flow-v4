@@ -1,11 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-interface PurchaseItem {
-  productName: string;
-  quantity: number;
-  unitPrice: number | string;
-  totalAmount: number | string;
-}
+
 export interface Purchase {
   id: string;
   productId: string;
@@ -18,7 +13,7 @@ export interface Purchase {
   status: 'Ordered' | 'Received' | 'Pending' | 'Cancelled';
   notes?: string;
   purchaseOrderId?: string;
-   items: PurchaseItem[]; // ✅ This is the missing part
+  
 }
 
 export interface PurchaseOrder {
