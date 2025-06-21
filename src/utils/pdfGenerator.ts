@@ -23,6 +23,19 @@ interface PurchaseForPDF {
   items?: PurchaseItem[];
 }
 
+interface SaleForPDF {
+  id: string;
+  productId: string;
+  productName: string;
+  customerName?: string;
+  quantity: number;
+  unitPrice: string;
+  totalAmount: string;
+  date: string;
+  status: string;
+  notes?: string;
+}
+
 export const generatePurchaseInvoicePDF = (purchase: PurchaseForPDF) => {
   const doc = new jsPDF();
   
@@ -86,4 +99,48 @@ export const generatePurchaseInvoicePDF = (purchase: PurchaseForPDF) => {
   
   // Save the PDF
   doc.save(`purchase-order-${purchase.purchaseOrderId || purchase.id}.pdf`);
+};
+
+export const generateSalesInvoicePDF = (sale: SaleForPDF) => {
+  const doc = new jsPDF();
+  
+  // Add title
+  doc.setFontSize(20);
+  doc.text('Sales Invoice', 20, 30);
+  
+  // Add invoice details
+  doc.setFontSize(12);
+  doc.text(`Invoice ID: ${sale.id}`, 20, 50);
+  doc.text(`Customer: ${sale.customerName || 'Walk-in Customer'}`, 20, 60);
+  doc.text(`Date: ${sale.date}`, 20, 70);
+  doc.text(`Status: ${sale.status}`, 20, 80);
+  
+  if (sale.notes) {
+    doc.text(`Notes: ${sale.notes}`, 20, 90);
+  }
+  
+  // Add table headers
+  let yPosition = 110;
+  doc.setFontSize(10);
+  doc.text('Product Name', 20, yPosition);
+  doc.text('Quantity', 80, yPosition);
+  doc.text('Unit Price', 120, yPosition);
+  doc.text('Total Amount', 160, yPosition);
+  
+  // Add line under headers
+  doc.line(20, yPosition + 2, 190, yPosition + 2);
+  yPosition += 10;
+  
+  // Add sale item
+  doc.text(sale.productName, 20, yPosition);
+  doc.text(sale.quantity.toString(), 80, yPosition);
+  doc.text(sale.unitPrice, 120, yPosition);
+  doc.text(sale.totalAmount, 160, yPosition);
+  
+  yPosition += 20;
+  doc.setFontSize(12);
+  doc.text(`Total: ${sale.totalAmount}`, 160, yPosition);
+  
+  // Save the PDF
+  doc.save(`sales-invoice-${sale.id}.pdf`);
 };
