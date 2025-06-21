@@ -10,6 +10,7 @@ import { CreatePurchaseDialog } from './CreatePurchaseDialog';
 import { ViewPurchaseDialog } from './ViewPurchaseDialog';
 import { EditPurchaseDialog } from './EditPurchaseDialog';
 import { generatePurchaseInvoicePDF } from '@/utils/pdfGenerator';
+import {generatePInvoicePDF} from '@/utils/pdfGenerator';
 
 export const PurchaseSection = () => {
   const { toast } = useToast();
@@ -90,7 +91,8 @@ export const PurchaseSection = () => {
       }))
     };
     console.log(purchaseForPDF);
-    generatePurchaseInvoicePDF(purchaseForPDF);
+    //generatePurchaseInvoicePDF(purchaseForPDF);
+    generatePInvoicePDF(purchaseForPDF);
     toast({
       title: "Purchase Order Generated",
       description: `Purchase order for ${order.id} has been generated.`,
