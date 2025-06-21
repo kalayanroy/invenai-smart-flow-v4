@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -8,11 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Trash2, Plus } from 'lucide-react';
 import { useProducts } from '@/hooks/useProducts';
-import { useSales } from '@/hooks/userSalesVouchers';
+import { useSales } from '@/hooks/useSales';
 import { usePurchases } from '@/hooks/usePurchases';
 import { useSalesReturns } from '@/hooks/useSalesReturns';
-import { Sale } from '@/hooks/useSales';
-import { SalesVoucherItem } from '@/hooks/useSalesVouchers';
+import { useSalesVouchers, SalesVoucherItem } from '@/hooks/useSalesVouchers';
 
 interface CreateSalesVoucherDialogProps {
   open: boolean;
@@ -25,6 +23,8 @@ export const CreateSalesVoucherDialog = ({ open, onOpenChange, onVoucherCreated 
   const { sales } = useSales();
   const { purchases } = usePurchases();
   const { salesReturns } = useSalesReturns();
+  const { salesVouchers } = useSalesVouchers();
+  
   const [formData, setFormData] = useState({
     voucherNumber: `SV${Date.now()}`,
     customerName: '',
@@ -34,27 +34,36 @@ export const CreateSalesVoucherDialog = ({ open, onOpenChange, onVoucherCreated 
     date: new Date().toISOString().split('T')[0],
     discountAmount: 0,
   });
-// Calculate actual available stock using: Opening Stock + Total Purchase + Total Return - Total Sales
+
+  // Calculate actual available stock using: Opening Stock + Total Purchase + Total Return - Total Sales - Total Sales Voucher Sales
   const getCalculatedStock = (productId: string) => {
     const product = products.find(p => p.id === productId);
     const productSales = sales.filter(sale => sale.productId === productId);
     const productPurchases = purchases.filter(purchase => purchase.productId === productId);
     const productReturns = salesReturns.filter(returnItem => returnItem.productId === productId);
     
+    // Get sales from vouchers
+    const voucherSales = salesVouchers.flatMap(voucher => 
+      voucher.items.filter(item => item.productId === productId)
+    );
+    
     const openingStock = product?.openingStock || 0;
     const totalSold = productSales.reduce((sum, sale) => sum + sale.quantity, 0);
     const totalPurchased = productPurchases.reduce((sum, purchase) => sum + purchase.quantity, 0);
     const totalReturned = productReturns.reduce((sum, returnItem) => sum + returnItem.returnQuantity, 0);
-    console.log("Sales List:"+sales);
-    console.log("Product Id:"+productId);
-    console.log("Sales:"+productSales);
-    console.log("Purchases:"+productPurchases);
-    console.log("Returns:"+productReturns);
-    return openingStock + totalPurchased + totalReturned - totalSold;
+    const totalVoucherSold = voucherSales.reduce((sum, item) => sum + item.quantity, 0);
+    
+    console.log("Sales List:", sales);
+    console.log("Voucher Sales:", voucherSales);
+    console.log("Product Id:", productId);
+    console.log("Sales:", productSales);
+    console.log("Purchases:", productPurchases);
+    console.log("Returns:", productReturns);
+    console.log("Total Voucher Sold:", totalVoucherSold);
+    
+    return openingStock + totalPurchased + totalReturned - totalSold - totalVoucherSold;
   };
-  //const selectedProduct = products.find(p => p.id === formData.productId);
-  //const availableStock = selectedProduct ? getCalculatedStock(selectedProduct.id) : 0;
-  //console.log(availableStock);
+
   const [items, setItems] = useState<SalesVoucherItem[]>([
     { productId: '', productName: '', quantity: 1, unitPrice: 0, totalAmount: 0 }
   ]);
