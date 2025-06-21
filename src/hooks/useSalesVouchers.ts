@@ -181,6 +181,37 @@ export const useSalesVouchers = () => {
     try {
       console.log('Updating sales voucher:', id, updates);
       
+      // Get the original voucher to restore stock first
+      const originalVoucher = salesVouchers.find(v => v.id === id);
+      if (!originalVoucher) {
+        throw new Error('Original voucher not found');
+      }
+
+      // Restore stock for original items
+      for (const item of originalVoucher.items) {
+        console.log(`Restoring stock for product ${item.productId}, adding back ${item.quantity}`);
+        
+        const { data: product, error: fetchError } = await supabase
+          .from('products')
+          .select('stock')
+          .eq('id', item.productId)
+          .single();
+
+        if (!fetchError && product) {
+          const newStock = product.stock + item.quantity;
+          console.log(`Product ${item.productId} stock: ${product.stock} -> ${newStock}`);
+          
+          await supabase
+            .from('products')
+            .update({ 
+              stock: newStock,
+              status: newStock === 0 ? 'Out of Stock' : newStock <= 10 ? 'Low Stock' : 'In Stock'
+            })
+            .eq('id', item.productId);
+        }
+      }
+
+      // Update voucher basic info
       const dbUpdates: any = {};
       
       if (updates.voucherNumber) dbUpdates.voucher_number = updates.voucherNumber;
@@ -193,14 +224,80 @@ export const useSalesVouchers = () => {
       if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
       if (updates.date) dbUpdates.date = updates.date;
 
-      const { error } = await supabase
+      const { error: voucherError } = await supabase
         .from('sales_vouchers')
         .update(dbUpdates)
         .eq('id', id);
 
-      if (error) {
-        console.error('Error updating voucher:', error);
-        throw error;
+      if (voucherError) {
+        console.error('Error updating voucher:', voucherError);
+        throw voucherError;
+      }
+
+      // Handle items update if provided
+      if (updates.items) {
+        // Delete all existing items
+        const { error: deleteError } = await supabase
+          .from('sales_voucher_items')
+          .delete()
+          .eq('voucher_id', id);
+
+        if (deleteError) {
+          console.error('Error deleting old voucher items:', deleteError);
+          throw deleteError;
+        }
+
+        // Insert new items
+        const voucherItems = updates.items.map(item => ({
+          voucher_id: id,
+          product_id: item.productId,
+          product_name: item.productName,
+          quantity: item.quantity,
+          unit_price: item.unitPrice,
+          total_amount: item.totalAmount
+        }));
+
+        const { error: itemsError } = await supabase
+          .from('sales_voucher_items')
+          .insert(voucherItems);
+
+        if (itemsError) {
+          console.error('Error creating new voucher items:', itemsError);
+          throw itemsError;
+        }
+
+        // Update product stock for new items
+        for (const item of updates.items) {
+          console.log(`Updating stock for product ${item.productId}, reducing by ${item.quantity}`);
+          
+          const { data: product, error: fetchError } = await supabase
+            .from('products')
+            .select('stock')
+            .eq('id', item.productId)
+            .single();
+
+          if (fetchError) {
+            console.error('Error fetching product for stock update:', fetchError);
+            continue;
+          }
+
+          const newStock = Math.max(0, product.stock - item.quantity);
+          console.log(`Product ${item.productId} stock: ${product.stock} -> ${newStock}`);
+          
+          const { error: updateError } = await supabase
+            .from('products')
+            .update({ 
+              stock: newStock,
+              status: newStock === 0 ? 'Out of Stock' : newStock <= 10 ? 'Low Stock' : 'In Stock'
+            })
+            .eq('id', item.productId);
+
+          if (updateError) {
+            console.error('Error updating product stock:', updateError);
+          } else {
+            console.log(`Successfully updated stock for product ${item.productId}`);
+          }
+        }
       }
 
       console.log('Sales voucher updated successfully');
