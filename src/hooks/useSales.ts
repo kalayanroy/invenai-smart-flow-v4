@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -61,8 +60,13 @@ export const useSales = () => {
     try {
       console.log('Adding sale to Supabase:', saleData);
 
+      // Generate unique ID using timestamp and random number
+      const timestamp = Date.now();
+      const random = Math.floor(Math.random() * 1000);
+      const uniqueId = `SALE-${timestamp}-${random}`;
+
       const newSale = {
-        id: `SALE${String(sales.length + 1).padStart(3, '0')}`,
+        id: uniqueId,
         product_id: saleData.productId,
         product_name: saleData.productName,
         quantity: saleData.quantity,
