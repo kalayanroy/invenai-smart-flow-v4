@@ -68,13 +68,28 @@ export const PurchaseSection = () => {
   };
 
   const handlePrintInvoice = (order: any) => {
-    // Create a purchase object for the PDF generator (using first item as base)
-    const firstItem = order.items[0];
+    // Create a comprehensive purchase object for the PDF generator with all items
     const purchaseForPDF = {
-      ...firstItem,
+      id: order.id,
+      productId: order.items.map(item => item.productId).join(', '),
+      productName: order.items.map(item => item.productName).join(', '),
+      supplier: order.supplier,
+      quantity: order.items.reduce((sum, item) => sum + item.quantity, 0),
+      unitPrice: `৳${(order.totalAmount / order.items.reduce((sum, item) => sum + item.quantity, 0)).toFixed(2)}`,
       totalAmount: `৳${order.totalAmount.toFixed(2)}`,
-      items: order.items // Add all items for multi-item invoice
+      date: order.date,
+      status: order.status,
+      notes: order.notes,
+      purchaseOrderId: order.id,
+      // Add all items for the multi-item invoice
+      items: order.items.map(item => ({
+        productName: item.productName,
+        quantity: item.quantity,
+        unitPrice: parseFloat(item.unitPrice.replace('৳', '').replace(',', '')),
+        totalAmount: parseFloat(item.totalAmount.replace('৳', '').replace(',', ''))
+      }))
     };
+    
     generatePurchaseInvoicePDF(purchaseForPDF);
     toast({
       title: "Purchase Order Generated",
