@@ -136,14 +136,18 @@ export const StockDashboard = () => {
 
       {/* Main Content */}
       <div className={`${isMobile ? 'px-2 py-4' : 'container mx-auto px-6 py-8'}`}>
-        <div className={`${isMobile ? 'space-y-4' : 'grid grid-cols-1 lg:grid-cols-4 gap-8'}`}>
-          <div className={`${isMobile ? '' : 'lg:col-span-3'} space-y-6`}>
-            {activeTab === 'overview' && (
-              <>
-                <MetricsOverview />
-                <InventoryChart />
-              </>
-            )}
+        {activeTab === 'overview' ? (
+          <div className={`${isMobile ? 'space-y-4' : 'grid grid-cols-1 lg:grid-cols-4 gap-8'}`}>
+            <div className={`${isMobile ? '' : 'lg:col-span-3'} space-y-6`}>
+              <MetricsOverview />
+              <InventoryChart />
+            </div>
+            <div className={`${isMobile ? '' : 'lg:col-span-1'}`}>
+              <AlertsPanel />
+            </div>
+          </div>
+        ) : (
+          <div className="w-full">
             {activeTab === 'inventory' && <ProductTable />}
             {activeTab === 'stock-management' && <StockManagement />}
             {activeTab === 'pos' && <POSSystem />}
@@ -152,14 +156,7 @@ export const StockDashboard = () => {
             {activeTab === 'purchases' && <PurchaseSection />}
             {activeTab === 'reports' && <Reports />}
           </div>
-
-          {/* Only show AlertsPanel on Overview tab */}
-          {activeTab === 'overview' && (
-            <div className={`${isMobile ? '' : 'lg:col-span-1'}`}>
-              <AlertsPanel />
-            </div>
-          )}
-        </div>
+        )}
       </div>
     </div>
   );
