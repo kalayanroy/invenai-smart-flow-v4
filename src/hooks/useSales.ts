@@ -114,6 +114,7 @@ const updateProductStock = async (productId: string, quantityChange: number) => 
       }
 
       console.log('Sale successfully added to Supabase:', data);
+      await updateProductStock(saleData.productId, saleData.quantity);
       await fetchSales(); // Refresh the list
       return data;
     } catch (error) {
@@ -149,6 +150,7 @@ const updateProductStock = async (productId: string, quantityChange: number) => 
       }
 
       console.log('Sale updated successfully in Supabase');
+      await updateProductStock(updates.productId!, updates.quantity || 0);
       await fetchSales(); // Refresh the list
     } catch (error) {
       console.error('Error in updateSale:', error);
@@ -158,6 +160,9 @@ const updateProductStock = async (productId: string, quantityChange: number) => 
 
   const deleteSale = async (id: string) => {
     try {
+      const { data, error } = await supabase.from('sales').select('*').eq('id', id).single();
+      if (error || !data) throw error;
+      
       console.log('Deleting sale from Supabase:', id);
       
       const { error } = await supabase
@@ -171,6 +176,7 @@ const updateProductStock = async (productId: string, quantityChange: number) => 
       }
 
       console.log('Sale deleted successfully from Supabase');
+      await updateProductStock(data.product_id, -data.quantity);
       await fetchSales(); // Refresh the list
     } catch (error) {
       console.error('Error in deleteSale:', error);
