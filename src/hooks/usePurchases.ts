@@ -226,31 +226,70 @@ export const usePurchases = () => {
       throw error;
     }
   };
-const updatePurchaseOrder = async (purchaseOrderId: string, updates: Partial<PurchaseOrder>) => {
-  try {
-    // Update all purchases in the order with new values (like status, notes, supplier)
-    console.log(purchaseOrderId);
-    console.log(updates);
-    const { error } = await supabase
-      .from('purchases')
-      .update({
-        ...(updates.supplier && { supplier: updates.supplier }),
-        ...(updates.date && { date: updates.date }),
-        ...(updates.status && { status: updates.status }),
-        ...(updates.notes !== undefined && { notes: updates.notes }),
-      })
-      .eq('purchase_order_id', purchaseOrderId);
 
-    if (error) throw error;
+  const updatePurchaseOrder = async (purchaseOrderId: string, updates: Partial<PurchaseOrder>) => {
+    try {
+      console.log('Updating purchase order:', purchaseOrderId, updates);
 
-    await fetchPurchases();
-  } catch (error) {
-    console.error('Error updating purchase order:', error);
-    throw error;
-  }
-};
+      // Get current purchase order items
+      const { data: currentItems, error: fetchError } = await supabase
+        .from('purchases')
+        .select('*')
+        .eq('purchase_order_id', purchaseOrderId);
 
-  
+      if (fetchError) throw fetchError;
+
+      // Revert stock changes for current items
+      if (currentItems) {
+        for (const item of currentItems) {
+          await updateProductStock(item.product_id, -item.quantity);
+        }
+      }
+
+      // Delete all current items
+      const { error: deleteError } = await supabase
+        .from('purchases')
+        .delete()
+        .eq('purchase_order_id', purchaseOrderId);
+
+      if (deleteError) throw deleteError;
+
+      // Add new items if provided
+      if (updates.items && updates.items.length > 0) {
+        const insertPromises = updates.items.map(async (item, index) => {
+          const purchaseId = item.id.startsWith('new-') ? `${purchaseOrderId}-${index + 1}` : item.id;
+          
+          const newPurchase = {
+            id: purchaseId,
+            purchase_order_id: purchaseOrderId,
+            product_id: item.productId,
+            product_name: item.productName,
+            supplier: updates.supplier || item.supplier,
+            quantity: item.quantity,
+            unit_price: item.unitPrice,
+            total_amount: item.totalAmount,
+            date: updates.date || new Date().toISOString().split('T')[0],
+            status: updates.status || 'Pending',
+            notes: updates.notes || null
+          };
+
+          await supabase.from('purchases').insert([newPurchase]);
+          
+          // Update stock for new items
+          const quantity = typeof item.quantity === 'number' ? item.quantity : parseInt(item.quantity.toString());
+          await updateProductStock(item.productId, quantity);
+        });
+
+        await Promise.all(insertPromises);
+      }
+
+      await fetchPurchases();
+    } catch (error) {
+      console.error('Error updating purchase order:', error);
+      throw error;
+    }
+  };
+
   const clearAllPurchases = async () => {
     try {
       const { error } = await supabase.from('purchases').delete().neq('id', '');
@@ -269,7 +308,7 @@ const updatePurchaseOrder = async (purchaseOrderId: string, updates: Partial<Pur
     addPurchase,
     addPurchaseOrder,
     updatePurchase,
-     updatePurchaseOrder, // ← Add this line
+    updatePurchaseOrder,
     deletePurchase,
     clearAllPurchases,
     fetchPurchases
