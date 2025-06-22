@@ -165,16 +165,12 @@ const updateProductStock = async (productId: string, quantityChange: number) => 
       
       console.log('Deleting sale from Supabase:', id);
       
-      const { error } = await supabase
+      await supabase
         .from('sales')
         .delete()
         .eq('id', id);
 
-      if (error) {
-        console.error('Supabase error deleting sale:', error);
-        throw error;
-      }
-
+      
       console.log('Sale deleted successfully from Supabase');
       await updateProductStock(data.product_id, -data.quantity);
       await fetchSales(); // Refresh the list
