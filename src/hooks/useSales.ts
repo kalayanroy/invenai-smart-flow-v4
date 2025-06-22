@@ -55,7 +55,29 @@ export const useSales = () => {
       console.error('Error in fetchSales:', error);
     }
   };
+const updateProductStock = async (productId: string, quantityChange: number) => {
+    const { data, error } = await supabase
+      .from('products')
+      .select('stock')
+      .eq('id', productId)
+      .single();
 
+    if (error || !data) {
+      console.error('Error fetching product for stock update:', error);
+      return;
+    }
+
+    const updatedStock = (data.stock || 0) + quantityChange;
+
+    const { error: updateError } = await supabase
+      .from('products')
+      .update({ stock: updatedStock })
+      .eq('id', productId);
+
+    if (updateError) {
+      console.error('Error updating stock:', updateError);
+    }
+  };
   const addSale = async (saleData: Omit<Sale, 'id'>) => {
     try {
       console.log('Adding sale to Supabase:', saleData);
