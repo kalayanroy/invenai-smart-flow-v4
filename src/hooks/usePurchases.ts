@@ -276,7 +276,7 @@ export const usePurchases = () => {
           await supabase.from('purchases').insert([newPurchase]);
           
           // Update stock for new items
-          const quantity = typeof item.quantity === 'number' ? item.quantity : parseInt(item.quantity.toString());
+          const quantity = typeof item.quantity === 'number' ? item.quantity : parseInt(item.quantity);
           await updateProductStock(item.productId, quantity);
         });
 
