@@ -65,6 +65,10 @@ export const CreatePurchaseDialog = ({ open, onOpenChange, onPurchaseCreated }: 
       if (product) {
         updatedItems[index].productName = product.name;
         updatedItems[index].unitPrice = parseFloat(product.purchasePrice.replace('৳', '')) || 0;
+        // Automatically calculate total amount when product is selected
+        updatedItems[index].totalAmount = updatedItems[index].quantity * updatedItems[index].unitPrice;
+        console.log(updatedItems[index].unitPrice);
+        console.log(updatedItems[index].totalAmount);
       }
     }
     
