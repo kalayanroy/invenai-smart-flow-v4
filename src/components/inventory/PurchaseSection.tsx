@@ -88,8 +88,8 @@ export const PurchaseSection = () => {
       items: order.items.map(item => ({
         productName: item.productName,
         quantity: item.quantity,
-        unitPrice: parseFloat(item.unitPrice)),
-        totalAmount: parseFloat(item.totalAmount))
+        unitPrice: parseFloat(item.unitPrice),
+        totalAmount: parseFloat(item.totalAmount)
       }))
     };
     console.log(purchaseForPDF);
