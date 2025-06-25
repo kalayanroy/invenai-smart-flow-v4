@@ -48,8 +48,8 @@ export const generateSalesVoucherPDF = (voucher: SalesVoucher) => {
     voucher.items.forEach((item: any) => {
     doc.text(item.productName, 20, yPosition);
     doc.text(item.quantity.toString(), 80, yPosition);
-    doc.text(`৳${item.unitPrice}`, 120, yPosition);
-    doc.text(`৳${item.totalAmount}`, 160, yPosition);
+    doc.text(`${item.unitPrice}`, 120, yPosition);
+    doc.text(`${item.totalAmount}`, 160, yPosition);
     yPosition += 10; // Move down for next item
   });
   }
