@@ -5,7 +5,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Trash2 } from 'lucide-react';
+//import { Plus, Trash2 } from 'lucide-react';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Plus, Trash2, Check, ChevronDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { useProducts } from '@/hooks/useProducts';
 import { Purchase } from '@/hooks/usePurchases';
 
@@ -44,15 +48,17 @@ export const CreatePurchaseDialog = ({ open, onOpenChange, onPurchaseCreated }: 
   const [items, setItems] = useState<PurchaseItem[]>([
     { productId: '', productName: '', quantity: 1, unitPrice: 0, totalAmount: 0 }
   ]);
-
+const [openProductSelectors, setOpenProductSelectors] = useState<boolean[]>([false]);
   const addItem = () => {
     setItems([...items, { productId: '', productName: '', quantity: 1, unitPrice: 0, totalAmount: 0 }]);
+    setOpenProductSelectors([...openProductSelectors, false]);
     console.log(items);
   };
 
   const removeItem = (index: number) => {
     if (items.length > 1) {
       setItems(items.filter((_, i) => i !== index));
+      setOpenProductSelectors(openProductSelectors.filter((_, i) => i !== index));
     }
   };
 
@@ -78,7 +84,11 @@ export const CreatePurchaseDialog = ({ open, onOpenChange, onPurchaseCreated }: 
     
     setItems(updatedItems);
   };
-
+const setProductSelectorOpen = (index: number, open: boolean) => {
+    const newOpenStates = [...openProductSelectors];
+    newOpenStates[index] = open;
+    setOpenProductSelectors(newOpenStates);
+  };
   const getTotalAmount = () => {
     return items.reduce((sum, item) => sum + item.totalAmount, 0);
   };
@@ -118,6 +128,7 @@ export const CreatePurchaseDialog = ({ open, onOpenChange, onPurchaseCreated }: 
       notes: ''
     });
     setItems([{ productId: '', productName: '', quantity: 1, unitPrice: 0, totalAmount: 0 }]);
+    setOpenProductSelectors([false]);
   };
 
   const isFormValid = items.some(item => item.productId && item.quantity > 0) && formData.supplier;
@@ -189,18 +200,52 @@ export const CreatePurchaseDialog = ({ open, onOpenChange, onPurchaseCreated }: 
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div className="space-y-2">
                       <Label>Product *</Label>
-                      <Select value={item.productId} onValueChange={(value) => updateItem(index, 'productId', value)}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select product" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {products.map((product) => (
-                            <SelectItem key={product.id} value={product.id}>
-                              {product.name} - {product.purchasePrice}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Popover open={openProductSelectors[index]} onOpenChange={(open) => setProductSelectorOpen(index, open)}>Add commentMore actions
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={openProductSelectors[index]}
+                            className="w-full justify-between"
+                          >
+                            {item.productId
+                              ? products.find((product) => product.id === item.productId)?.name
+                              : "Select product..."}
+                            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-full p-0" align="start">
+                          <Command>
+                            <CommandInput placeholder="Search products..." />
+                            <CommandList>
+                              <CommandEmpty>No product found.</CommandEmpty>
+                              <CommandGroup>
+                                {products.map((product) => (
+                                  <CommandItem
+                                    key={product.id}
+                                    value={product.name}
+                                    onSelect={() => {
+                                      updateItem(index, 'productId', product.id);
+                                      setProductSelectorOpen(index, false);
+                                    }}
+                                  >
+                                    <Check
+                                      className={cn(
+                                        "mr-2 h-4 w-4",
+                                        item.productId === product.id ? "opacity-100" : "opacity-0"
+                                      )}
+                                    />
+                                    <div className="flex flex-col">
+                                      <span>{product.name}</span>
+                                      <span className="text-sm text-muted-foreground">{product.purchasePrice}</span>
+                                    </div>
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
                     </div>
 
                     <div className="space-y-2">
