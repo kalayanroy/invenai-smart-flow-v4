@@ -205,7 +205,9 @@ export const CreateSaleDialog = ({ open, onOpenChange, onSaleCreated }: CreateSa
               </div>
               <div className="col-span-2 text-lg font-semibold">
                 <span className="text-gray-600">Total Amount:</span> ৳{totalAmount.toFixed(2)}
-          </div>
+              </div>
+              </div>
+            </div>
           <div className="space-y-2">
             <Label htmlFor="notes">Notes</Label>
             <Textarea
