@@ -200,7 +200,7 @@ const setProductSelectorOpen = (index: number, open: boolean) => {
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div className="space-y-2">
                       <Label>Product *</Label>
-                      <Popover open={openProductSelectors[index]} onOpenChange={(open) => setProductSelectorOpen(index, open)}>Add commentMore actions
+                      <Popover open={openProductSelectors[index]} onOpenChange={(open) => setProductSelectorOpen(index, open)}>
                         <PopoverTrigger asChild>
                           <Button
                             variant="outline"
