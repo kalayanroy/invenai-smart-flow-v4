@@ -79,8 +79,8 @@ export const PurchaseSection = () => {
       productName: order.items.map(item => item.productName).join(', '),
       supplier: order.supplier,
       quantity: order.items.reduce((sum, item) => sum + item.quantity, 0),
-      unitPrice: `${(order.totalAmount / order.items.reduce((sum, item) => sum + item.quantity, 0)).toFixed(2)}`,
-      totalAmount: `${order.totalAmount.toFixed(2)}`,
+      unitPrice: `৳${(order.totalAmount / order.items.reduce((sum, item) => sum + item.quantity, 0)).toFixed(2)}`,
+      totalAmount: `৳${order.totalAmount.toFixed(2)}`,
       date: order.date,
       status: order.status,
       notes: order.notes,
@@ -88,8 +88,8 @@ export const PurchaseSection = () => {
       items: order.items.map(item => ({
         productName: item.productName,
         quantity: item.quantity,
-        unitPrice: parseFloat(item.unitPrice),
-        totalAmount: parseFloat(item.totalAmount)
+        unitPrice: parseFloat(item.unitPrice.replace('৳', '').replace(',', '')),
+        totalAmount: parseFloat(item.totalAmount.replace('৳', '').replace(',', ''))
       }))
     };
     console.log(purchaseForPDF);
@@ -122,7 +122,7 @@ export const PurchaseSection = () => {
               <DollarSign className="h-5 w-5 text-green-600" />
               <div>
                 <p className="text-sm text-gray-600">Purchase Cost</p>
-                <p className="text-2xl font-bold">{totalPurchases.toLocaleString()}</p>
+                <p className="text-2xl font-bold">৳{totalPurchases.toLocaleString()}</p>
               </div>
             </div>
           </CardContent>
