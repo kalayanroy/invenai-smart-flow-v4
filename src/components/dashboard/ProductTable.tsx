@@ -1,16 +1,19 @@
-
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Eye, Edit, Trash2, Plus, Loader2 } from 'lucide-react';
+import { Eye, Edit, Trash2, Plus, Loader2, ChevronDown, Check } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CreateProductForm } from '../inventory/CreateProductForm';
 import { ProductViewDialog } from '../inventory/ProductViewDialog';
 import { ProductEditDialog } from '../inventory/ProductEditDialog';
 import { ProductTableFilters } from './ProductTableFilters';
 import { useToast } from '@/hooks/use-toast';
 import { useProducts, Product } from '@/hooks/useProducts';
+import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
 
 export const ProductTable = () => {
   const { toast } = useToast();
@@ -26,18 +29,103 @@ export const ProductTable = () => {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [stockFilter, setStockFilter] = useState('all');
+  
+  // Dropdown search states
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [selectedProductFromDropdown, setSelectedProductFromDropdown] = useState<Product | null>(null);
+  const [dropdownSearchTerm, setDropdownSearchTerm] = useState('');
+  const [dropdownSearchResults, setDropdownSearchResults] = useState<Product[]>([]);
+  const [isDropdownSearching, setIsDropdownSearching] = useState(false);
 
   // Get unique categories
   const categories = useMemo(() => {
     return [...new Set(products.map(p => p.category))];
   }, [products]);
 
-  // Filter products
+  // Search products in database for dropdown
+  const searchProductsInDatabase = useCallback(async (query: string) => {
+    if (!query || query.length < 2) {
+      setDropdownSearchResults([]);
+      return;
+    }
+
+    setIsDropdownSearching(true);
+    try {
+      console.log('Searching products in database:', query);
+      
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .or(`name.ilike.%${query}%,sku.ilike.%${query}%,barcode.ilike.%${query}%,category.ilike.%${query}%`)
+        .order('name')
+        .limit(20);
+
+      if (error) {
+        console.error('Error searching products:', error);
+        return;
+      }
+
+      const mappedProducts = data.map(product => ({
+        id: product.id,
+        name: product.name,
+        sku: product.sku,
+        barcode: product.barcode || '',
+        category: product.category,
+        stock: product.stock,
+        reorderPoint: product.reorder_point,
+        price: product.price,
+        purchasePrice: product.purchase_price,
+        sellPrice: product.sell_price,
+        openingStock: product.opening_stock,
+        unit: product.unit,
+        status: product.status,
+        aiRecommendation: product.ai_recommendation || '',
+        image: product.image,
+        createdAt: product.created_at
+      }));
+
+      console.log(`Found ${mappedProducts.length} products matching "${query}"`);
+      setDropdownSearchResults(mappedProducts);
+    } catch (error) {
+      console.error('Error in searchProductsInDatabase:', error);
+    } finally {
+      setIsDropdownSearching(false);
+    }
+  }, []);
+
+  // Handle dropdown search input change
+  const handleDropdownSearchChange = useCallback((value: string) => {
+    setDropdownSearchTerm(value);
+    searchProductsInDatabase(value);
+  }, [searchProductsInDatabase]);
+
+  // Enhanced filter products with more comprehensive search
   const filteredProducts = useMemo(() => {
-    return products.filter(product => {
-      const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           product.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           product.category.toLowerCase().includes(searchTerm.toLowerCase());
+    console.log('Filtering products with search term:', searchTerm);
+    console.log('Selected product from dropdown:', selectedProductFromDropdown);
+    
+    let productsToFilter = products;
+    
+    // If a product is selected from dropdown and it's not in the loaded products, add it
+    if (selectedProductFromDropdown && !products.find(p => p.id === selectedProductFromDropdown.id)) {
+      console.log('Adding selected product to filter list:', selectedProductFromDropdown.name);
+      productsToFilter = [selectedProductFromDropdown, ...products];
+    }
+    
+    return productsToFilter.filter(product => {
+      // If a specific product is selected from dropdown, prioritize showing it
+      if (selectedProductFromDropdown && product.id === selectedProductFromDropdown.id) {
+        console.log('Showing selected product:', product.name);
+        return true;
+      }
+      
+      // Enhanced search that includes name, SKU, category, and barcode
+      const searchLower = searchTerm.toLowerCase().trim();
+      const matchesSearch = !searchTerm || 
+        product.name.toLowerCase().includes(searchLower) ||
+        product.sku.toLowerCase().includes(searchLower) ||
+        product.category.toLowerCase().includes(searchLower) ||
+        (product.barcode && product.barcode.toLowerCase().includes(searchLower));
       
       const matchesCategory = categoryFilter === 'all' || product.category === categoryFilter;
       const matchesStatus = statusFilter === 'all' || product.status === statusFilter;
@@ -61,14 +149,40 @@ export const ProductTable = () => {
         }
       }
       
-      return matchesSearch && matchesCategory && matchesStatus && matchesStock;
+      const result = matchesSearch && matchesCategory && matchesStatus && matchesStock;
+      
+      if (searchTerm && result) {
+        console.log('Product matches search:', product.name, product.sku);
+      }
+      
+      return result;
     });
-  }, [products, searchTerm, categoryFilter, statusFilter, stockFilter]);
+  }, [products, searchTerm, categoryFilter, statusFilter, stockFilter, selectedProductFromDropdown]);
+
+  // Filter products for dropdown based on dropdown search term
+  const dropdownFilteredProducts = useMemo(() => {
+    if (dropdownSearchTerm.trim() && dropdownSearchResults.length > 0) {
+      return dropdownSearchResults;
+    }
+    
+    if (!dropdownSearchTerm.trim()) {
+      return products.slice(0, 10); // Show first 10 if no search
+    }
+    
+    // Local search in loaded products as fallback
+    const searchLower = dropdownSearchTerm.toLowerCase().trim();
+    return products.filter(product => 
+      product.name.toLowerCase().includes(searchLower) ||
+      product.sku.toLowerCase().includes(searchLower) ||
+      product.category.toLowerCase().includes(searchLower) ||
+      (product.barcode && product.barcode.toLowerCase().includes(searchLower))
+    ).slice(0, 10);
+  }, [products, dropdownSearchTerm, dropdownSearchResults]);
 
   // Count active filters
   const activeFiltersCount = useMemo(() => {
     let count = 0;
-    if (searchTerm) count++;
+    if (searchTerm.trim()) count++;
     if (categoryFilter !== 'all') count++;
     if (statusFilter !== 'all') count++;
     if (stockFilter !== 'all') count++;
@@ -113,10 +227,31 @@ export const ProductTable = () => {
   }
 
   const clearFilters = () => {
+    console.log('Clearing all filters');
     setSearchTerm('');
     setCategoryFilter('all');
     setStatusFilter('all');
     setStockFilter('all');
+    setSelectedProductFromDropdown(null);
+    setDropdownSearchTerm('');
+    setDropdownSearchResults([]);
+  };
+
+  const handleProductSelectFromDropdown = (product: Product) => {
+    console.log('Product selected from dropdown:', product.name, product.id);
+    setSelectedProductFromDropdown(product);
+    setDropdownOpen(false);
+    setDropdownSearchTerm('');
+    setDropdownSearchResults([]);
+    // Clear other filters to ensure the selected product is visible
+    setSearchTerm('');
+    setCategoryFilter('all');
+    setStatusFilter('all');
+    setStockFilter('all');
+    
+    // Automatically open the product view modal
+    setSelectedProduct(product);
+    setShowViewDialog(true);
   };
 
   const getStatusColor = (status: string) => {
@@ -181,6 +316,95 @@ export const ProductTable = () => {
         </div>
       </div>
 
+      {/* Product Search Dropdown */}
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Search & Select Product to View Details
+              </label>
+              <Popover open={dropdownOpen} onOpenChange={setDropdownOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={dropdownOpen}
+                    className="w-full justify-between h-10"
+                  >
+                    {selectedProductFromDropdown 
+                      ? `${selectedProductFromDropdown.name} (${selectedProductFromDropdown.sku})`
+                      : "Search products by name, SKU, or barcode to view details..."
+                    }
+                    <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0 bg-white border shadow-lg z-50" align="start">
+                  <Command>
+                    <CommandInput 
+                      placeholder="Search products..." 
+                      value={dropdownSearchTerm}
+                      onValueChange={handleDropdownSearchChange}
+                    />
+                    <CommandList className="max-h-60 overflow-y-auto">
+                      <CommandEmpty>
+                        {isDropdownSearching ? "Searching..." : 
+                         loading && !dropdownSearchTerm ? "Loading products..." : 
+                         "No product found."}
+                      </CommandEmpty>
+                      <CommandGroup>
+                        {dropdownFilteredProducts.map((product) => (
+                          <CommandItem
+                            key={product.id}
+                            value={`${product.name}-${product.id}`}
+                            onSelect={() => handleProductSelectFromDropdown(product)}
+                            className="cursor-pointer"
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                selectedProductFromDropdown?.id === product.id ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            <div className="flex flex-col">
+                              <span className="font-medium">{product.name}</span>
+                              <span className="text-sm text-muted-foreground">
+                                SKU: {product.sku} | Stock: {product.stock} | {product.category}
+                              </span>
+                            </div>
+                          </CommandItem>
+                        ))}
+                        
+                        {/* Search loading indicator */}
+                        {isDropdownSearching && (
+                          <div className="flex items-center justify-center p-4">
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            <span className="text-sm text-gray-500">Searching products...</span>
+                          </div>
+                        )}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+            {selectedProductFromDropdown && (
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setSelectedProductFromDropdown(null);
+                  setSearchTerm('');
+                  setDropdownSearchResults([]);
+                }}
+                className="h-10"
+              >
+                Clear Selection
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Filters */}
       <Card>
         <CardContent className="p-6">
@@ -210,6 +434,16 @@ export const ProductTable = () => {
                 - {activeFiltersCount} filter{activeFiltersCount > 1 ? 's' : ''} applied
               </span>
             )}
+            {searchTerm && (
+              <span className="text-sm font-normal text-blue-600 ml-2">
+                - searching for "{searchTerm}"
+              </span>
+            )}
+            {selectedProductFromDropdown && (
+              <span className="text-sm font-normal text-green-600 ml-2">
+                - selected: {selectedProductFromDropdown.name}
+              </span>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -229,7 +463,13 @@ export const ProductTable = () => {
               </thead>
               <tbody>
                 {filteredProducts.map((product) => (
-                  <tr key={product.id} className="border-b hover:bg-gray-50 transition-colors">
+                  <tr 
+                    key={product.id} 
+                    className={cn(
+                      "border-b hover:bg-gray-50 transition-colors",
+                      selectedProductFromDropdown?.id === product.id && "bg-blue-50 border-blue-200"
+                    )}
+                  >
                     <td className="py-4 px-4">
                       <div className="flex items-center gap-3">
                         {product.image && (
@@ -245,7 +485,7 @@ export const ProductTable = () => {
                         </div>
                       </div>
                     </td>
-                    <td className="py-4 px-4 text-sm font-mono">{product.id}</td>
+                    <td className="py-4 px-4 text-sm font-mono">{product.sku}</td>
                     <td className="py-4 px-4">
                       <div className="text-sm">
                         <div className="font-medium">{product.stock} {product.unit}</div>
@@ -322,11 +562,17 @@ export const ProductTable = () => {
           
           {filteredProducts.length === 0 && !loading && (
             <div className="text-center py-8 text-gray-500">
-              {activeFiltersCount > 0 ? (
+              {activeFiltersCount > 0 || searchTerm || selectedProductFromDropdown ? (
                 <div>
-                  <p>No products found matching your filters.</p>
+                  <p>No products found matching your search criteria.</p>
+                  <p className="text-sm mt-1">
+                    {searchTerm && `Search: "${searchTerm}"`}
+                    {searchTerm && activeFiltersCount > 0 && ' with '}
+                    {activeFiltersCount > 0 && `${activeFiltersCount} filter${activeFiltersCount > 1 ? 's' : ''} applied`}
+                    {selectedProductFromDropdown && ` | Selected: ${selectedProductFromDropdown.name}`}
+                  </p>
                   <Button variant="outline" onClick={clearFilters} className="mt-2">
-                    Clear Filters
+                    Clear All Filters
                   </Button>
                 </div>
               ) : (
