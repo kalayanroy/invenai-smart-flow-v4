@@ -136,8 +136,8 @@ export const PurchaseSection = () => {
       productName: order.items.map(item => item.productName).join(', '),
       supplier: order.supplier,
       quantity: order.items.reduce((sum, item) => sum + item.quantity, 0),
-      unitPrice: `৳${(order.totalAmount / order.items.reduce((sum, item) => sum + item.quantity, 0)).toFixed(2)}`,
-      totalAmount: `৳${order.totalAmount.toFixed(2)}`,
+      unitPrice: `${(order.totalAmount / order.items.reduce((sum, item) => sum + item.quantity, 0)).toFixed(2)}`,
+      totalAmount: `${order.totalAmount.toFixed(2)}`,
       date: order.date,
       status: order.status,
       notes: order.notes,
@@ -145,8 +145,8 @@ export const PurchaseSection = () => {
       items: order.items.map(item => ({
         productName: item.productName,
         quantity: item.quantity,
-        unitPrice: parseFloat(item.unitPrice.replace('৳', '').replace(',', '')),
-        totalAmount: parseFloat(item.totalAmount.replace('৳', '').replace(',', ''))
+        unitPrice: parseFloat(item.unitPrice),
+        totalAmount: parseFloat(item.totalAmount)
       }))
     };
     console.log(purchaseForPDF);
