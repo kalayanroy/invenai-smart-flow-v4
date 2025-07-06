@@ -95,7 +95,7 @@ export const generatePInvoicePDF = (purchase: PurchaseForPDF) => {
 
   // Header
   doc.setFontSize(20);
-  doc.text('PURCHASE ORDER', 105, 20, { align: 'center' });
+  doc.text('PURCHASE INVOICE', 105, 20, { align: 'center' });
 
   // Company info
   doc.setFontSize(12);
